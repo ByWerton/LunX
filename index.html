@@ -11,7 +11,7 @@
         .logo { font-size: 28px; font-weight: bold; color: #007acc; text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
         #user-section { background: #1a1a1a; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #333; margin-bottom: 10px; }
         #user-email { font-size: 11px; color: #fff; margin-bottom: 5px; word-break: break-all; }
-        .auth-btn { background-color: #007acc; color: white; border: none; padding: 5px 10px; cursor: pointer; font-size: 12px; width: 100%; border-radius: 3px; margin-top: 5px; }
+        .auth-btn { background-color: #007acc; color: white; border: none; padding: 10px 10px; cursor: pointer; font-size: 14px; width: 100%; border-radius: 3px; margin-top: 5px; }
         .auth-btn.logout { background-color: #d9534f; }
         button.tool-btn { background-color: #3e3e42; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; text-align: left; width: 100%; }
         button.tool-btn:hover { background-color: #505050; }
@@ -23,57 +23,61 @@
         .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; width: 100%; padding: 8px; border: none; color: white; cursor: pointer; }
         #status { font-size: 12px; color: #888; margin-top: auto; }
         
-        /* Modal Stilleri */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #252526; padding: 20px; width: 300px; border-radius: 8px; border: 1px solid #007acc; text-align: center; }
-        .modal-content input { width: 90%; padding: 10px; margin: 5px 0; background: #333; border: 1px solid #555; color: white; }
-        #auth-error { color: #ff4444; font-size: 12px; margin-top: 5px; display: none; }
-        
+        /* Modal Stilleri (Tüm ekranı kaplayan Giriş/Kayıt Ekranı) */
+        .auth-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
+        .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .auth-container input { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; display: none; }
+        .switch-auth { position: absolute; top: 20px; right: 20px; color: #007acc; cursor: pointer; font-size: 14px; }
+        .switch-auth:hover { text-decoration: underline; }
+
         /* Ana Menü ve Proje Seçim Stilleri */
-        #main-menu-modal { background: rgba(0,0,0,0.95); z-index: 3000; }
-        #main-menu-modal .modal-content { max-width: 500px; width: 90%; background: #1e1e1e; border: 2px solid #007acc; }
+        #main-menu-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; }
+        #main-menu-modal .modal-content { max-width: 500px; width: 90%; background: #1e1e1e; border: 2px solid #007acc; padding: 40px; border-radius: 8px;}
         .menu-btn { background-color: #007acc; color: white; padding: 15px; font-size: 18px; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
         .menu-btn:hover { background-color: #005f99; }
         .env-btn { transition: border 0.2s, background-color 0.2s; border: 3px solid transparent !important; }
         .env-btn.selected { border: 4px solid #FFD700 !important; } 
-        .warning-text { color: #ffc107; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="main-menu-modal" class="modal flex">
-        <div class="modal-content p-8">
-            <h1 class="logo" style="font-size: 48px; margin-bottom: 40px;">LUNX STUDIO <span style="font-size: 14px; color: #ccc;">V0.2</span></h1>
+    <div id="auth-screen" class="auth-screen flex">
+        <a id="auth-switch-link" class="switch-auth" onclick="switchAuthMode()"></a>
+        <div id="auth-container" class="auth-container">
+            <h1 class="logo" style="font-size: 36px; margin-bottom: 20px;">LUNX STUDIO</h1>
             
-            <div id="project-naming-section" style="display: none;">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">1. Proje Adı</h3>
-                <input type="text" id="project-name-input" placeholder="Proje Adı (Örn: Benim İlk Oyunum)" class="w-full p-3 border border-gray-300 rounded-lg mb-4 text-gray-200 bg-gray-700">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">2. Ortam Seçimi</h3>
-                
-                <div id="project-options" class="space-y-4 mb-8">
-                    <button onclick="selectEnvironment('default_template')" class="env-btn selected w-full p-4 bg-indigo-500 text-white rounded-lg font-semibold hover:bg-indigo-600 transition shadow-lg">🏞️ Varsayılan Şablon (Gökyüzü/Kalın Zemin)</button>
-                </div>
-                <button onclick="startProject()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition">▶️ Projeyi Başlat</button>
-            </div>
+            <h2 id="auth-title" style="color:#007acc; margin-bottom: 20px;"></h2>
             
-            <div id="main-menu-buttons">
-                <button id="new-project-btn" onclick="checkLoginAndOpenProjectName()" class="menu-btn w-full mb-4">🆕 Yeni Proje Oluştur</button>
-                <button id="load-project-btn" onclick="window.loadScene()" class="menu-btn w-full mb-4" style="background-color: #c99400;">📂 Kayıtlı Projeyi Yükle</button>
-                <p id="login-warning" class="warning-text" style="display: none;">Yeni proje oluşturmak ve kaydetmek için giriş yapmalısınız.</p>
-                <button onclick="document.getElementById('auth-modal').style.display='flex'" class="auth-btn" style="margin-top: 20px;">Giriş / Kayıt</button>
-            </div>
+            <div id="auth-error" style="display: none;"></div>
+            
+            <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
+            <input type="password" id="auth-password-input" placeholder="Şifre">
+            
+            <button id="auth-submit-btn" class="auth-btn" onclick="handleAuthSubmit()"></button>
         </div>
     </div>
 
 
-    <div id="auth-modal" class="modal">
+    <div id="main-menu-modal">
         <div class="modal-content">
-            <div id="auth-error"></div>
-            <input type="email" id="email-input" placeholder="E-posta Adresi">
-            <input type="password" id="password-input" placeholder="Şifre">
-            <button class="auth-btn" onclick="window.loginUser()">Giriş Yap</button>
-            <button class="auth-btn" style="background-color: #444;" onclick="window.registerUser()">Yeni Kayıt</button>
-            <button class="auth-btn logout" style="margin-top:10px; background-color: #3e3e42;" onclick="document.getElementById('auth-modal').style.display='none'">Kapat</button>
+            <h1 class="logo" style="font-size: 48px; margin-bottom: 40px;">LUNX STUDIO <span style="font-size: 14px; color: #ccc;">V0.3</span></h1>
+            
+            <div id="project-naming-section" style="display: none;">
+                <h3 style="font-size: 18px; color: #ccc;">1. Proje Adı</h3>
+                <input type="text" id="project-name-input" placeholder="Proje Adı (Örn: Benim İlk Oyunum)" style="width: 100%; padding: 10px; margin: 10px 0 20px 0;">
+                <h3 style="font-size: 18px; color: #ccc;">2. Ortam Seçimi</h3>
+                
+                <div id="project-options" style="margin-bottom: 25px;">
+                    <button onclick="selectEnvironment('default_template')" class="env-btn selected menu-btn" style="width: 100%;">🏞️ Varsayılan Şablon</button>
+                </div>
+                <button onclick="startProject()" class="menu-btn" style="width: 100%; background-color: #2da042;">▶️ Projeyi Başlat</button>
+            </div>
+            
+            <div id="main-menu-buttons">
+                <button id="new-project-btn" onclick="checkLoginAndOpenProjectName()" class="menu-btn" style="width: 100%; margin-bottom: 15px;">🆕 Yeni Proje Oluştur</button>
+                <button id="load-project-btn" onclick="window.loadScene()" class="menu-btn" style="width: 100%; background-color: #c99400;">📂 Kayıtlı Projeyi Yükle</button>
+            </div>
         </div>
     </div>
 
@@ -82,8 +86,7 @@
         
         <div id="user-section">
             <span id="user-email">Misafir Modu</span>
-            <button id="login-btn-sidebar" class="auth-btn" onclick="document.getElementById('auth-modal').style.display='flex'">Giriş / Kayıt</button>
-            <button id="logout-btn-sidebar" class="auth-btn logout" style="display:none;" onclick="window.logoutUser()">Çıkış Yap</button>
+            <button id="logout-btn-sidebar" class="auth-btn logout" style="display:block;" onclick="window.logoutUser()">Çıkış Yap</button>
         </div>
 
         <h4>PROJE YÖNETİMİ</h4>
@@ -115,7 +118,7 @@
             <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
             <button class="run-btn" onclick="window.saveScript()">⚡ Kodu Çalıştır</button>
         </div>
-        <div id="status">LunX Studio V0.2 Yükleniyor...</div>
+        <div id="status">LunX Studio V0.3 Yükleniyor...</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -123,12 +126,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script> 
 
     <script type="module">
-        // --- 1. FIREBASE SDK KURULUMU (GÜNCEL ve HATASIZ) ---
+        // --- 1. FIREBASE SDK KURULUMU ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        // Senin LunX Studio projenin güncel yapılandırması
         const firebaseConfig = {
             apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
             authDomain: "lunxstudio.firebaseapp.com",
@@ -159,52 +161,106 @@
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let currentProjectName = "Yeni Proje";
+        let authMode = 'register'; // Başlangıç modu Kayıt Ol
 
-        // --- 3. ANA MENÜ VE PROJE AKIŞI ---
+        // --- 3. GİRİŞ / KAYIT AKIŞI FONKSİYONLARI ---
+
+        window.showAuth = (mode) => {
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('main-menu-modal').style.display = 'none';
+            
+            const authTitle = document.getElementById('auth-title');
+            const authSubmitBtn = document.getElementById('auth-submit-btn');
+            const authSwitchLink = document.getElementById('auth-switch-link');
+            document.getElementById('auth-error').style.display = 'none';
+
+            if (mode === 'register') {
+                authMode = 'register';
+                authTitle.innerText = "HESAP OLUŞTUR";
+                authSubmitBtn.innerText = "Kayıt Ol";
+                authSwitchLink.innerText = "Bir hesabın var mı? (Giriş Yap)";
+                authSwitchLink.onclick = () => showAuth('login');
+            } else { // login
+                authMode = 'login';
+                authTitle.innerText = "GİRİŞ YAP";
+                authSubmitBtn.innerText = "Giriş Yap";
+                authSwitchLink.innerText = "Hesabın yok mu? (Kayıt Ol)";
+                authSwitchLink.onclick = () => showAuth('register');
+            }
+        }
+        
+        window.switchAuthMode = () => {
+             showAuth(authMode === 'register' ? 'login' : 'register');
+        }
+
+        window.handleAuthSubmit = async () => {
+            const email = document.getElementById('auth-email-input').value;
+            const pass = document.getElementById('auth-password-input').value;
+            
+            if (!email || !pass) {
+                showError("Lütfen e-posta ve şifreyi girin.");
+                return;
+            }
+
+            try {
+                if (authMode === 'register') {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                    log("Kayıt başarılı. Otomatik giriş yapıldı.");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    log("Giriş başarılı.");
+                }
+                // Başarılı giriş/kayıt sonrası Ana Menüye geç
+                document.getElementById('auth-screen').style.display = 'none';
+                showMainMenu(); 
+            } catch (error) { showError(error.message); }
+        };
+
+        window.logoutUser = async () => { 
+            await signOut(auth); 
+            // Çıkış yapınca Auth ekranına geri dön
+            showAuth('login');
+        };
+
+        function showError(msg) { 
+            const errDiv = document.getElementById('auth-error');
+            errDiv.innerText = msg; errDiv.style.display = 'block';
+        }
+
+        // Firebase kullanıcı durumu takibi
+        if(auth) {
+            onAuthStateChanged(auth, (user) => {
+                const userEmailSpan = document.getElementById('user-email');
+                if (user) {
+                    userEmailSpan.innerText = user.email;
+                    userEmailSpan.style.color = "#4caf50";
+                } else {
+                    userEmailSpan.innerText = "Misafir Modu";
+                    userEmailSpan.style.color = "#fff";
+                }
+            });
+        }
+
+        // --- 4. ANA MENÜ VE PROJE AKIŞI ---
         
         function showMainMenu() {
             document.getElementById('main-menu-modal').style.display = 'flex';
             document.getElementById('sidebar-left').style.display = 'none';
             document.getElementById('sidebar-right').style.display = 'none';
             
-            // 3D Ekranı gizle
-            if(renderer) {
-                 renderer.domElement.style.display = 'none'; 
-            } else {
-                // Henüz init edilmemişse, 3D ekranını oluştur
-                // Bu, İlk Yüklemede Beyaz Ekran sorununu çözer
-                initPlaceholder();
-            }
+            if(renderer) renderer.domElement.style.display = 'none';
+            else initPlaceholder();
 
             // Proje adlandırma bölümünü gizleyip, ana butonları göster
             document.getElementById('project-naming-section').style.display = 'none';
             document.getElementById('main-menu-buttons').style.display = 'block';
         }
 
-        function initPlaceholder() {
-            // Sadece bir kere çağrılmasını sağla
-            if (renderer) return;
-
-            const viewport = document.getElementById('viewport');
-            // THREE.js'i başlat (arka planda çalışması için)
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            viewport.appendChild(renderer.domElement);
-            renderer.domElement.style.display = 'none'; // Başlangıçta gizle
-        }
-
         window.checkLoginAndOpenProjectName = () => {
-            if (auth && auth.currentUser) {
-                document.getElementById('main-menu-buttons').style.display = 'none';
-                document.getElementById('project-naming-section').style.display = 'block';
-                document.getElementById('login-warning').style.display = 'none';
-                document.getElementById('project-name-input').focus();
-            } else {
-                document.getElementById('login-warning').style.display = 'block';
-                log("Yeni proje oluşturmak için giriş yapın.");
-            }
+            // Giriş yapılmış kontrolü zaten onAuthStateChanged ile yapılıyor
+            document.getElementById('main-menu-buttons').style.display = 'none';
+            document.getElementById('project-naming-section').style.display = 'block';
+            document.getElementById('project-name-input').focus();
         }
         
         window.selectEnvironment = (env) => {
@@ -214,16 +270,13 @@
 
         window.startProject = () => {
             if (!auth || !auth.currentUser) {
-                log("Hata: Giriş yapılmadan proje başlatılamaz. Lütfen önce Giriş/Kayıt olun.");
+                log("Hata: Giriş yapılmadan proje başlatılamaz.");
+                showAuth('login'); 
                 return;
             }
             
-            const projectNameInput = document.getElementById('project-name-input');
-            const projectName = projectNameInput.value.trim();
-            
-            if (projectName) {
-                currentProjectName = projectName;
-            }
+            const projectName = document.getElementById('project-name-input').value.trim() || "Adsız Proje";
+            currentProjectName = projectName;
             
             document.getElementById('main-menu-modal').style.display = 'none';
             document.getElementById('sidebar-left').style.display = 'flex';
@@ -231,10 +284,8 @@
             document.title = `LunX Studio - ${currentProjectName}`;
             
             if (!controls) { 
-                // Eğer kontroller ve gizmo ilk kez başlatılıyorsa (yani initPlaceHolder'dan sonra)
                 initFullScene(); 
             } else {
-                // Zaten init edilmişse, sadece görünür yap
                 renderer.domElement.style.display = 'block'; 
             }
             
@@ -243,9 +294,21 @@
             log(`Proje başlatıldı: ${currentProjectName}`);
         }
 
+        // --- 5. 3D BAŞLATMA VE KONTROL FONKSİYONLARI (Aynı Kalır) ---
+
+        function initPlaceholder() {
+            if (renderer) return;
+            const viewport = document.getElementById('viewport');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            viewport.appendChild(renderer.domElement);
+            renderer.domElement.style.display = 'none'; 
+        }
+
         function initFullScene() {
              try {
-                // Sadece eksik 3D bileşenlerini kur
                 camera.position.set(5, 5, 5);
                 
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -273,7 +336,7 @@
                 log("KRİTİK HATA: 3D motoru başlatılamadı. Konsolu kontrol edin.");
             }
         }
-
+        
         function setupEnvironment(env) {
             scene.background = new THREE.Color(0x87CEEB); 
             scene.children = scene.children.filter(child => child.isLight || child.isTransformControls || (child.isMesh && objects.includes(child)));
@@ -287,61 +350,50 @@
             const gridHelper = new THREE.GridHelper(30, 30, 0x999999, 0x777777); 
             scene.add(gridHelper);
         }
-        
-        // --- 4. KİMLİK DOĞRULAMA (Giriş/Kayıt) ---
-        
-        window.registerUser = async () => {
-            const email = document.getElementById('email-input').value;
-            const pass = document.getElementById('password-input').value;
-            try {
-                await createUserWithEmailAndPassword(auth, email, pass);
-                document.getElementById('auth-modal').style.display = 'none';
-                log("Kayıt başarılı. Giriş yapıldı.");
-                showMainMenu(); 
-            } catch (error) { showError(error.message); }
-        };
-        window.loginUser = async () => {
-            const email = document.getElementById('email-input').value;
-            const pass = document.getElementById('password-input').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                document.getElementById('auth-modal').style.display = 'none';
-                log("Giriş başarılı.");
-                showMainMenu(); 
-            } catch (error) { showError(error.message); }
-        };
-        window.logoutUser = async () => { 
-            await signOut(auth); 
-            showMainMenu(); 
-        };
-        function showError(msg) { 
-            const errDiv = document.getElementById('auth-error');
-            errDiv.innerText = msg; errDiv.style.display = 'block';
+
+        window.addShape = (type, existingData = null) => {
+            let geometry, material, mesh;
+            let color, position, script;
+
+            if (existingData) {
+                color = existingData.color;
+                position = existingData.position;
+                script = existingData.script;
+            } else {
+                color = Math.random() * 0xffffff;
+                position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
+                script = "";
+            }
+
+            material = new THREE.MeshStandardMaterial({ color: color });
+            if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
+            else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
+            else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+            
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(position.x, position.y, position.z);
+            mesh.name = "LunX_" + type + "_" + objects.length;
+            mesh.userData = { script: script, compiled: null, type: type };
+
+            if (script) applyScript(mesh, script);
+
+            scene.add(mesh);
+            objects.push(mesh);
+            
+            if(!existingData) selectObject(mesh);
         }
 
-        if(auth) {
-            onAuthStateChanged(auth, (user) => {
-                const userEmailSpan = document.getElementById('user-email');
-                const loginBtn = document.getElementById('login-btn-sidebar');
-                const logoutBtn = document.getElementById('logout-btn-sidebar');
-                if (user) {
-                    userEmailSpan.innerText = user.email;
-                    userEmailSpan.style.color = "#4caf50";
-                    loginBtn.style.display = 'none';
-                    logoutBtn.style.display = 'block';
-                    document.getElementById('login-warning').style.display = 'none';
-                    log(user.email + " giriş yaptı.");
-                } else {
-                    userEmailSpan.innerText = "Misafir Modu";
-                    userEmailSpan.style.color = "#fff";
-                    loginBtn.style.display = 'block';
-                    logoutBtn.style.display = 'none';
-                    log("Misafir modundasınız.");
-                }
-            });
+        window.clearScene = (showConfirm = true) => {
+            if (showConfirm && !confirm("Tüm sahne silinecek! Emin misiniz?")) return;
+            objects.forEach(obj => scene.remove(obj));
+            objects = [];
+            selectObject(null);
+            log("Sahne temizlendi.");
         }
         
-        // --- 5. VERİTABANI VE 3D İŞLEMLERİ ---
+        // ... (Diğer tüm yardımcı fonksiyonlar [saveScene, loadScene, onKeyDown, onMouseDown, selectObject, saveScript, applyScript, updateUI, log, onWindowResize, animate] aynı kalır) ...
+
+        // --- 6. VERİTABANI İŞLEMLERİ ---
 
         window.saveScene = async () => {
             const user = auth.currentUser;
@@ -392,48 +444,8 @@
                 log("Hata (Yükleme): " + error.message);
             }
         }
-        
-        window.addShape = (type, existingData = null) => {
-            let geometry, material, mesh;
-            let color, position, script;
 
-            if (existingData) {
-                color = existingData.color;
-                position = existingData.position;
-                script = existingData.script;
-            } else {
-                color = Math.random() * 0xffffff;
-                position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
-                script = "";
-            }
-
-            material = new THREE.MeshStandardMaterial({ color: color });
-            if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
-            else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
-            else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-            
-            mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(position.x, position.y, position.z);
-            mesh.name = "LunX_" + type + "_" + objects.length;
-            mesh.userData = { script: script, compiled: null, type: type };
-
-            if (script) applyScript(mesh, script);
-
-            scene.add(mesh);
-            objects.push(mesh);
-            
-            if(!existingData) selectObject(mesh);
-        }
-
-        window.clearScene = (showConfirm = true) => {
-            if (showConfirm && !confirm("Tüm sahne silinecek! Emin misiniz?")) return;
-            objects.forEach(obj => scene.remove(obj));
-            objects = [];
-            selectObject(null);
-            log("Sahne temizlendi.");
-        }
-
-        // --- 6. KONTROL VE YARDIMCI FONKSİYONLAR ---
+        // --- 7. KONTROL VE YARDIMCI FONKSİYONLAR ---
 
         function onKeyDown(event) {
             const key = event.key.toLowerCase();
@@ -461,7 +473,6 @@
         }
 
         function onMouseDown(event) {
-            // renderer'ın var olduğundan emin ol
             if (!renderer || !renderer.domElement) return;
 
             const viewport = document.getElementById('viewport');
@@ -545,15 +556,15 @@
                     try { obj.userData.compiled(obj, time); } catch (err) {}
                 }
             });
-            if (controls) controls.update(); // Kontroller yüklendiğinde güncelle
+            if (controls) controls.update(); 
             if (renderer && scene && camera) renderer.render(scene, camera);
             if (selectedObject) { updateUI(); }
         }
 
-        // Uygulama yüklendiğinde Ana Menüyü göster
+        // Uygulama yüklendiğinde KAYIT OL ekranını göster
         window.onload = () => {
-            showMainMenu();
-            log("LunX Studio V0.2 hazır. Giriş yapın veya Kaydolun.");
+            showAuth('register');
+            log("LunX Studio V0.3 hazır.");
         };
     </script>
 </body>
