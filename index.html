@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.10 - Stabil Başlangıç ve Mobil Fix</title>
+    <title>LunX Studio V2.11 - Full Mobil ve Editor</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -44,10 +44,11 @@
         
         /* Özellik Paneli Stili */
         .property-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 13px; }
-        .property-row label { flex-basis: 35%; }
+        .property-row label { flex-basis: 50%; } /* Label genişliği artırıldı */
         .property-row input[type="range"] { flex-basis: 50%; height: 10px; }
         .property-row input[type="color"] { width: 50px; height: 25px; border: none; padding: 0; }
-        .property-row input[type="number"] { width: 40px; background: #333; border: 1px solid #555; color: white; border-radius: 2px; padding: 3px; }
+        .property-row input[type="number"] { width: 50px; background: #333; border: 1px solid #555; color: white; border-radius: 2px; padding: 3px; }
+        .property-row input[type="checkbox"] { width: 15px; height: 15px; } /* Checkbox boyutu */
 
         /* Simülasyon Butonu */
         #play-button { background-color: #2da042; }
@@ -87,26 +88,30 @@
             position: absolute;
         }
 
-        /* Zıplama Butonu */
+        /* Zıplama Butonu (Yeni Tasarım) */
         #jump-button {
             position: absolute;
             bottom: 50px;
             right: 50px;
             width: 80px;
             height: 80px;
-            background-color: #007acc;
+            background-color: #2da042; 
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 30px;
+            font-size: 50px; 
+            font-weight: bold;
+            line-height: 1; 
             color: white;
             pointer-events: all; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 3px solid #1a7a2e; 
+            user-select: none;
             transition: background-color 0.1s;
         }
         #jump-button:active {
-             background-color: #005a9c;
+             background-color: #1a7a2e;
         }
         
         /* Küçük ekranlarda sidebar'ı gizle */
@@ -198,7 +203,7 @@
                 <div id="joystick-area">
                     <div id="joystick-handle"></div>
                 </div>
-                <div id="jump-button">⬆️</div>
+                <div id="jump-button">+</div>
             </div>
         </div>
         <div id="sidebar-right">
@@ -462,13 +467,22 @@
                 position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
                 script = "";
             }
+            
+            let userDataDefaults = { 
+                script: script, 
+                compiled: null, 
+                type: type, 
+                gravityEnabled: true, 
+                canCollide: true 
+            };
+
 
             if (type === 'spawn') {
                 geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
                 material = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
                 mesh = new THREE.Mesh(geometry, material);
                 mesh.name = "SpawnPoint";
-                mesh.userData = { script: "", compiled: null, type: 'spawn' };
+                mesh.userData = { ...userDataDefaults, type: 'spawn', gravityEnabled: false, canCollide: false }; 
                 mesh.position.set(0, 0.05, 0); 
             }
             else {
@@ -481,7 +495,8 @@
                 mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(position.x, position.y, position.z);
                 mesh.name = type.charAt(0).toUpperCase() + type.slice(1) + "_" + objects.length;
-                mesh.userData = { script: script, compiled: null, type: type };
+                
+                mesh.userData = userDataDefaults; 
             }
             
             if (script) window.applyScript(mesh, script);
@@ -514,7 +529,9 @@
                 type: obj.userData.type,
                 position: obj.position.clone(),
                 color: obj.material.color.getHex(),
-                script: obj.userData.script || ""
+                script: obj.userData.script || "",
+                gravityEnabled: obj.userData.gravityEnabled || false,
+                canCollide: obj.userData.canCollide || false
             }));
             try {
                 await db.ref('scenes/' + user.uid).set(sceneData);
@@ -561,7 +578,7 @@
                 item.style.border = '1px solid transparent';
             });
             if (obj) {
-                obj.material.emissive.setHex(0x333333); 
+                if (obj.material && obj.material.emissive) obj.material.emissive.setHex(0x333333); 
                 const listItem = document.getElementById('item-' + obj.name);
                 if (listItem) {
                     listItem.style.backgroundColor = '#007acc';
@@ -655,7 +672,9 @@
                         z: selectedObject.position.z + 1 
                     },
                     color: selectedObject.material.color.getHex(),
-                    script: selectedObject.userData.script || ""
+                    script: selectedObject.userData.script || "",
+                    gravityEnabled: selectedObject.userData.gravityEnabled || false,
+                    canCollide: selectedObject.userData.canCollide || false
                 };
                 window.addShape(originalData.type, originalData);
                 window.log(selectedObject.name + " çoğaltıldı.");
@@ -721,7 +740,12 @@
             const intersects = raycaster.intersectObjects(objects); 
 
             if (intersects.length > 0) {
-                window.selectObject(intersects[0].object);
+                // Sadece kullanıcı tarafından eklenebilen nesneleri seç
+                if (intersects[0].object.userData.type !== 'ground') {
+                    window.selectObject(intersects[0].object);
+                } else {
+                    window.selectObject(null);
+                }
             } else if (transformControls && !transformControls.dragging) {
                 window.selectObject(null); 
             }
@@ -732,12 +756,16 @@
             
             if (property === 'color') {
                 selectedObject.material.color.set(value);
-                selectedObject.material.emissive.setHex(0x333333); 
+                if(selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x333333); 
             } else if (property.startsWith('position')) {
                 const axis = property.slice(-1).toLowerCase();
                 selectedObject.position[axis] = parseFloat(value);
+            } 
+            else if (property === 'gravityEnabled' || property === 'canCollide') {
+                selectedObject.userData[property] = value;
+                window.log(`${selectedObject.name} için ${property} ayarı ${value} olarak güncellendi.`);
             }
-            
+
             if (transformControls.object) {
                 transformControls.updateMatrixWorld();
             }
@@ -767,7 +795,6 @@
             
             if (selectedObject && selectedObject.userData.type !== 'ground') {
                 
-                // Özellik Paneli HTML'i
                 infoDiv.innerHTML = `
                     <h4>TEMEL ÖZELLİKLER</h4>
                     <div class="property-row">
@@ -794,6 +821,20 @@
                      <div class="property-row">
                         <label>Z:</label>
                         <input type="number" step="0.1" value="${selectedObject.position.z.toFixed(1)}" onchange="window.updateSelectedObjectProperty('positionZ', this.value)">
+                    </div>
+                    
+                    <h4>OYUN ÖZELLİKLERİ</h4>
+                    <div class="property-row">
+                        <label>Yer Çekimi Etkin (Şimdilik Geliştiriliyor):</label>
+                        <input type="checkbox" id="gravity-toggle"
+                                ${selectedObject.userData.gravityEnabled ? 'checked' : ''}
+                                onchange="window.updateSelectedObjectProperty('gravityEnabled', this.checked)">
+                    </div>
+                    <div class="property-row">
+                        <label>Çarpışma Etkin:</label>
+                        <input type="checkbox" id="collide-toggle"
+                                ${selectedObject.userData.canCollide ? 'checked' : ''}
+                                onchange="window.updateSelectedObjectProperty('canCollide', this.checked)">
                     </div>
                 `;
                 
@@ -869,8 +910,9 @@
         window.startSimulation = () => {
             const playerHeight = 1.8;
             const playerRadius = 0.3;
+            // Karakteri daha belirgin bir renkte yapalım (Kapsül)
             const playerGeometry = new THREE.CapsuleGeometry(playerRadius, playerHeight - 2 * playerRadius, 10, 20);
-            const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: false });
+            const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: false }); 
             player = new THREE.Mesh(playerGeometry, playerMaterial);
             player.name = "Player_Character";
             player.userData.onGround = false;
@@ -886,6 +928,7 @@
             scene.add(player);
             window.initPlayerControls();
 
+            // Kamerayı karaktere odakla (Takip etme)
             controls.target.copy(player.position);
             camera.position.set(player.position.x, player.position.y + 1, player.position.z + 3);
             controls.update();
@@ -942,7 +985,8 @@
                 
                 // Karakteri hareket yönüne doğru döndür (Dinamik Dönüş)
                 const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
-                player.rotation.y = targetRotation;
+                // Yumuşak dönüş için basit interpolasyon (opsiyonel)
+                player.rotation.y = targetRotation; // Şimdilik anlık dönüş
             }
 
 
@@ -954,7 +998,8 @@
                 0.5 
             );
 
-            const collidableObjects = objects.filter(obj => obj.userData.type !== 'spawn' && obj.visible); 
+            // Sadece çarpışmaya izin verilen nesneleri kontrol et
+            const collidableObjects = objects.filter(obj => obj.userData.canCollide && obj.visible); 
             const intersections = playerRaycaster.intersectObjects(collidableObjects, true);
 
             if (intersections.length > 0) {
@@ -980,12 +1025,12 @@
 
         window.initMobileControls = () => {
             const joystickArea = document.getElementById('joystick-area');
-            const joystickHandle = document.getElementById('joystick-handle');
             const jumpButton = document.getElementById('jump-button');
+            const joystickHandle = document.getElementById('joystick-handle');
             const maxRadius = 60; 
             
             const startMove = (e) => {
-                // Joystick'in sol tarafta etkinleştiğinden emin olalım
+                // Sol yarım ekranda değilse (Kamera kontrolüne izin ver)
                 if (e.touches && e.touches[0].clientX > window.innerWidth / 2) return; 
 
                 e.preventDefault();
@@ -1080,7 +1125,7 @@
             if (renderer && scene && camera) renderer.render(scene, camera);
         }
         
-        // --- UYGULAMA BAŞLANGICI (YÜKLEME FIX) ---
+        // --- UYGULAMA BAŞLANGICI ---
         
         const initializeApp = () => {
             if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
