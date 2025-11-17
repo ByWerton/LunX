@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.11 - Full Mobil ve Editor</title>
+    <title>LunX Studio V2.12 - Özelleştirilebilir Karakter & Animasyon</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -12,13 +12,14 @@
         /* Auth ve Loading Stil */
         #loading-screen { display: flex; flex-direction: column; color: #007acc; font-size: 24px; }
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .auth-container input, #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
+        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
         #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; }
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
         
         /* Proje Ekranı Stili */
         #project-screen { background-color: #252526; justify-content: flex-start; align-items: stretch; flex-direction: column; }
-        .project-header { background-color: #1e1e1e; padding: 20px 40px; border-bottom: 1px solid #007acc; display: flex; justify-content: space-between; align-items: center; }
+        .project-header { background-color: #1e1e1e; padding: 10px 40px; border-bottom: 1px solid #007acc; display: flex; justify-content: space-between; align-items: center; height: 60px;}
+        .user-panel { display: flex; align-items: center;}
         .user-panel button { background-color: #c92c2c; padding: 8px 15px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         .project-content { display: flex; padding: 20px; flex-grow: 1; }
         .template-area { width: 300px; padding: 10px; border-right: 1px solid #3e3e42; }
@@ -44,11 +45,11 @@
         
         /* Özellik Paneli Stili */
         .property-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 13px; }
-        .property-row label { flex-basis: 50%; } /* Label genişliği artırıldı */
+        .property-row label { flex-basis: 50%; } 
         .property-row input[type="range"] { flex-basis: 50%; height: 10px; }
         .property-row input[type="color"] { width: 50px; height: 25px; border: none; padding: 0; }
         .property-row input[type="number"] { width: 50px; background: #333; border: 1px solid #555; color: white; border-radius: 2px; padding: 3px; }
-        .property-row input[type="checkbox"] { width: 15px; height: 15px; } /* Checkbox boyutu */
+        .property-row input[type="checkbox"] { width: 15px; height: 15px; } 
 
         /* Simülasyon Butonu */
         #play-button { background-color: #2da042; }
@@ -88,7 +89,7 @@
             position: absolute;
         }
 
-        /* Zıplama Butonu (Yeni Tasarım) */
+        /* Zıplama Butonu */
         #jump-button {
             position: absolute;
             bottom: 50px;
@@ -133,6 +134,13 @@
             <h1 class="logo" style="font-size: 36px; margin-bottom: 20px;">LUNX STUDIO</h1>
             <h2 id="auth-title" style="color:#007acc; margin-bottom: 20px;"></h2>
             <div id="auth-error" style="display: none;"></div>
+            
+            <input type="text" id="auth-username-input" placeholder="Kullanıcı Adı (Sadece Kayıt İçin)" style="display: none;">
+            <div id="gender-selection" style="display: none; margin: 10px 0;">
+                <label style="margin-right: 15px;">Cinsiyet:</label>
+                <input type="radio" id="gender-male" name="gender" value="male" checked> Erkek
+                <input type="radio" id="gender-female" name="gender" value="female" style="margin-left: 15px;"> Kız
+            </div>
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
             <input type="password" id="auth-password-input" placeholder="Şifre">
             <button id="auth-submit-btn" class="tool-btn" style="width: 95%; background-color:#007acc;" onclick="window.handleAuthSubmit()"></button>
@@ -247,7 +255,7 @@
         
         const firebaseConfig = {
           // BURAYI KENDİ API KEY'İNİZLE DEĞİŞTİRİN
-          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
+          apiKey: "AIzaSyD4Dh_WCxTSqMnL8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
           projectId: "lunxstudio",
@@ -298,17 +306,26 @@
             const authTitle = document.getElementById('auth-title');
             const authSubmitBtn = document.getElementById('auth-submit-btn');
             const authSwitchLink = document.getElementById('auth-switch-link');
+            const usernameInput = document.getElementById('auth-username-input'); 
+            const genderSelect = document.getElementById('gender-selection'); 
 
             if (mode === 'register') {
                 authMode = 'register';
                 authTitle.innerText = "HESAP OLUŞTUR";
                 authSubmitBtn.innerText = "Kayıt Ol";
                 authSwitchLink.innerText = "Bir hesabın var mı? (Giriş Yap)";
+                
+                usernameInput.style.display = 'block'; 
+                genderSelect.style.display = 'block'; 
+
             } else { 
                 authMode = 'login';
                 authTitle.innerText = "GİRİŞ YAP";
                 authSubmitBtn.innerText = "Giriş Yap";
                 authSwitchLink.innerText = "Hesabın yok mu? (Kayıt Ol)";
+
+                usernameInput.style.display = 'none'; 
+                genderSelect.style.display = 'none'; 
             }
             authStateChecked = true; 
         }
@@ -339,15 +356,35 @@
                 return;
             }
 
-            try {
-                if (authMode === 'register') {
-                    await auth.createUserWithEmailAndPassword(email, pass);
-                } else {
-                    await auth.signInWithEmailAndPassword(email, pass);
+            if (authMode === 'register') {
+                const username = document.getElementById('auth-username-input').value;
+                const gender = document.querySelector('input[name="gender"]:checked').value;
+
+                if (!username) {
+                    window.showError("Lütfen bir kullanıcı adı girin.");
+                    return;
                 }
-                window.log("Giriş/Kayıt başarılı.");
-            } catch (error) { 
-                window.showError(error.message); 
+                
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+                    // Kullanıcı verisini veritabanına kaydet
+                    await db.ref('users/' + userCredential.user.uid).set({
+                        email: email,
+                        username: username,
+                        gender: gender
+                    });
+                    window.log("Kayıt başarılı. Kullanıcı verisi kaydedildi.");
+
+                } catch (error) { 
+                    window.showError(error.message); 
+                }
+            } else {
+                try {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                    window.log("Giriş başarılı.");
+                } catch (error) { 
+                    window.showError(error.message); 
+                }
             }
         };
         
@@ -456,16 +493,18 @@
         window.addShape = (type, existingData = null) => {
             if (!scene) return;
             let geometry, material, mesh;
-            let color, position, script;
+            let color, position, script, opacity;
             
             if (existingData) {
                 color = existingData.color;
                 position = existingData.position;
                 script = existingData.script;
+                opacity = existingData.opacity !== undefined ? existingData.opacity : 1.0; 
             } else {
                 color = Math.random() * 0xffffff;
                 position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
                 script = "";
+                opacity = 1.0; 
             }
             
             let userDataDefaults = { 
@@ -486,7 +525,11 @@
                 mesh.position.set(0, 0.05, 0); 
             }
             else {
-                material = new THREE.MeshStandardMaterial({ color: color });
+                material = new THREE.MeshStandardMaterial({ 
+                    color: color,
+                    transparent: opacity < 1.0, 
+                    opacity: opacity 
+                });
                 if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
                 else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
                 else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
@@ -530,6 +573,7 @@
                 position: obj.position.clone(),
                 color: obj.material.color.getHex(),
                 script: obj.userData.script || "",
+                opacity: obj.material.opacity || 1.0,
                 gravityEnabled: obj.userData.gravityEnabled || false,
                 canCollide: obj.userData.canCollide || false
             }));
@@ -569,7 +613,9 @@
         window.selectObject = (obj) => {
             if (!transformControls || isSimulationMode) return; 
             
-            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
+            objects.forEach(o => {
+                 if (o.material && o.material.emissive) o.material.emissive.setHex(0x000000);
+            });
             
             selectedObject = obj;
             
@@ -673,6 +719,7 @@
                     },
                     color: selectedObject.material.color.getHex(),
                     script: selectedObject.userData.script || "",
+                    opacity: selectedObject.material.opacity || 1.0,
                     gravityEnabled: selectedObject.userData.gravityEnabled || false,
                     canCollide: selectedObject.userData.canCollide || false
                 };
@@ -765,6 +812,12 @@
                 selectedObject.userData[property] = value;
                 window.log(`${selectedObject.name} için ${property} ayarı ${value} olarak güncellendi.`);
             }
+            // YENİ: Opaklık (Şeffaflık)
+            else if (property === 'opacity') {
+                const opacityValue = parseFloat(value);
+                selectedObject.material.opacity = opacityValue;
+                selectedObject.material.transparent = opacityValue < 1.0;
+            }
 
             if (transformControls.object) {
                 transformControls.updateMatrixWorld();
@@ -809,6 +862,15 @@
                                onchange="window.updateSelectedObjectProperty('color', this.value)">
                     </div>` : ''}
 
+                    <h4>GÖRÜNÜM AYARLARI</h4>
+                    <div class="property-row">
+                        <label for="opacity-slider">Şeffaflık (Opaklık):</label>
+                        <input type="range" id="opacity-slider" min="0" max="1" step="0.05" 
+                               value="${selectedObject.material.opacity.toFixed(2)}"
+                               oninput="window.updateSelectedObjectProperty('opacity', this.value)">
+                        <span>${(selectedObject.material.opacity * 100).toFixed(0)}%</span>
+                    </div>
+
                     <h4>POZİSYON</h4>
                     <div class="property-row">
                         <label>X:</label>
@@ -825,7 +887,7 @@
                     
                     <h4>OYUN ÖZELLİKLERİ</h4>
                     <div class="property-row">
-                        <label>Yer Çekimi Etkin (Şimdilik Geliştiriliyor):</label>
+                        <label>Yer Çekimi Etkin:</label>
                         <input type="checkbox" id="gravity-toggle"
                                 ${selectedObject.userData.gravityEnabled ? 'checked' : ''}
                                 onchange="window.updateSelectedObjectProperty('gravityEnabled', this.checked)">
@@ -860,6 +922,66 @@
         }
 
         // --- 6. SİMÜLASYON MODU YÖNETİMİ ---
+        
+        // YENİ: Blok Karakter Modeli Oluşturucu (Roblox Tarzı Basit Model)
+        window.createBlockCharacter = (gender = 'male') => {
+            const group = new THREE.Group();
+            const color = (gender === 'male') ? 0x00aaff : 0xffaaff; // Mavi veya Pembe
+            const skinColor = 0xf0c0b0; // Ten rengi
+
+            // Boyutlar (Approx. Roblox R15/R6)
+            const headSize = 0.8;
+            const torsoHeight = 1.0;
+            const limbWidth = 0.4;
+            const limbHeight = 1.0;
+            const totalHeight = limbHeight + torsoHeight + headSize; 
+
+            // Baş
+            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), new THREE.MeshBasicMaterial({ color: skinColor }));
+            head.position.y = limbHeight + torsoHeight + (headSize / 2) - 0.2; // Torso'nun üstüne yerleştir
+            head.name = "Head";
+            group.add(head);
+
+            // Gövde (Torso)
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), new THREE.MeshBasicMaterial({ color: color }));
+            torso.position.y = limbHeight + (torsoHeight / 2) - 0.1;
+            torso.name = "Torso";
+            group.add(torso);
+            
+            // --- Kolları ve Bacakları ekleyelim (Animasyon için ayrı parçalar olmalı) ---
+            
+            // Sol Kol
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: skinColor }));
+            leftArm.position.set(-0.6, limbHeight + (torsoHeight / 2) - (limbHeight / 2), 0);
+            leftArm.geometry.translate(0, limbHeight / 2, 0); // Rotasyon merkezini omuz hizasına taşı
+            leftArm.name = "LeftArm";
+            group.add(leftArm);
+            
+            // Sağ Kol
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: skinColor }));
+            rightArm.position.set(0.6, limbHeight + (torsoHeight / 2) - (limbHeight / 2), 0);
+            rightArm.geometry.translate(0, limbHeight / 2, 0); // Rotasyon merkezini omuz hizasına taşı
+            rightArm.name = "RightArm";
+            group.add(rightArm);
+
+            // Sol Bacak
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: color }));
+            leftLeg.position.set(-0.2, 0, 0);
+            leftLeg.geometry.translate(0, limbHeight / 2, 0); // Rotasyon merkezini kalça hizasına taşı
+            leftLeg.name = "LeftLeg";
+            group.add(leftLeg);
+
+            // Sağ Bacak
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: color }));
+            rightLeg.position.set(0.2, 0, 0);
+            rightLeg.geometry.translate(0, limbHeight / 2, 0); // Rotasyon merkezini kalça hizasına taşı
+            rightLeg.name = "RightLeg";
+            group.add(rightLeg);
+
+            group.userData.totalHeight = totalHeight;
+            group.userData.limbHeight = limbHeight;
+            return group;
+        };
 
         window.initPlayerControls = () => {
             playerVelocity = new THREE.Vector3();
@@ -884,8 +1006,8 @@
                 controls.enabled = true;
                 controls.enableZoom = false;
                 controls.enablePan = false; 
-                controls.minDistance = 2; 
-                controls.maxDistance = 5; 
+                controls.minDistance = 3; 
+                controls.maxDistance = 6; 
                 
                 window.startSimulation();
             } else {
@@ -907,22 +1029,32 @@
             }
         }
 
-        window.startSimulation = () => {
-            const playerHeight = 1.8;
-            const playerRadius = 0.3;
-            // Karakteri daha belirgin bir renkte yapalım (Kapsül)
-            const playerGeometry = new THREE.CapsuleGeometry(playerRadius, playerHeight - 2 * playerRadius, 10, 20);
-            const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: false }); 
-            player = new THREE.Mesh(playerGeometry, playerMaterial);
+        window.startSimulation = async () => {
+            const user = auth.currentUser;
+            let gender = 'male';
+
+            if (user) {
+                const snapshot = await db.ref('users/' + user.uid).once('value');
+                if (snapshot.exists()) {
+                    gender = snapshot.val().gender || 'male';
+                }
+            }
+
+            // Blok Karakter Oluşturma
+            player = window.createBlockCharacter(gender); 
             player.name = "Player_Character";
             player.userData.onGround = false;
+            player.userData.isMoving = false; // Animasyon için
             
+            const playerHeight = player.userData.totalHeight; 
+            const playerRadius = 0.3; // Çarpışma için varsayılan bir yarıçap
+
             const spawnPoint = objects.find(obj => obj.userData.type === 'spawn');
             if (spawnPoint) {
                 player.position.copy(spawnPoint.position);
-                player.position.y += playerHeight / 2;
+                player.position.y += playerRadius; // Yere tam basması için yükseklik ayarı
             } else {
-                player.position.set(0, playerHeight / 2, 0);
+                player.position.set(0, playerRadius, 0);
             }
 
             scene.add(player);
@@ -930,7 +1062,8 @@
 
             // Kamerayı karaktere odakla (Takip etme)
             controls.target.copy(player.position);
-            camera.position.set(player.position.x, player.position.y + 1, player.position.z + 3);
+            // Kamerayı karakterden belli bir mesafede arkasına konumlandır
+            camera.position.set(player.position.x + 3, player.position.y + 3, player.position.z + 5);
             controls.update();
 
             window.log("Simülasyon başlatıldı. Mobil Kontroller Aktif.");
@@ -956,6 +1089,7 @@
 
             const speed = 5.0; 
             const gravity = 9.8 * 2.0; 
+            const time = clock.getElapsedTime(); // Animasyon için
 
             playerVelocity.y -= gravity * delta;
             
@@ -983,11 +1117,45 @@
                 player.position.x += targetDirection.x * speed * delta;
                 player.position.z += targetDirection.z * speed * delta;
                 
-                // Karakteri hareket yönüne doğru döndür (Dinamik Dönüş)
+                // Karakteri hareket yönüne doğru döndür (Yumuşak Dönüş)
                 const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
-                // Yumuşak dönüş için basit interpolasyon (opsiyonel)
-                player.rotation.y = targetRotation; // Şimdilik anlık dönüş
+                player.rotation.y += (targetRotation - player.rotation.y) * 8 * delta; 
+                
+                player.userData.isMoving = true; 
+            } else {
+                player.userData.isMoving = false; 
             }
+            
+            /* --- BASİT YÜRÜME ANİMASYONU --- */
+            const arm = player.getObjectByName('LeftArm');
+            const leg = player.getObjectByName('LeftLeg');
+            const otherArm = player.getObjectByName('RightArm');
+            const otherLeg = player.getObjectByName('RightLeg');
+            
+            if (player.userData.isMoving && player.userData.onGround) {
+                const sineWave = Math.sin(time * 10) * 0.5; // Hız ve genlik ayarı
+                
+                // Kollar (Rotasyon x ekseninde öne-arkaya sallanır)
+                if(arm && otherArm) {
+                    arm.rotation.x = sineWave;
+                    otherArm.rotation.x = -sineWave;
+                }
+                
+                // Bacaklar (Rotasyon x ekseninde öne-arkaya sallanır)
+                 if(leg && otherLeg) {
+                    leg.rotation.x = -sineWave;
+                    otherLeg.rotation.x = sineWave;
+                }
+
+            } else {
+                // Durma Anı: Parçaları yumuşakça sıfırla
+                const damping = 0.9;
+                if(arm) arm.rotation.x *= damping;
+                if(otherArm) otherArm.rotation.x *= damping;
+                if(leg) leg.rotation.x *= damping;
+                if(otherLeg) otherLeg.rotation.x *= damping;
+            }
+            /* -------------------------------- */
 
 
             // Çarpışma Kontrolü (Raycasting)
@@ -995,19 +1163,21 @@
                 player.position, 
                 new THREE.Vector3(0, -1, 0), 
                 0, 
-                0.5 
+                player.userData.limbHeight / 2 + 0.1 // Ayak hizasından biraz aşağısı
             );
 
             // Sadece çarpışmaya izin verilen nesneleri kontrol et
             const collidableObjects = objects.filter(obj => obj.userData.canCollide && obj.visible); 
             const intersections = playerRaycaster.intersectObjects(collidableObjects, true);
+            
+            const limbHeight = player.userData.limbHeight;
 
             if (intersections.length > 0) {
                  const distance = intersections[0].distance;
-                 if (distance < 0.5) {
+                 if (distance < limbHeight / 2 + 0.1) {
                     player.userData.onGround = true;
                     playerVelocity.y = Math.max(0, playerVelocity.y); 
-                    player.position.y = intersections[0].point.y + 0.5; 
+                    player.position.y = intersections[0].point.y + limbHeight / 2; // Yere oturt
                  }
             } else {
                 player.userData.onGround = false;
@@ -1030,7 +1200,6 @@
             const maxRadius = 60; 
             
             const startMove = (e) => {
-                // Sol yarım ekranda değilse (Kamera kontrolüne izin ver)
                 if (e.touches && e.touches[0].clientX > window.innerWidth / 2) return; 
 
                 e.preventDefault();
@@ -1141,12 +1310,25 @@
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
 
-                auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged(async (user) => {
                     const userEmail = user ? user.email : "Misafir Modu";
                     document.getElementById('user-email').innerText = userEmail;
                     document.getElementById('project-user-email').innerText = userEmail;
-
+                    
                     if (user) {
+                        const snapshot = await db.ref('users/' + user.uid).once('value');
+                        const userData = snapshot.val() || { username: 'Misafir', gender: 'male' };
+                        
+                        // Profil Fotoğrafı (Baş Harf ve Cinsiyet Rengi)
+                        const userPanel = document.getElementById('project-user-email');
+                        userPanel.innerHTML = `
+                             <span style="background-color: ${userData.gender === 'male' ? '#007acc' : '#ff4aff'}; 
+                                          padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 10px;">
+                                ${userData.username.charAt(0).toUpperCase()}
+                             </span> 
+                             ${userData.username} (${userEmail})
+                        `;
+
                         window.showProjectScreen(); 
                     } else {
                         window.showAuth('login');
