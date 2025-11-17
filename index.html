@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.13 - Çalışan Giriş/Kayıt</title>
+    <title>LunX Studio V2.14 - Karakter ve Çarpışma</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -35,7 +35,21 @@
         .tool-btn.active { background-color: #007acc; }
         #main-area { flex-grow: 1; display: none; overflow: hidden; }
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        #sidebar-right { width: 250px; background-color: #252526; border-left: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; }
+        
+        /* YARI SAYDAM SAĞ PANEL */
+        #sidebar-right { 
+            width: 280px; 
+            background-color: rgba(37, 37, 38, 0.95); /* Yarı Saydam */
+            border-left: 1px solid #3e3e42; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 10;
+        }
         .panel-section { margin-bottom: 15px; }
         h4 { margin: 0 0 5px 0; font-size: 14px; color: #aaa; }
         
@@ -45,11 +59,13 @@
         
         /* Özellik Paneli Stili */
         .property-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 13px; }
-        .property-row label { flex-basis: 50%; } 
-        .property-row input[type="range"] { flex-basis: 50%; height: 10px; }
+        .property-row label { flex-basis: 60%; } 
+        .property-row input[type="range"] { flex-basis: 40%; height: 10px; }
         .property-row input[type="color"] { width: 50px; height: 25px; border: none; padding: 0; }
-        .property-row input[type="number"] { width: 50px; background: #333; border: 1px solid #555; color: white; border-radius: 2px; padding: 3px; }
-        .property-row input[type="checkbox"] { width: 15px; height: 15px; } 
+        .property-row input[type="number"] { width: 60px; background: #333; border: 1px solid #555; color: white; border-radius: 2px; padding: 3px; text-align: center;}
+        .property-row input[type="checkbox"] { width: 15px; height: 15px; margin-left: auto; } 
+        #code-editor { width: 100%; height: 100px; background-color: #1e1e1e; color: #fff; border: 1px solid #007acc; padding: 5px; box-sizing: border-box; }
+
 
         /* Simülasyon Butonu */
         #play-button { background-color: #2da042; }
@@ -74,7 +90,7 @@
             left: 30px;
             width: 120px;
             height: 120px;
-            background-color: rgba(0, 0, 0, 0.4);
+            background-color: rgba(0, 0, 0, 0.6); /* Yarı Saydam */
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -84,7 +100,7 @@
         #joystick-handle {
             width: 60px;
             height: 60px;
-            background-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(255, 255, 255, 0.8); /* Yarı Saydam */
             border-radius: 50%;
             position: absolute;
         }
@@ -96,7 +112,7 @@
             right: 50px;
             width: 80px;
             height: 80px;
-            background-color: #2da042; 
+            background-color: rgba(45, 160, 66, 0.8); /* Yarı Saydam */
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -118,7 +134,14 @@
         /* Küçük ekranlarda sidebar'ı gizle */
         @media (max-width: 768px) {
             #sidebar-right {
-                display: none !important; 
+                width: 100%;
+                background-color: rgba(37, 37, 38, 0.98);
+                padding-bottom: 120px; /* Mobil kontroller için yer açar */
+                transform: translateY(100%);
+                transition: transform 0.3s ease-out;
+            }
+            #sidebar-right.open {
+                 transform: translateY(0);
             }
         }
     </style>
@@ -136,10 +159,11 @@
             <div id="auth-error" style="display: none;"></div>
             
             <input type="text" id="auth-username-input" placeholder="Kullanıcı Adı (Sadece Kayıt İçin)" style="display: none;">
+            
             <div id="gender-selection" style="display: none; margin: 10px 0; text-align: left; padding-left: 5%;">
-                <label style="margin-right: 15px;">Cinsiyet:</label>
-                <input type="radio" id="gender-male" name="gender" value="male" checked> Erkek
-                <input type="radio" id="gender-female" name="gender" value="female" style="margin-left: 15px;"> Kız
+                <label style="margin-right: 15px; color: #007acc; font-weight: bold;">Karakter Cinsiyeti:</label><br>
+                <input type="radio" id="gender-male" name="gender" value="male" checked> Erkek (Mavi)
+                <input type="radio" id="gender-female" name="gender" value="female" style="margin-left: 15px;"> Kız (Pembe)
             </div>
 
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
@@ -198,15 +222,16 @@
         </div>
         <div class="tool-group">
             <button class="tool-btn" onclick="window.saveScene()" title="Kaydet">💾 Kaydet</button>
-            <button class="tool-btn" onclick="window.showProjectScreen()" title="Yükle / Yeni Proje">📂 Projeler</button>
+            <button class="tool-btn" onclick="window.showProjectScreen(auth.currentUser)" title="Yükle / Yeni Proje">📂 Projeler</button>
         </div>
-        <div id="user-info">
+        <div id="user-info" style="margin-left: auto;">
             <span id="status">Hazır.</span>
-            <span id="user-email" style="color:#4caf50;"></span>
+            <span id="user-email" style="color:#4caf50; margin-left: 15px;"></span>
         </div>
+        <button id="toggle-sidebar" class="tool-btn" style="margin-left: 15px; display: none;" onclick="window.toggleSidebar()">👁️</button>
     </div>
     
-    <div id="main-area" style="display: none;">
+    <div id="main-area" style="display: none; position: relative;">
         <div id="viewport">
              <div id="mobile-controls">
                 <div id="joystick-area">
@@ -291,6 +316,7 @@
             document.getElementById('toolbar').style.display = 'none';
             document.getElementById('main-area').style.display = 'none';
             document.getElementById('auth-error').style.display = 'none'; 
+            document.getElementById('sidebar-right').classList.remove('open');
         }
 
         window.showError = (msg) => { 
@@ -350,6 +376,11 @@
             window.hideAllScreens();
             document.getElementById('project-screen').style.display = 'flex';
             document.getElementById('user-email').innerText = userEmail; // Üst çubukta
+            
+            // Mobil görünümlerde sidebar butonu göster
+            if (window.innerWidth <= 768) {
+                document.getElementById('toggle-sidebar').style.display = 'block';
+            }
         }
         
         window.fetchAndUpdateUser = async (user) => {
@@ -423,19 +454,18 @@
             }
         };
         
-        // --- Diğer 3D ve Uygulama Fonksiyonları aynı kaldı --- 
-        // (Buradan sonraki kısım, önceki kodun çalışan 3D mantığını içerir ve sadeleştirilmiştir.)
+        // --- 3. EDİTÖR FONKSİYONLARI ---
         
         window.startStudio = (isNew = false) => {
             window.hideAllScreens();
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
+            document.getElementById('sidebar-right').style.display = 'flex';
             
             if (!controls) { 
                 window.initFullScene(); 
             } else {
                 window.onWindowResize(); 
-                window.enableEditorControls(true); 
             }
             
             if(isNew) {
@@ -483,6 +513,7 @@
                 transformControls = new THREE.TransformControls(camera, renderer.domElement);
                 scene.add(transformControls);
                 
+                // Klavye hareketini kontrolsüz bırakmak için disabled sadece mouse ile yapılır
                 transformControls.addEventListener('dragging-changed', function (event) { 
                     controls.enabled = !event.value; 
                     window.isTransforming = event.value; 
@@ -521,6 +552,7 @@
                 scene.add(ground);
                 ground.userData.type = 'ground'; 
                 ground.userData.canCollide = true; // Zemin çarpışmaya izin verir
+                ground.userData.gravityEnabled = false; // Zemin hareket etmez
             }
 
             if (env === 'simple_cube') {
@@ -531,26 +563,30 @@
         window.addShape = (type, existingData = null) => {
             if (!scene) return;
             let geometry, material, mesh;
-            let color, position, script, opacity;
+            let color, position, script, opacity, gravityEnabled, canCollide;
             
             if (existingData) {
                 color = existingData.color;
                 position = existingData.position;
                 script = existingData.script;
                 opacity = existingData.opacity !== undefined ? existingData.opacity : 1.0; 
+                gravityEnabled = existingData.gravityEnabled !== undefined ? existingData.gravityEnabled : false;
+                canCollide = existingData.canCollide !== undefined ? existingData.canCollide : true;
             } else {
                 color = Math.random() * 0xffffff;
                 position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
                 script = "";
                 opacity = 1.0; 
+                gravityEnabled = false; 
+                canCollide = true;
             }
             
             let userDataDefaults = { 
                 script: script, 
                 compiled: null, 
                 type: type, 
-                gravityEnabled: false, // Varsayılan olarak yer çekimi kapalı
-                canCollide: true 
+                gravityEnabled: gravityEnabled, 
+                canCollide: canCollide 
             };
 
 
@@ -969,13 +1005,28 @@
             camera.aspect = viewport.clientWidth / viewport.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            
+            // Mobil görünüm için sidebar butonunu göster/gizle
+            if (window.innerWidth <= 768) {
+                document.getElementById('toggle-sidebar').style.display = 'block';
+            } else {
+                document.getElementById('toggle-sidebar').style.display = 'none';
+                document.getElementById('sidebar-right').style.transform = 'translateY(0)'; // Büyük ekranda daima görünür
+                document.getElementById('sidebar-right').classList.remove('open');
+
+            }
+        }
+        
+        window.toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar-right');
+            sidebar.classList.toggle('open');
         }
 
-        // --- SİMÜLASYON FONKSİYONLARI ---
+        // --- 4. SİMÜLASYON FONKSİYONLARI ---
 
         window.createBlockCharacter = (gender = 'male') => {
             const group = new THREE.Group();
-            const color = (gender === 'male') ? 0x00aaff : 0xffaaff; 
+            const color = (gender === 'male') ? 0x007acc : 0xff4aff; // Mavi veya Pembe
             const skinColor = 0xf0c0b0; 
             const limbWidth = 0.4;
             const limbHeight = 1.0;
@@ -997,8 +1048,8 @@
             // Kollar (Rotasyon için pivotu üste taşı)
             const createArm = (side) => {
                 const arm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: skinColor }));
-                arm.position.set(side * 0.6, 1.5, 0); // 1.5 = Torso'nun yarısı + limb'in yarısı
-                arm.geometry.translate(0, -limbHeight / 2, 0); // Rotasyon merkezini omuz hizasına taşı
+                arm.position.set(side * 0.6, 1.5, 0); 
+                arm.geometry.translate(0, -limbHeight / 2, 0); 
                 arm.name = side === 0.6 ? "RightArm" : "LeftArm";
                 return arm;
             };
@@ -1008,15 +1059,15 @@
             // Bacaklar (Rotasyon için pivotu üste taşı)
             const createLeg = (side) => {
                 const leg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: color }));
-                leg.position.set(side * 0.2, 0.5, 0); // 0.5 = Limb'in yarısı
-                leg.geometry.translate(0, -limbHeight / 2, 0); // Rotasyon merkezini kalça hizasına taşı
+                leg.position.set(side * 0.2, 0.5, 0); 
+                leg.geometry.translate(0, -limbHeight / 2, 0); 
                 leg.name = side === 0.2 ? "RightLeg" : "LeftLeg";
                 return leg;
             };
             group.add(createLeg(0.2));
             group.add(createLeg(-0.2));
             
-            group.userData.totalHeight = 2.0; // Basit Çarpışma Yüksekliği
+            group.userData.totalHeight = 2.0; 
             group.userData.limbHeight = limbHeight;
             return group;
         };
@@ -1027,25 +1078,27 @@
             moveForward = moveBackward = moveLeft = moveRight = false;
         }
 
-        window.toggleSimulationMode = (enable) => {
+        window.toggleSimulationMode = async (enable) => { // async yapıldı
             isSimulationMode = enable;
             
             document.getElementById('play-button').style.display = enable ? 'none' : 'block';
             document.getElementById('stop-button').style.display = enable ? 'block' : 'none';
             document.getElementById('editor-tools').style.display = enable ? 'none' : 'flex';
             document.getElementById('editor-creation-tools').style.display = enable ? 'none' : 'flex';
-            document.getElementById('sidebar-right').style.display = enable ? 'none' : 'flex';
+            document.getElementById('sidebar-right').style.display = enable ? 'none' : (window.innerWidth > 768 ? 'flex' : 'none');
+            document.getElementById('toggle-sidebar').style.display = enable ? 'none' : (window.innerWidth <= 768 ? 'block' : 'none');
             document.getElementById('mobile-controls').style.display = enable ? 'block' : 'none'; 
             
             window.selectObject(null); 
 
             if (enable) {
+                // Kamera kontrolünü hareket için kullanmaya devam et
                 controls.enabled = true;
                 controls.enableZoom = false;
                 controls.enablePan = false; 
                 controls.minDistance = 3; 
                 controls.maxDistance = 6; 
-                window.startSimulation();
+                await window.startSimulation(); // Karakter oluşturulana kadar bekle
             } else {
                 window.stopSimulation();
                 controls.enabled = true;
@@ -1053,6 +1106,7 @@
                 controls.enablePan = true;
                 controls.minDistance = 0.1; 
                 controls.maxDistance = Infinity; 
+                document.getElementById('sidebar-right').style.display = window.innerWidth > 768 ? 'flex' : 'none';
             }
         }
 
@@ -1073,19 +1127,19 @@
             player.userData.isMoving = false; 
             
             const playerHeight = player.userData.totalHeight; 
-            const playerRadius = 0.3; 
-
+            
             const spawnPoint = objects.find(obj => obj.userData.type === 'spawn');
             if (spawnPoint) {
                 player.position.copy(spawnPoint.position);
                 player.position.y += playerHeight / 2; 
             } else {
-                player.position.set(0, playerHeight / 2, 0); // Yere basması için yüksekliği ayarla
+                player.position.set(0, playerHeight / 2, 0); 
             }
 
             scene.add(player);
             window.initPlayerControls();
 
+            // Kamerayı karakterin arkasına odakla
             controls.target.copy(player.position);
             camera.position.set(player.position.x + 3, player.position.y + 3, player.position.z + 5);
             controls.update();
@@ -1131,12 +1185,14 @@
             targetDirection.set(moveX, 0, moveZ).normalize();
 
             if (targetDirection.lengthSq() > 0) {
+                // Kamera Yönüne Göre Hareket Etme (OrbitControls'tan Açıyı Al)
                 const angle = controls.getAzimuthalAngle(); 
                 targetDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
 
                 player.position.x += targetDirection.x * speed * delta;
                 player.position.z += targetDirection.z * speed * delta;
                 
+                // Karakteri yürüme yönüne çevirme
                 const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
                 player.rotation.y += (targetRotation - player.rotation.y) * 8 * delta; 
                 
@@ -1178,7 +1234,8 @@
                 rayLength
             );
 
-            const collidableObjects = scene.children.filter(obj => obj.userData && obj.userData.canCollide && obj.visible); 
+            // Sadece çarpışmaya izin veren nesneleri filtrele
+            const collidableObjects = objects.filter(obj => obj.userData && obj.userData.canCollide && obj.visible); 
             const intersections = playerRaycaster.intersectObjects(collidableObjects, true);
             
             if (intersections.length > 0) {
@@ -1194,10 +1251,11 @@
 
             player.position.y += playerVelocity.y * delta;
 
+            // Kamera takibi
             controls.target.copy(player.position);
             controls.update(); 
         }
-
+        
         // --- MOBİL KONTROL MANTIĞI ---
 
         window.initMobileControls = () => {
@@ -1207,6 +1265,8 @@
             const maxRadius = 60; 
             
             const startMove = (e) => {
+                if (!isSimulationMode) return;
+                // Eğer ekranın sağ yarısına dokunulduysa kamera kontrolü varsayılır
                 if (e.touches && e.touches[0].clientX > window.innerWidth / 2) return; 
 
                 e.preventDefault();
@@ -1222,7 +1282,7 @@
             };
 
             const move = (e) => {
-                if (!joystickActive) return;
+                if (!joystickActive || !isSimulationMode) return;
                 e.preventDefault();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1268,7 +1328,7 @@
             handle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
             
             joystickX = deltaX / maxRadius;
-            joystickY = -deltaY / maxRadius; 
+            joystickY = -deltaY / maxRadius; // Y eksenini ters çevir (yukarı gitmek pozitif)
         }
 
         window.resetJoystick = () => {
@@ -1278,7 +1338,8 @@
             joystickY = 0;
         }
 
-        // --- 7. ANİMASYON DÖNGÜSÜ ---
+
+        // --- 5. ANİMASYON DÖNGÜSÜ (Run Time) ---
         
         window.animate = () => {
             requestAnimationFrame(window.animate);
@@ -1289,6 +1350,24 @@
                 window.updatePlayerMovement(delta); 
             }
 
+            // Yer çekimini etkin nesnelere uygula (Player hariç)
+            objects.filter(obj => obj.userData.gravityEnabled).forEach(obj => {
+                 // Basit yer çekimi simülasyonu
+                 if (!obj.userData.velocity) obj.userData.velocity = new THREE.Vector3(0, 0, 0);
+                 
+                 const gravity = 9.8 * 2.0; 
+                 obj.userData.velocity.y -= gravity * delta;
+                 obj.position.y += obj.userData.velocity.y * delta;
+                 
+                 // Zemin çarpışması (Zemin objesiyle)
+                 const ground = scene.children.find(c => c.userData.type === 'ground');
+                 if(ground && obj.position.y <= 0.5) { // Basit kontrol
+                    obj.position.y = 0.5;
+                    obj.userData.velocity.y = 0; 
+                 }
+            });
+            
+            // Scriptleri çalıştır
             objects.forEach(obj => {
                 if (obj.userData && obj.userData.compiled) {
                     try { obj.userData.compiled(obj, time); } catch (err) {}
@@ -1299,7 +1378,7 @@
             if (renderer && scene && camera) renderer.render(scene, camera);
         }
         
-        // --- UYGULAMA BAŞLANGICI ---
+        // --- 6. UYGULAMA BAŞLANGICI ---
         
         const initializeApp = () => {
             if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
@@ -1315,7 +1394,6 @@
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
 
-                // KRİTİK DÜZELTME: Bu olay, giriş/kayıt başarılı olduğunda da tetiklenir.
                 auth.onAuthStateChanged((user) => {
                     if (user) {
                          // Giriş yapmış
@@ -1338,12 +1416,8 @@
 
         document.addEventListener('DOMContentLoaded', initializeApp);
         
-        // Timeout kontrolü (Gerekirse bu kaldırılabilir, onAuthStateChanged güvenilirdir)
-        setTimeout(() => {
-            if (!auth.currentUser) {
-                 window.showAuth('login');
-            }
-        }, 3000); 
+        // İlk yüklemede ekran boyutunu kontrol et
+        window.onWindowResize();
 
     </script>
 </body>
