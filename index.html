@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.0 - TAM ENTEGRE</title>
+    <title>LunX Studio V2.1 - Giriş Öncelikli</title>
     <style>
         /* CSS Stilleri (Değişmedi) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -129,7 +129,7 @@
     <script>
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
-        // ** YENİ VE TAM GÜNCEL YAPILANDIRMA **
+        // ** KULLANICIDAN ALINAN TAM YAPILANDIRMA **
         const firebaseConfig = {
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
           authDomain: "lunxstudio.firebaseapp.com",
@@ -159,7 +159,7 @@
         const mouse = new THREE.Vector2();
         let authMode = 'register'; 
 
-        // --- 2. GİRİŞ / KAYIT / EKRAN YÖNETİMİ (Değişmedi) ---
+        // --- 2. GİRİŞ / KAYIT / EKRAN YÖNETİMİ ---
 
         window.showAuth = (mode) => {
             document.getElementById('auth-screen').style.display = 'flex';
@@ -236,10 +236,12 @@
                 document.getElementById('user-email').style.color = color;
                 
                 if (user) {
+                    // Kullanıcı giriş yaptıysa ve ana ekran açık değilse, proje ekranını göster
                     if (document.getElementById('main-area').style.display === 'none') {
                         window.showProjectScreen(); 
                     }
                 } else {
+                    // Kullanıcı yoksa, Auth ekranını göster
                     window.showAuth('login');
                 }
             });
@@ -254,6 +256,8 @@
             
             if (!controls) { 
                 window.initFullScene(); 
+            } else {
+                window.onWindowResize(); // Tekrar boyutlandırma
             }
             
             if(isNew) {
@@ -436,7 +440,7 @@
             else if (key === 'q') { window.setTool("rotate"); }
             else if (key === 'w') { window.setTool("translate"); }
             else if (key === 'e') { window.setTool("scale"); }
-            else if (key === 's') { window.setTool("select"); } // Yeni kısayol
+            else if (key === 's') { window.setTool("select"); } 
         }
 
         window.onMouseDown = (event) => {
@@ -468,7 +472,6 @@
             if (obj) {
                 obj.material.emissive.setHex(0x333333);
                 
-                // Eğer taşıma, döndürme veya ölçeklendirme aracı aktifse TransformControls'u ata
                 if (document.getElementById('tool-translate').classList.contains('active') ||
                     document.getElementById('tool-rotate').classList.contains('active') ||
                     document.getElementById('tool-scale').classList.contains('active')) {
@@ -535,16 +538,22 @@
             if (renderer && scene && camera) renderer.render(scene, camera);
         }
         
-        // --- UYGULAMA BAŞLANGICI ---
+        // --- UYGULAMA BAŞLANGICI: SADECE 3D MOTORUNU İLK AÇILIŞTA HAZIRLA ---
         window.onload = () => {
+            // 1. 3D motorunu (Three.js) başlat (Gri ekranı engellemek için)
             window.initFullScene(); 
+            
+            // 2. 3D Studio'yu ve Proje Ekranını gizle
             document.getElementById('main-area').style.display = 'none'; 
+            document.getElementById('project-screen').style.display = 'none';
 
             if (!auth) {
+                // Firebase bağlantısı beklenemezse, sadece Auth'u göster
                 window.log("KRİTİK HATA: Firebase kütüphanesi yüklenemedi. Konsolu kontrol edin.");
                 window.showAuth('login');
             } else {
-                window.log("LunX Studio V2.0 yüklendi. Giriş bekleniyor...");
+                // Firebase Auth'un kullanıcı durumunu (giriş yapılıp yapılmadığını) kontrol etmesi için beklenir.
+                window.log("LunX Studio V2.1 yüklendi. Kullanıcı durumu kontrol ediliyor...");
             }
         };
     </script>
