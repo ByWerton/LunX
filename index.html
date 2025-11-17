@@ -3,62 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.2 - Hata Ayıklama</title>
+    <title>LunX Studio V2.3 - Hierarchy Entegre</title>
     <style>
-        /* CSS Stilleri (Değişmedi) */
+        /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
+        .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         
-        /* Tüm ekranları başlangıçta gizle */
-        .full-screen-container { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: #1e1e1e; 
-            z-index: 5000; 
-            justify-content: center; 
-            align-items: center; 
-        }
-
-        /* Yükleme Ekranı (İlk açılışta görünecek tek şey) */
-        #loading-screen {
-            display: flex; /* Başlangıçta görünür olacak */
-            flex-direction: column;
-            color: #007acc;
-            font-size: 24px;
-        }
-
+        /* Auth ve Loading Stil */
+        #loading-screen { display: flex; flex-direction: column; color: #007acc; font-size: 24px; }
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .auth-container input, #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
         #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; display: none; }
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
         
-        /* Project Screen (Roblox Studio Stili) */
+        /* Proje Ekranı Stili */
         #project-screen { background-color: #252526; justify-content: flex-start; align-items: stretch; flex-direction: column; }
         .project-header { background-color: #1e1e1e; padding: 20px 40px; border-bottom: 1px solid #007acc; display: flex; justify-content: space-between; align-items: center; }
-        .project-header .logo { font-size: 28px; }
-        .user-panel { display: flex; align-items: center; gap: 10px; }
         .user-panel button { background-color: #c92c2c; padding: 8px 15px; }
         .project-content { display: flex; padding: 20px; flex-grow: 1; }
         .template-area { width: 300px; padding: 10px; border-right: 1px solid #3e3e42; }
         .my-projects-area { flex-grow: 1; padding: 10px 20px; }
         .start-btn { background-color: #007acc; width: 90%; padding: 12px; border: none; color: white; cursor: pointer; border-radius: 4px; margin-top: 20px; }
         
-        /* Studio Stilleri (Toolbar, Viewport) */
+        /* Studio Arayüzü Stili */
         #toolbar { background-color: #252526; display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
         .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
         .tool-btn { background-color: #3e3e42; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; }
         .tool-btn:hover { background-color: #505050; }
         .tool-btn.active { background-color: #007acc; }
-        #user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12px; }
         #main-area { flex-grow: 1; display: none; overflow: hidden; }
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
         #sidebar-right { width: 250px; background-color: #252526; border-left: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; }
         .panel-section { margin-bottom: 15px; }
         h4 { margin: 0 0 5px 0; font-size: 14px; color: #aaa; }
+        
+        /* Hierarchy Stilleri */
+        .hierarchy-item { padding: 5px 8px; cursor: pointer; margin-bottom: 2px; border-radius: 3px; font-size: 13px; white-space: nowrap; border: 1px solid transparent; transition: background-color 0.1s; }
+        .hierarchy-item:hover { background-color: #333333; }
+        
+        /* Context Menu Stili */
+        #context-menu { display: none; position: fixed; background: #3e3e42; border: 1px solid #007acc; border-radius: 4px; z-index: 9000; padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .context-item { padding: 5px; cursor: pointer; font-size: 13px; transition: background-color 0.1s; }
+        .context-item:hover { background-color: #007acc; }
     </style>
 </head>
 <body>
@@ -132,16 +119,30 @@
     <div id="main-area" style="display: none;">
         <div id="viewport"></div>
         <div id="sidebar-right">
+            
             <div class="panel-section">
-                <h4>SEÇİLİ NESNE</h4>
-                <div id="object-info">Hiçbir nesne seçili değil.</div>
+                <h4>HİYERARŞİ (NESNELER) 📦</h4>
+                <div id="hierarchy-panel" style="overflow-y: auto; height: 150px; border: 1px solid #3e3e42; padding: 5px;">
+                    </div>
             </div>
+            
+            <div class="panel-section" id="property-panel">
+                <h4>ÖZELLİKLER</h4>
+                <div id="object-info">Seçili değil.</div>
+            </div>
+
             <div class="panel-section" id="script-panel" style="display:none;">
                 <h4>LUNX SCRIPT (JS)</h4>
                 <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
                 <button class="run-btn" onclick="window.saveScript()">⚡ Kodu Çalıştır</button>
             </div>
         </div>
+    </div>
+    
+    <div id="context-menu" style="display: none; position: fixed; background: #3e3e42; border: 1px solid #007acc; border-radius: 4px; z-index: 9000; padding: 5px;">
+        <div class="context-item" onclick="window.runSelectedScript()">⚡ Kodu Çalıştır</div>
+        <div class="context-item" onclick="window.deleteSelectedObject()">❌ Sil</div>
+        <div class="context-item" onclick="window.duplicateSelectedObject()">➕ Çoğalt</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -156,7 +157,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
-          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
+          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrOoctk", // API KEY'İNİZ BURADA
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
           projectId: "lunxstudio",
@@ -176,7 +177,6 @@
 
         // --- 2. GİRİŞ / KAYIT / EKRAN YÖNETİMİ ---
         
-        // Tüm ekranları gizler, sadece istenileni gösterir.
         window.hideAllScreens = () => {
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('auth-screen').style.display = 'none';
@@ -233,20 +233,18 @@
                     await auth.signInWithEmailAndPassword(email, pass);
                 }
                 window.log("Giriş/Kayıt başarılı. Yönlendiriliyor...");
-                // auth.onAuthStateChanged tetiklenecek ve showProjectScreen çağrılacak.
             } catch (error) { 
                 window.showError(error.message); 
             }
         };
-
-        // --- 3. STÜDYO BAŞLATMA VE KONTROLLER (Değişmedi) ---
+        
+        // --- 3. STÜDYO BAŞLATMA VE KONTROLLER ---
 
         window.startStudio = (isNew = false) => {
             window.hideAllScreens();
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
             
-            // 3D motoru burada başlatılır, böylece boyutlandırma hataları önlenir.
             if (!controls) { 
                 window.initFullScene(); 
             } else {
@@ -261,11 +259,26 @@
             
             window.setTool('select'); 
             window.log(`LunX Studio hazır.`);
+            window.updateHierarchyList(); // Listeyi başlat
         }
 
-        // Diğer Stüdyo fonksiyonları (initFullScene, setTool, addShape, saveScene, loadScene, animate vb.) değişmedi
-        // Orijinal kodunuzda olduğu gibi kalmalıdır.
-        
+        window.setTool = (mode) => {
+            if (!transformControls) return;
+
+            document.querySelectorAll('.tool-group .tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tool-${mode}`).classList.add('active');
+
+            if (mode === 'select') {
+                transformControls.detach();
+            } else {
+                if (selectedObject) {
+                    transformControls.attach(selectedObject);
+                }
+                transformControls.setMode(mode);
+            }
+            window.log("Tool: " + mode.charAt(0).toUpperCase() + mode.slice(1));
+        }
+
         window.initFullScene = () => {
              try {
                 const viewport = document.getElementById('viewport');
@@ -317,7 +330,7 @@
                 window.addShape('cube', { position: { x: 0, y: 1.5, z: 0 }, color: 0xff0000, script: "object.rotation.y += 0.01;" });
             }
         }
-        
+
         window.addShape = (type, existingData = null) => {
             if (!scene) return;
             let geometry, material, mesh;
@@ -348,6 +361,8 @@
             scene.add(mesh);
             objects.push(mesh);
             
+            window.updateHierarchyList(); // Listeyi güncelle
+            
             if(!existingData) window.selectObject(mesh);
         }
 
@@ -356,9 +371,14 @@
             objects.forEach(obj => scene.remove(obj));
             objects = [];
             window.selectObject(null);
+            
+            window.updateHierarchyList(); // Listeyi güncelle
+
             window.log("Sahne temizlendi.");
         }
         
+        // --- 4. VERİTABANI VE KAYDET/YÜKLE ---
+
         window.saveScene = async () => {
             const user = auth.currentUser;
             if (!user) { window.log("Hata: Kaydetmek için giriş yapmalısınız!"); return; }
@@ -393,15 +413,132 @@
                 }
             } catch (error) { window.log("Hata (Yükleme): " + error.message); }
         }
+
+        // --- 5. ETKİLEŞİM, HİYERARŞİ VE GÜNCELLEME ---
+
+        window.selectObjectByName = (name) => {
+            const objectToSelect = objects.find(obj => obj.name === name);
+            window.selectObject(objectToSelect);
+        }
+
+        window.selectObject = (obj) => {
+            if (!transformControls) return;
+            
+            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
+            
+            selectedObject = obj;
+            
+            document.querySelectorAll('.hierarchy-item').forEach(item => {
+                item.style.backgroundColor = 'transparent';
+                item.style.border = '1px solid transparent';
+            });
+            if (obj) {
+                obj.material.emissive.setHex(0x333333); // Highlight in 3D
+                const listItem = document.getElementById('item-' + obj.name);
+                if (listItem) {
+                    listItem.style.backgroundColor = '#007acc';
+                    listItem.style.border = '1px solid #1a1a1a';
+                }
+                
+                if (document.getElementById('tool-translate').classList.contains('active') ||
+                    document.getElementById('tool-rotate').classList.contains('active') ||
+                    document.getElementById('tool-scale').classList.contains('active')) {
+                    transformControls.attach(obj); 
+                }
+            } else {
+                if(transformControls) transformControls.detach(); 
+            }
+            window.updateUI();
+        }
+
+        window.updateHierarchyList = () => {
+            const hierarchyPanel = document.getElementById('hierarchy-panel');
+            hierarchyPanel.innerHTML = ''; 
+            
+            objects.forEach(obj => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'hierarchy-item';
+                itemDiv.id = 'item-' + obj.name;
+                itemDiv.innerText = obj.name;
+
+                itemDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    window.selectObjectByName(obj.name);
+                    document.getElementById('context-menu').style.display = 'none';
+                };
+                
+                itemDiv.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.selectObjectByName(obj.name); 
+                    window.showContextMenu(e.clientX, e.clientY);
+                };
+                
+                hierarchyPanel.appendChild(itemDiv);
+            });
+            
+            if (selectedObject) {
+                const listItem = document.getElementById('item-' + selectedObject.name);
+                if (listItem) {
+                    listItem.style.backgroundColor = '#007acc';
+                    listItem.style.border = '1px solid #1a1a1a';
+                }
+            }
+        };
         
+        window.showContextMenu = (x, y) => {
+            const menu = document.getElementById('context-menu');
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.style.display = 'block';
+        };
+
+        window.runSelectedScript = () => {
+            if (selectedObject) {
+                window.saveScript(); 
+                window.log(selectedObject.name + " scripti çalıştırıldı.");
+            }
+            document.getElementById('context-menu').style.display = 'none';
+        }
+        
+        window.deleteSelectedObject = () => {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                objects = objects.filter(obj => obj !== selectedObject);
+                window.selectObject(null);
+                window.updateHierarchyList(); 
+                window.log("Nesne silindi.");
+            }
+            document.getElementById('context-menu').style.display = 'none';
+        }
+        
+        window.duplicateSelectedObject = () => {
+            if (selectedObject) {
+                const originalData = {
+                    type: selectedObject.userData.type,
+                    position: { 
+                        x: selectedObject.position.x + 1, 
+                        y: selectedObject.position.y, 
+                        z: selectedObject.position.z + 1 
+                    },
+                    color: selectedObject.material.color.getHex(),
+                    script: selectedObject.userData.script || ""
+                };
+                window.addShape(originalData.type, originalData);
+                window.log(selectedObject.name + " çoğaltıldı.");
+            }
+            document.getElementById('context-menu').style.display = 'none';
+        }
+
+        document.addEventListener('click', () => {
+            document.getElementById('context-menu').style.display = 'none';
+        });
+
         window.onKeyDown = (event) => {
             const key = event.key.toLowerCase();
             if (key === 'delete' && selectedObject) {
                 if (confirm(`'${selectedObject.name}' nesnesini silmek istediğinize emin misiniz?`)) {
-                    scene.remove(selectedObject);
-                    objects = objects.filter(obj => obj !== selectedObject);
-                    window.selectObject(null);
-                    window.log("Nesne silindi.");
+                    window.deleteSelectedObject();
                 }
             } 
             else if (key === 'q') { window.setTool("rotate"); }
@@ -430,25 +567,6 @@
             }
         }
         
-        window.selectObject = (obj) => {
-            if (!transformControls) return;
-            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
-            selectedObject = obj;
-            window.updateUI();
-            
-            if (obj) {
-                obj.material.emissive.setHex(0x333333);
-                
-                if (document.getElementById('tool-translate').classList.contains('active') ||
-                    document.getElementById('tool-rotate').classList.contains('active') ||
-                    document.getElementById('tool-scale').classList.contains('active')) {
-                    transformControls.attach(obj); 
-                }
-            } else {
-                if(transformControls) transformControls.detach(); 
-            }
-        }
-
         window.saveScript = () => {
             if (!selectedObject) return;
             const codeText = document.getElementById('code-editor').value;
@@ -471,7 +589,10 @@
             const scriptPanel = document.getElementById('script-panel');
             const editor = document.getElementById('code-editor');
             if (selectedObject) {
-                infoDiv.innerHTML = `<strong>${selectedObject.name}</strong><br>Pozisyon: x${selectedObject.position.x.toFixed(1)} y${selectedObject.position.y.toFixed(1)} z${selectedObject.position.z.toFixed(1)}`;
+                infoDiv.innerHTML = `
+                    <strong>${selectedObject.name}</strong><br>
+                    Pozisyon: x${selectedObject.position.x.toFixed(1)} y${selectedObject.position.y.toFixed(1)} z${selectedObject.position.z.toFixed(1)}
+                `;
                 scriptPanel.style.display = 'block';
                 editor.value = selectedObject.userData.script || "";
             } else {
@@ -505,35 +626,31 @@
             if (renderer && scene && camera) renderer.render(scene, camera);
         }
         
-        // --- UYGULAMA BAŞLANGICI: Firebase'i yükle ve Auth durumunu kontrol et ---
+        // --- UYGULAMA BAŞLANGICI ---
         window.onload = () => {
-            document.getElementById('loading-screen').style.display = 'flex'; // Yükleniyor ekranını göster
+            document.getElementById('loading-screen').style.display = 'flex'; 
 
             try {
-                // Firebase'i başlat
                 app = firebase.initializeApp(firebaseConfig);
                 auth = app.auth(); 
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
 
-                // Auth durumundaki değişiklikleri dinle
                 auth.onAuthStateChanged((user) => {
                     const userEmail = user ? user.email : "Misafir Modu";
                     document.getElementById('user-email').innerText = userEmail;
                     document.getElementById('project-user-email').innerText = userEmail;
 
                     if (user) {
-                        // Kullanıcı giriş yapmışsa: Proje Yönetim ekranını göster
                         window.showProjectScreen(); 
                     } else {
-                        // Kullanıcı giriş yapmamışsa: Auth ekranını göster
                         window.showAuth('login');
                     }
                 });
 
             } catch(e) {
                 window.hideAllScreens();
-                document.getElementById('auth-screen').style.display = 'flex'; // Auth ekranını göster
+                document.getElementById('auth-screen').style.display = 'flex'; 
                 window.showError("KRİTİK HATA: Firebase başlatılamadı. Konsolu kontrol edin.");
                 console.error("Firebase BAŞLATMA KRİTİK HATASI:", e);
             }
