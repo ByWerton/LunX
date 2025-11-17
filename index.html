@@ -3,18 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.30 - Hızlı Başlatma ve Customization</title>
+    <title>LunX Studio V2.31 - Hızlı Başlatma ve Customization</title>
     <style>
-        /* CSS Stilleri (Önceki versiyondan korunmuştur) */
+        /* CSS Stilleri (Giriş Ekranı Düzeltmeleri Dahil) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
-        /* #loading-screen kaldırıldı */
-        .auth-container, .settings-panel { background: #252526; padding: 40px; width: 400px; max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
+        
+        /* 1. AUTH CONTAINER DÜZELTMESİ (Hizalama Sorununu Çözer) */
+        .auth-container, .settings-panel { 
+            background: #252526; 
+            padding: 40px; 
+            width: 400px; 
+            max-height: 80vh; 
+            overflow-y: auto; 
+            border-radius: 8px; 
+            border: 2px solid #007acc; 
+            text-align: center; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); 
+            /* YENİ EKLENTİLER */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Tüm içeriği ortala */
+            gap: 10px; /* Elemanlar arası boşluk */
+        }
+        
+        /* 2. INPUT DÜZELTMESİ (Marjinleri Kaldırır) */
+        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select { 
+            width: 90%; 
+            padding: 12px; 
+            /* margin: 10px 0; KALDIRILDI - Artık GAP ile yönetiliyor */
+            background: #333; 
+            border: 1px solid #555; 
+            color: white; 
+            border-radius: 4px; 
+            box-sizing: border-box;
+        }
+        
+        /* 3. INITIAL SETTINGS DÜZELTMESİ (Cinsiyet Seçimi Kutusu) */
+        #initial-settings {
+            width: 90%; 
+            text-align: left; 
+        }
+
         .auth-container textarea { height: 80px; resize: vertical; font-size: 10px; }
-        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; }
+        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 90%; }
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
-        .start-btn { background-color: #007acc; width: 90%; padding: 12px; border: none; color: white; cursor: pointer; border-radius: 4px; margin-top: 20px; }
+        
+        /* 4. START BUTTON DÜZELTMESİ (Marjini Kaldırır) */
+        .start-btn { 
+            background-color: #007acc; 
+            width: 90%; 
+            padding: 12px; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            /* margin-top: 20px; KALDIRILDI - Artık GAP ile yönetiliyor */
+        }
+        
         #toolbar { background-color: #252526; display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
         .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
@@ -63,7 +109,7 @@
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
             <input type="password" id="auth-password-input" placeholder="Şifre">
             <div id="initial-settings" style="display: none;">
-                <label style="margin-right: 15px; color: #007acc; font-weight: bold;">Başlangıç Cinsiyeti:</label><br>
+                <label style="color: #007acc; font-weight: bold;">Başlangıç Cinsiyeti:</label><br>
                 <input type="radio" id="gender-male" name="gender-auth" value="male" checked> Erkek
                 <input type="radio" id="gender-female" name="gender-auth" value="female" style="margin-left: 15px;"> Kız
             </div>
@@ -300,7 +346,6 @@
         // --- 2. GİRİŞ / KAYIT / EKRAN YÖNETİMİ ---
         
         window.hideAllScreens = () => {
-            // document.getElementById('loading-screen').style.display = 'none'; // Kaldırıldı
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('project-screen').style.display = 'none';
             document.getElementById('toolbar').style.display = 'none';
