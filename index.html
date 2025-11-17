@@ -3,59 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio</title>
+    <title>LunX Studio - Nihai Versiyon</title>
     <style>
-        /* Genel Düzen */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* 1. ÜST ARAÇ ÇUBUĞU */
-        #toolbar { 
-            background-color: #252526; 
-            display: flex; 
-            align-items: center; 
-            padding: 5px 10px; 
-            border-bottom: 1px solid #3e3e42;
-            height: 40px;
-        }
+        #toolbar { background-color: #252526; display: flex; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
         .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
-        
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
-        .tool-btn { 
-            background-color: #3e3e42; 
-            color: white; 
-            border: none; 
-            padding: 5px 10px; 
-            cursor: pointer; 
-            border-radius: 4px; 
-            transition: 0.2s; 
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
+        .tool-btn { background-color: #3e3e42; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; }
         .tool-btn:hover { background-color: #505050; }
         .tool-btn.active { background-color: #007acc; }
-        
-        /* Kullanıcı ve Durum Bilgileri Sağda */
         #user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12px; }
-        #user-email { color: #fff; }
-        #logout-btn { background-color: #d9534f; padding: 4px 8px; font-size: 12px; }
-        #status { font-size: 12px; color: #888; }
-
-        /* 2. ANA ÇALIŞMA ALANI */
         #main-area { flex-grow: 1; display: flex; overflow: hidden; }
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        
-        /* 3. SAĞ PANEL (Script Editor) */
         #sidebar-right { width: 250px; background-color: #252526; border-left: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; }
         .panel-section { margin-bottom: 15px; }
         h4 { margin: 0 0 5px 0; font-size: 14px; color: #aaa; }
         #object-info { font-size: 12px; }
         #code-editor { width: 100%; height: 150px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 5px; box-sizing: border-box; }
         .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; width: 100%; padding: 8px; border: none; color: white; cursor: pointer; border-radius: 4px; }
-
-        /* 4. AUTH EKRANI */
         .auth-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .auth-container input { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
@@ -80,25 +45,21 @@
     
     <div id="toolbar" style="display: none;">
         <div class="logo">LunX</div>
-
         <div class="tool-group">
             <button id="tool-translate" class="tool-btn active" onclick="window.setTool('translate')" title="Taşı (W)">↔️</button>
             <button id="tool-rotate" class="tool-btn" onclick="window.setTool('rotate')" title="Çevir (Q)">🔄</button>
             <button id="tool-scale" class="tool-btn" onclick="window.setTool('scale')" title="Boyutlandır (E)">↕️</button>
         </div>
-        
         <div class="tool-group">
             <button class="tool-btn" onclick="window.addShape('cube')" title="Küp Ekle">🟦</button>
             <button class="tool-btn" onclick="window.addShape('sphere')" title="Küre Ekle">🔵</button>
             <button class="tool-btn" onclick="window.addShape('cylinder')" title="Silindir Ekle">🛢️</button>
         </div>
-        
         <div class="tool-group">
             <button class="tool-btn" onclick="window.saveScene()" title="Kaydet">💾</button>
             <button class="tool-btn" onclick="window.loadScene()" title="Yükle">📂</button>
             <button class="tool-btn" onclick="window.clearScene(true)" title="Sahneyi Sil" style="background-color:#c92c2c;">🗑️</button>
         </div>
-
         <div id="user-info">
             <span id="status">Hazır.</span>
             <span id="user-email" style="color:#4caf50;"></span>
@@ -108,7 +69,6 @@
     
     <div id="main-area" style="display: none;">
         <div id="viewport"></div>
-        
         <div id="sidebar-right">
             <div class="panel-section">
                 <h4>SEÇİLİ NESNE</h4>
@@ -132,30 +92,24 @@
 
     <script>
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
-
-        // DİKKAT: Eski versiyon SDK kullanılmıştır (firebasejs/8.10.0), çünkü bu versiyon 
-        // tek HTML dosyasında ve yerel sunucusuz ortamda daha kararlı çalışır.
         
+        // SİZİN VERDİĞİNİZ DEĞERLER ENTEGRE EDİLDİ
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // Proje anahtarınız
-            authDomain: "lunxstudio.firebaseapp.com",
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
+            authDomain: "lunxstudio.firebaseapp.com", 
             databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com", 
             projectId: "lunxstudio",
-            // Diğerleri opsiyonel
         };
         
-        // Bu SDK'lar global olarak 'firebase' değişkenini tanımlar
         let app, auth, db;
         try {
-            // Firebase'i başlat
             app = firebase.initializeApp(firebaseConfig);
-            // Servisleri tanımla
             auth = app.auth(); 
             db = app.database(); 
             window.log("Firebase SDK (v8) bağlandı.");
         } catch(e) {
             console.error("Firebase BAŞLATMA KRİTİK HATASI:", e);
-            window.log("HATA: Firebase başlatılamadı.");
+            window.log("KRİTİK HATA: Firebase başlatılamadı.");
         }
 
         let scene, camera, renderer, controls, transformControls;
@@ -210,7 +164,16 @@
                 document.getElementById('auth-screen').style.display = 'none';
                 window.startStudio(); 
                 window.log("Giriş/Kayıt başarılı.");
-            } catch (error) { window.showError(error.message); }
+            } catch (error) { 
+                // Ağ hatası veya hatalı anahtar kontrolü eklendi
+                if (error.code === 'auth/network-request-failed') {
+                    window.showError("Ağ Hatası: İnternet bağlantınızı kontrol edin.");
+                } else if (error.code === 'auth/invalid-api-key') {
+                     window.showError("API Anahtar Hatası: Firebase yapılandırma anahtarınız yanlış. Lütfen konsolunuzu kontrol edin.");
+                } else {
+                    window.showError(error.message); 
+                }
+            }
         };
 
         window.logoutUser = async () => { 
@@ -223,7 +186,6 @@
             errDiv.innerText = msg; errDiv.style.display = 'block';
         }
 
-        // Firebase kullanıcı durumu takibi
         if(auth) {
             auth.onAuthStateChanged((user) => {
                 const userEmailSpan = document.getElementById('user-email');
@@ -231,7 +193,7 @@
                     userEmailSpan.innerText = user.email;
                     userEmailSpan.style.color = "#4caf50";
                     if (document.getElementById('main-area').style.display === 'none') {
-                        // Yeni giriş yaptıysa stüdyoyu başlat
+                        // Gri ekranı önlemek için Studio'yu başlat
                         window.startStudio(); 
                     }
                 } else {
@@ -249,8 +211,6 @@
             
             if (!controls) { 
                 window.initFullScene(); 
-            } else {
-                renderer.domElement.style.display = 'block'; 
             }
             window.clearScene(false);
             window.setupEnvironment('default_template');
@@ -504,7 +464,7 @@
         // --- UYGULAMA BAŞLANGICI ---
         window.onload = () => {
             window.showAuth('register');
-            window.log("LunX Studio V0.5 yüklendi.");
+            window.log("LunX Studio V0.8 yüklendi.");
         };
     </script>
 </body>
