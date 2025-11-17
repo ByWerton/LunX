@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio - Nihai Versiyon</title>
+    <title>LunX Studio - Nihai Sürüm</title>
     <style>
+        /* CSS stilleri önceki versiyonlarla aynıdır */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         #toolbar { background-color: #252526; display: flex; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
         .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
@@ -93,7 +94,7 @@
     <script>
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
-        // SİZİN VERDİĞİNİZ DEĞERLER ENTEGRE EDİLDİ
+        // SİZİN TARAFINIZDAN SAĞLANAN VE KODA ENTEGRE EDİLEN API ANAHTARLARI
         const firebaseConfig = {
             apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
             authDomain: "lunxstudio.firebaseapp.com", 
@@ -165,7 +166,6 @@
                 window.startStudio(); 
                 window.log("Giriş/Kayıt başarılı.");
             } catch (error) { 
-                // Ağ hatası veya hatalı anahtar kontrolü eklendi
                 if (error.code === 'auth/network-request-failed') {
                     window.showError("Ağ Hatası: İnternet bağlantınızı kontrol edin.");
                 } else if (error.code === 'auth/invalid-api-key') {
@@ -192,8 +192,8 @@
                 if (user) {
                     userEmailSpan.innerText = user.email;
                     userEmailSpan.style.color = "#4caf50";
+                    // Kullanıcı giriş yaptıysa ve ekran Auth ekranı değilse Studio'yu başlat
                     if (document.getElementById('main-area').style.display === 'none') {
-                        // Gri ekranı önlemek için Studio'yu başlat
                         window.startStudio(); 
                     }
                 } else {
@@ -265,6 +265,7 @@
         }
         
         window.setupEnvironment = (env) => {
+            // Ortam ayarları ve zemin/grid oluşturma
             scene.background = new THREE.Color(0x87CEEB); 
             scene.children = scene.children.filter(child => child.isLight || child.isTransformControls || (child.isMesh && objects.includes(child)));
 
@@ -463,8 +464,9 @@
         
         // --- UYGULAMA BAŞLANGICI ---
         window.onload = () => {
+            // Uygulama yüklendiğinde Auth ekranını göster
             window.showAuth('register');
-            window.log("LunX Studio V0.8 yüklendi.");
+            window.log("LunX Studio V0.9 yüklendi.");
         };
     </script>
 </body>
