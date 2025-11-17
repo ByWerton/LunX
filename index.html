@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V1.0 - Proje Oluşturma Entegre</title>
+    <title>LunX Studio V1.0 - Tam Entegre</title>
     <style>
         /* CSS stilleri önceki versiyonlarla aynıdır */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -223,7 +223,7 @@
                 if (user) {
                     userEmailSpan.innerText = user.email;
                     userEmailSpan.style.color = "#4caf50";
-                    // Uygulama ilk yüklendiğinde kullanıcı varsa proje ekranını göster
+                    // Kullanıcı varsa, ana stüdyo alanını açmadan önce proje seçme ekranına yönlendir
                     if (document.getElementById('auth-screen').style.display !== 'none' || document.getElementById('main-area').style.display === 'none') {
                         window.showProjectScreen(); 
                     }
@@ -522,7 +522,20 @@
         // --- UYGULAMA BAŞLANGICI ---
         window.onload = () => {
             // Kullanıcı durumuna göre ya Auth ekranı ya da Project ekranı açılır (onAuthStateChanged ile yönetilir)
-            window.log("LunX Studio V1.0 yüklendi.");
+            
+            // Tüm ana bölümleri gizleyerek temiz bir başlangıç yapın (Gri ekran sorununu önlemek için agresif CSS kontrolü)
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('project-screen').style.display = 'none';
+            document.getElementById('toolbar').style.display = 'none';
+            document.getElementById('main-area').style.display = 'none';
+            
+            if (!auth) {
+                // Firebase başlatılamazsa hata göster
+                window.log("KRİTİK HATA: Firebase kütüphanesi yüklenemedi. Konsolu kontrol edin.");
+                window.showAuth('login'); // Yine de Auth ekranını açmaya çalış
+            } else {
+                 window.log("LunX Studio V1.0 yüklendi. Firebase durum bekleniyor...");
+            }
         };
     </script>
 </body>
