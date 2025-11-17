@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.23 - Açılma Sorunu Giderildi ve Optimize Edildi</title>
+    <title>LunX Studio V2.24 - Yüklenme Hatası Giderildi</title>
     <style>
         /* CSS Stilleri (Değişiklik yapılmadı) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -279,7 +279,7 @@
         let moveForward, moveBackward, moveLeft, moveRight; 
         let joystickActive = false; 
         let joystickX = 0, joystickY = 0; 
-        let authStateChecked = false; 
+        let authStateChecked = false; // Yüklenme ekranı kontrolü için yeni bayrak
         
         // KRİTİK: Karakter Özelleştirme Verisi
         let currentCustomization = {
@@ -328,6 +328,8 @@
         }
 
         window.showAuth = (mode) => {
+            if (authStateChecked) return; // Eğer zaten bir kez kontrol edildiyse tekrar çalıştırma
+
             window.hideAllScreens();
             document.getElementById('auth-screen').style.display = 'flex';
             
@@ -355,7 +357,7 @@
                 usernameInput.style.display = 'none'; 
                 initialSettings.style.display = 'none'; 
             }
-            authStateChecked = true; 
+            authStateChecked = true; // Ekran gösterildi, bir daha gösterme
         }
         
         window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
@@ -400,6 +402,7 @@
         
         window.fetchAndUpdateUser = async (user) => {
             if (!user) return;
+            // İlk kontrol için sadece username ve gender çekiliyor
             const snapshot = await db.ref('users/' + user.uid).once('value');
             const userData = snapshot.val() || { username: user.email.split('@')[0], gender: 'male', torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0" };
             
@@ -711,7 +714,7 @@
             return group;
         };
         
-        // --- 5. Studio/Simülasyon Fonksiyonları (Eksik Kısımlar Dolduruldu) ---
+        // --- 5. Studio/Simülasyon Fonksiyonları (Tüm Kritik Kısımlar Dolduruldu) ---
         
         window.log = (msg) => { console.log(`[LunX] ${msg}`); document.getElementById('status').innerText = msg; }
         window.toggleSidebar = () => { document.getElementById('sidebar-right').classList.toggle('open'); }
@@ -1191,7 +1194,6 @@
             
             const speed = 5.0; 
             const gravity = -9.8; 
-            const jumpPower = 10;
             
             // Basit yer çekimi
             playerVelocity.y += gravity * delta;
@@ -1240,8 +1242,9 @@
             const jumpButton = document.getElementById('jump-button');
 
             const maxRadius = 50; 
-            const centerX = joystickArea.offsetLeft + 50;
-            const centerY = joystickArea.offsetTop + 50;
+            const bounds = joystickArea.getBoundingClientRect();
+            const centerX = bounds.left + bounds.width / 2;
+            const centerY = bounds.top + bounds.height / 2;
             
             // Joystick Fonksiyonları
             const startDrag = (e) => {
@@ -1289,6 +1292,7 @@
                 deltaY = Math.sin(angle) * maxRadius;
             }
 
+            // Pozisyonları handle'ın merkezine göre ayarla (30px = yarım handle boyutu)
             handle.style.left = `${deltaX + 30}px`; 
             handle.style.top = `${deltaY + 30}px`; 
 
@@ -1326,7 +1330,7 @@
         }
         
         // --- 6. UYGULAMA BAŞLANGICI ---
-        const initializeApp = () => {
+        const initializeApp = async () => {
             if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
                 window.showError("KRİTİK HATA: Kütüphaneler yüklenemedi. İnternet bağlantınızı kontrol edin.");
                 window.hideAllScreens();
@@ -1335,12 +1339,24 @@
             }
 
             try {
+                // Firebase SDK'nın tamamen initialize edilmesini bekle
                 app = firebase.initializeApp(firebaseConfig);
                 auth = app.auth(); 
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
+                
+                // KRİTİK DÜZELTME 2: 3 saniye sonra zorla giriş ekranına geç
+                const timeoutId = setTimeout(() => {
+                    if (!authStateChecked) {
+                        window.log("Zaman aşımı! Firebase yanıt vermedi. Giriş ekranına zorla geçiliyor.");
+                        window.showAuth('login');
+                    }
+                }, 3000); 
 
+                // Kullanıcı durumu değiştiğinde (Giriş/Çıkış) çalışır
                 auth.onAuthStateChanged((user) => {
+                    clearTimeout(timeoutId); // Başarılı olursa zaman aşımını iptal et
+
                     if (user) {
                         window.log("Oturum Açık: " + user.email);
                         window.showProjectScreen(user); 
