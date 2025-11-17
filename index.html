@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.20 - Karakter ve Çarpışma</title>
+    <title>LunX Studio V2.21 - Tam Karakter Özelleştirme</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -20,7 +20,11 @@
         /* Karakter Özelleştirme Alanı */
         #customize-section { margin-top: 20px; padding: 15px; border: 1px dashed #007acc; border-radius: 4px; display: none; }
         #customize-section h4 { color: #2da042; margin-top: 0; }
-        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; display: inline-block; margin-left: 10px; vertical-align: middle; }
+        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; }
+        .file-upload-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;}
+        .file-upload-container .upload-btn { flex-shrink: 0; margin-left: 10px; padding: 6px 10px; font-size: 12px; }
+        .file-upload-container label { font-weight: bold; font-size: 12px; }
+        .file-upload-container input[type="file"] { display: none; }
 
 
         /* Proje Ekranı Stili */
@@ -176,13 +180,32 @@
             <div id="customize-section">
                 <h4>KARAKTER GÖRÜNÜMÜ (Base64/URL)</h4>
                 <p style="font-size: 11px; color: #aaa; text-align: left; margin: 5px 0 10px 0; padding-left: 5%;">
-                    Kafa ve Gövde için Base64/URL yapıştırın. Resim yoksa varsayılan renk kullanılır.
+                    Kafa ve Gövde için Base64/URL yapıştırın VEYA görsel yükleyin (Max 1MB).
                 </p>
                 <div style="text-align: left; padding-left: 5%;">
-                    <label style="font-weight: bold; font-size: 12px;">Kafa Resmi:</label> <div id="head-preview" class="custom-preview"></div>
+                    
+                    <div class="file-upload-container">
+                        <label>Kafa Resmi:</label> 
+                        <div style="display: flex; align-items: center;">
+                            <div id="head-preview" class="custom-preview">Boş</div>
+                            <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'head')">
+                            <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('head-image-file').click()">
+                                🖼️ Yükle
+                            </button>
+                        </div>
+                    </div>
                     <textarea id="head-texture-input" placeholder="Kafa Base64 veya URL... (örn: data:image/png;base64,iVBOR...)" onchange="window.updatePreview('head')"></textarea>
                     
-                    <label style="font-weight: bold; font-size: 12px;">Gövde Resmi:</label> <div id="torso-preview" class="custom-preview"></div>
+                    <div class="file-upload-container">
+                        <label>Gövde Resmi:</label> 
+                         <div style="display: flex; align-items: center;">
+                            <div id="torso-preview" class="custom-preview">Boş</div>
+                            <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torso')">
+                            <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('torso-image-file').click()">
+                                👕 Yükle
+                            </button>
+                        </div>
+                    </div>
                     <textarea id="torso-texture-input" placeholder="Gövde Base64 veya URL... (örn: data:image/png;base64,iVBOR...)" onchange="window.updatePreview('torso')"></textarea>
                 </div>
             </div>
@@ -405,6 +428,34 @@
                  preview.innerText = "Boş";
             }
         }
+        
+        // YENİ KRİTİK FONKSİYON: DOSYAYI BASE64'E DÖNÜŞTÜRME
+        window.handleImageUpload = (fileInput, part) => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Boyut kontrolü (Max 1MB)
+            if (file.size > 1024 * 1024) { 
+                 window.showError("Görsel boyutu 1MB'dan küçük olmalıdır.");
+                 fileInput.value = ''; // Inputu sıfırla
+                 return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64String = event.target.result;
+                // Base64 stringini input alanına aktar
+                document.getElementById(`${part}-texture-input`).value = base64String;
+                window.updatePreview(part);
+                window.log(`Karakter resmi (${part}) başarıyla yüklendi ve Base64'e dönüştürüldü.`);
+            };
+            
+            reader.onerror = (error) => {
+                 window.showError("Dosya okuma hatası: " + error);
+            };
+
+            reader.readAsDataURL(file); // Dosyayı Base64 olarak oku
+        }
 
 
         window.showProjectScreen = (user) => {
@@ -485,8 +536,8 @@
                         email: email,
                         username: username,
                         gender: gender,
-                        headTexture: headTexture, // Yeni: Base64/URL veri
-                        torsoTexture: torsoTexture // Yeni: Base64/URL veri
+                        headTexture: headTexture, // Base64/URL veri
+                        torsoTexture: torsoTexture // Base64/URL veri
                     });
                     window.log("Kayıt başarılı. Oturum açılıyor...");
                     // onAuthStateChanged tetiklenecek ve bizi Proje Ekranına yönlendirecek.
