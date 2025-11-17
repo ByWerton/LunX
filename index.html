@@ -235,7 +235,7 @@
         </div>
     </div>
     <div id="toolbar">
-        <div class="logo">LunX</div>
+        <div class="logo">LunX">LunX</div>
         <div class="tool-group">
             <button id="play-button" class="tool-btn" onclick="window.toggleSimulationMode(true)" title="Oyunu Başlat">▶️ Oynat</button>
             <button id="stop-button" class="tool-btn" onclick="window.toggleSimulationMode(false)" title="Oyunu Durdur">🛑 Durdur</button>
@@ -1401,64 +1401,3 @@
         window.updateJoystickPosition = (clientX, clientY, centerX, centerY, maxRadius, handle) => {
             let deltaX = clientX - centerX;
             let deltaY = clientY - centerY;
-            
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            if (distance > maxRadius) {
-                const angle = Math.atan2(deltaY, deltaX);
-                deltaX = Math.cos(angle) * maxRadius;
-                deltaY = Math.sin(angle) * maxRadius;
-            }
-
-            handle.style.left = `${deltaX + 30}px`; 
-            handle.style.top = `${deltaY + 30}px`; 
-
-            joystickX = deltaX / maxRadius;
-            joystickY = -(deltaY / maxRadius); 
-        }
-
-        window.resetJoystick = (handle) => {
-            handle.style.left = '30px';
-            handle.style.top = '30px';
-            joystickX = 0;
-            joystickY = 0;
-        }
-
-        window.animate = () => {
-            requestAnimationFrame(window.animate);
-            const delta = clock.getDelta();
-
-            if (renderer) {
-                controls.update();
-                transformControls.update();
-                
-                if (isSimulationMode) {
-                    window.updatePlayerMovement(delta);
-                    objects.forEach(obj => {
-                        if (obj.userData.script) {
-                            window.applyScript(obj, obj.userData.script);
-                        }
-                    });
-                }
-                renderer.render(scene, camera);
-            }
-        }
-        
-        // --- 6. CİHAZ ÖNİZLEME FONKSİYONLARI ---
-        
-        window.setAuthContainerMode = (mode, button) => {
-            const container = document.getElementById('auth-container');
-            
-            // Tüm mod sınıflarını temizle
-            container.classList.remove('sim-pc', 'sim-tablet', 'sim-phone');
-            
-            // Yeni mod sınıfını ekle
-            container.classList.add(`sim-${mode}`);
-            
-            // Butonların aktif/pasif durumunu güncelle
-            document.querySelectorAll('#device-mode-switcher .mode-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            window.log(`${mode.
