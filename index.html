@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LunX Studio</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; height: 100vh; }
+        
+        /* SOL PANEL: Araçlar */
+        #sidebar-left { width: 200px; background-color: #252526; border-right: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .logo { font-size: 24px; font-weight: bold; color: #007acc; text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
+        button { background-color: #3e3e42; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; text-align: left; }
+        button:hover { background-color: #007acc; }
+        h4 { margin: 10px 0 5px 0; font-size: 14px; color: #aaa; }
+
+        /* ORTA: 3D Sahne */
+        #viewport { flex-grow: 1; position: relative; background-color: #000; }
+        
+        /* SAĞ PANEL: Özellikler ve Kod */
+        #sidebar-right { width: 300px; background-color: #252526; border-left: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; }
+        .panel-section { margin-bottom: 20px; }
+        input[type="text"], input[type="number"] { width: 100%; background: #3c3c3c; border: 1px solid #555; color: white; padding: 5px; margin-bottom: 5px; box-sizing: border-box; }
+        
+        /* Kod Editörü Alanı */
+        #code-editor { width: 100%; height: 200px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 10px; box-sizing: border-box; font-size: 12px; resize: vertical; }
+        .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; }
+        .run-btn:hover { background-color: #3fb950; }
+        
+        #status { font-size: 12px; color: #888; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar-left">
+        <div class="logo">LunX</div>
+        
+        <h4>NESNELER</h4>
+        <button onclick="addShape('cube')">🟦 Küp Ekle</button>
+        <button onclick="addShape('sphere')">🔵 Küre Ekle</button>
+        <button onclick="addShape('cylinder')">🛢️ Silindir Ekle</button>
+        
+        <h4>SAHNE</h4>
+        <button onclick="clearScene()">🗑️ Hepsini Sil</button>
+    </div>
+
+    <div id="viewport"></div>
+
+    <div id="sidebar-right">
+        <div class="panel-section">
+            <h4>SEÇİLİ NESNE</h4>
+            <div id="object-info">Hiçbir nesne seçili değil.</div>
+        </div>
+
+        <div class="panel-section" id="script-panel" style="display:none;">
+            <h4>LUNX SCRIPT (JS)</h4>
+            <p style="font-size:11px; color:#aaa;">"object" değişkenini kullanarak kod yazın. (Örn: object.rotation.y += 0.05)</p>
+            <textarea id="code-editor" placeholder="// Buraya kod yazın..."></textarea>
+            <button class="run-btn" onclick="saveScript()">💾 Kodu Kaydet & Çalıştır</button>
+        </div>
+        
+        <div id="status">LunX Studio Ready.</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // === LUNX ÇEKİRDEK ===
+        
+        let scene, camera, renderer, controls;
+        let objects = []; // Sahnedeki tıklanabilir nesneler
+        let selectedObject = null;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Başlatma
+        function init() {
+            const viewport = document.getElementById('viewport');
+
+            // 1. Sahne
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+            
+            // Izgara (Grid)
+            const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            // 2. Kamera
+            camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+
+            // 3. Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            viewport.appendChild(renderer.domElement);
+
+            // 4. Kontroller (Orbit)
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // 5. Işıklar
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            viewport.addEventListener('mousedown', onMouseDown);
+
+            animate();
+        }
+
+        // === NESNE YÖNETİMİ ===
+
+        function addShape(type) {
+            let geometry, material, mesh;
+            const color = Math.random() * 0xffffff;
+            material = new THREE.MeshStandardMaterial({ color: color });
+
+            if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
+            else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
+            else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set((Math.random() - 0.5) * 4, 0.5, (Math.random() - 0.5) * 4);
+            mesh.name = "LunX_" + type + "_" + objects.length;
+            
+            // Script verisi için boş bir alan açalım
+            mesh.userData = { 
+                script: "",     // Kullanıcının yazdığı kod metni
+                compiled: null  // Çalıştırılabilir fonksiyon
+            };
+
+            scene.add(mesh);
+            objects.push(mesh);
+            selectObject(mesh);
+            
+            log("Nesne oluşturuldu: " + type);
+        }
+
+        function clearScene() {
+            // Sadece bizim eklediğimiz objeleri sil (Grid ve Işık kalacak)
+            objects.forEach(obj => scene.remove(obj));
+            objects = [];
+            selectedObject = null;
+            updateUI();
+            log("Sahne temizlendi.");
+        }
+
+        // === SEÇİM VE UI ===
+
+        function onMouseDown(event) {
+            const viewport = document.getElementById('viewport');
+            const rect = renderer.domElement.getBoundingClientRect();
+            
+            mouse.x = ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects);
+
+            if (intersects.length > 0) {
+                selectObject(intersects[0].object);
+            } else {
+                // Boşa tıklanırsa seçimi kaldır
+                // (İsteğe bağlı: seçimi kaldırmak istemiyorsan burayı sil)
+                // selectObject(null); 
+            }
+        }
+
+        function selectObject(obj) {
+            // Eski seçili objeyi normale döndür (varsa)
+            if (selectedObject && selectedObject.material.emissive) {
+                selectedObject.material.emissive.setHex(0x000000);
+            }
+
+            selectedObject = obj;
+            updateUI();
+
+            if (obj) {
+                // Seçili olduğunu belli etmek için parlat
+                obj.material.emissive.setHex(0x333333);
+            }
+        }
+
+        function updateUI() {
+            const infoDiv = document.getElementById('object-info');
+            const scriptPanel = document.getElementById('script-panel');
+            const editor = document.getElementById('code-editor');
+
+            if (selectedObject) {
+                infoDiv.innerHTML = `
+                    <strong>İsim:</strong> ${selectedObject.name}<br>
+                    <strong>Pos:</strong> X:${selectedObject.position.x.toFixed(2)} Y:${selectedObject.position.y.toFixed(2)}<br>
+                    <strong>Renk:</strong> #${selectedObject.material.color.getHexString()}
+                `;
+                scriptPanel.style.display = 'block';
+                // Varsa kayıtlı kodu editöre yükle
+                editor.value = selectedObject.userData.script || "";
+            } else {
+                infoDiv.innerHTML = "Hiçbir nesne seçili değil.";
+                scriptPanel.style.display = 'none';
+            }
+        }
+
+        // === KODLAMA SİSTEMİ (CORE) ===
+
+        function saveScript() {
+            if (!selectedObject) return;
+            
+            const codeText = document.getElementById('code-editor').value;
+            selectedObject.userData.script = codeText;
+            
+            // Kodu derle (Function constructor kullanarak)
+            // 'object' değişkenini kullanıcının kullanımına sunuyoruz.
+            try {
+                // Kullanıcı kodunu bir fonksiyona çeviriyoruz
+                // Bu fonksiyon her kare (frame) çalışacak
+                selectedObject.userData.compiled = new Function('object', 'time', codeText);
+                log("Script başarıyla kaydedildi ve çalışıyor!");
+            } catch (e) {
+                log("Script Hatası: " + e.message);
+                selectedObject.userData.compiled = null;
+            }
+        }
+
+        function log(msg) {
+            document.getElementById('status').innerText = msg;
+            console.log(msg);
+        }
+
+        function onWindowResize() {
+            const viewport = document.getElementById('viewport');
+            camera.aspect = viewport.clientWidth / viewport.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        }
+
+        // === OYUN DÖNGÜSÜ (UPDATE) ===
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now();
+
+            // Sahnedeki her nesneyi kontrol et
+            objects.forEach(obj => {
+                // Eğer nesnenin derlenmiş bir kodu varsa çalıştır
+                if (obj.userData && obj.userData.compiled) {
+                    try {
+                        obj.userData.compiled(obj, time);
+                    } catch (err) {
+                        // Hata olursa konsola bas (sürekli hata vermemesi için durdurulabilir)
+                    }
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Başlat
+        init();
+
+    </script>
+</body>
+</html>
