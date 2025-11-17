@@ -32,10 +32,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            line-height: 1; /* Emoji hizalaması için */
+            line-height: 1;
         }
         .tool-btn:hover { background-color: #505050; }
-        .tool-btn.active { background-color: #007acc; } /* Seçili tool için */
+        .tool-btn.active { background-color: #007acc; }
         
         /* Kullanıcı ve Durum Bilgileri Sağda */
         #user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12px; }
@@ -55,7 +55,7 @@
         #code-editor { width: 100%; height: 150px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 5px; box-sizing: border-box; }
         .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; width: 100%; padding: 8px; border: none; color: white; cursor: pointer; border-radius: 4px; }
 
-        /* 4. AUTH EKRANI (Aynı kalır) */
+        /* 4. AUTH EKRANI */
         .auth-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .auth-container input { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
@@ -67,14 +67,14 @@
 <body>
 
     <div id="auth-screen" class="auth-screen flex">
-        <a id="auth-switch-link" class="switch-auth" onclick="switchAuthMode()"></a>
+        <a id="auth-switch-link" class="switch-auth" onclick="window.switchAuthMode()"></a>
         <div id="auth-container" class="auth-container">
             <h1 class="logo" style="font-size: 36px; margin-bottom: 20px;">LUNX STUDIO</h1>
             <h2 id="auth-title" style="color:#007acc; margin-bottom: 20px;"></h2>
             <div id="auth-error" style="display: none;"></div>
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
             <input type="password" id="auth-password-input" placeholder="Şifre">
-            <button id="auth-submit-btn" class="tool-btn" style="width: 95%; background-color:#007acc;"></button>
+            <button id="auth-submit-btn" class="tool-btn" style="width: 95%; background-color:#007acc;" onclick="window.handleAuthSubmit()"></button>
         </div>
     </div>
     
@@ -82,9 +82,9 @@
         <div class="logo">LunX</div>
 
         <div class="tool-group">
-            <button id="tool-translate" class="tool-btn active" onclick="setTool('translate')" title="Taşı (W)">↔️</button>
-            <button id="tool-rotate" class="tool-btn" onclick="setTool('rotate')" title="Çevir (Q)">🔄</button>
-            <button id="tool-scale" class="tool-btn" onclick="setTool('scale')" title="Boyutlandır (E)">↕️</button>
+            <button id="tool-translate" class="tool-btn active" onclick="window.setTool('translate')" title="Taşı (W)">↔️</button>
+            <button id="tool-rotate" class="tool-btn" onclick="window.setTool('rotate')" title="Çevir (Q)">🔄</button>
+            <button id="tool-scale" class="tool-btn" onclick="window.setTool('scale')" title="Boyutlandır (E)">↕️</button>
         </div>
         
         <div class="tool-group">
@@ -124,35 +124,40 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    <script type="module">
-        // --- 1. FIREBASE SDK KURULUMU ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    <script>
+        // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
 
+        // DİKKAT: Eski versiyon SDK kullanılmıştır (firebasejs/8.10.0), çünkü bu versiyon 
+        // tek HTML dosyasında ve yerel sunucusuz ortamda daha kararlı çalışır.
+        
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // Proje anahtarınız
             authDomain: "lunxstudio.firebaseapp.com",
             databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com", 
             projectId: "lunxstudio",
-            storageBucket: "lunxstudio.firebasestorage.app",
-            messagingSenderId: "810358489202",
-            appId: "1:810358489202:web:301dbd444bf4608f2782eb",
-            measurementId: "G-Y36QNCE71R"
+            // Diğerleri opsiyonel
         };
         
-        let app, auth, db; 
+        // Bu SDK'lar global olarak 'firebase' değişkenini tanımlar
+        let app, auth, db;
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app); 
-            db = getDatabase(app); 
+            // Firebase'i başlat
+            app = firebase.initializeApp(firebaseConfig);
+            // Servisleri tanımla
+            auth = app.auth(); 
+            db = app.database(); 
+            window.log("Firebase SDK (v8) bağlandı.");
         } catch(e) {
             console.error("Firebase BAŞLATMA KRİTİK HATASI:", e);
+            window.log("HATA: Firebase başlatılamadı.");
         }
 
-        // --- 2. GLOBAL DURUMLAR VE DEĞİŞKENLER ---
         let scene, camera, renderer, controls, transformControls;
         let objects = []; 
         let selectedObject = null;
@@ -160,7 +165,7 @@
         const mouse = new THREE.Vector2();
         let authMode = 'register'; 
 
-        // --- 3. GİRİŞ / KAYIT AKIŞI FONKSİYONLARI ---
+        // --- 2. GİRİŞ / KAYIT AKIŞI FONKSİYONLARI ---
 
         window.showAuth = (mode) => {
             document.getElementById('auth-screen').style.display = 'flex';
@@ -177,85 +182,80 @@
                 authTitle.innerText = "HESAP OLUŞTUR";
                 authSubmitBtn.innerText = "Kayıt Ol";
                 authSwitchLink.innerText = "Bir hesabın var mı? (Giriş Yap)";
-                authSwitchLink.onclick = () => showAuth('login');
             } else { 
                 authMode = 'login';
                 authTitle.innerText = "GİRİŞ YAP";
                 authSubmitBtn.innerText = "Giriş Yap";
                 authSwitchLink.innerText = "Hesabın yok mu? (Kayıt Ol)";
-                authSwitchLink.onclick = () => showAuth('register');
             }
         }
         
-        window.switchAuthMode = () => { showAuth(authMode === 'register' ? 'login' : 'register'); }
+        window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
 
         window.handleAuthSubmit = async () => {
             const email = document.getElementById('auth-email-input').value;
             const pass = document.getElementById('auth-password-input').value;
             
             if (!email || !pass) {
-                showError("Lütfen e-posta ve şifreyi girin.");
+                window.showError("Lütfen e-posta ve şifreyi girin.");
                 return;
             }
 
             try {
                 if (authMode === 'register') {
-                    await createUserWithEmailAndPassword(auth, email, pass);
+                    await auth.createUserWithEmailAndPassword(email, pass);
                 } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
+                    await auth.signInWithEmailAndPassword(email, pass);
                 }
                 document.getElementById('auth-screen').style.display = 'none';
-                // Giriş başarılı olunca 3D ortamı başlat
-                startStudio(); 
-            } catch (error) { showError(error.message); }
+                window.startStudio(); 
+                window.log("Giriş/Kayıt başarılı.");
+            } catch (error) { window.showError(error.message); }
         };
 
         window.logoutUser = async () => { 
-            await signOut(auth); 
-            showAuth('login');
+            await auth.signOut(); 
+            window.showAuth('login');
         };
 
-        function showError(msg) { 
+        window.showError = (msg) => { 
             const errDiv = document.getElementById('auth-error');
             errDiv.innerText = msg; errDiv.style.display = 'block';
         }
 
-        // Firebase kullanıcı durumu takibi ve arayüz güncelleme
+        // Firebase kullanıcı durumu takibi
         if(auth) {
-            onAuthStateChanged(auth, (user) => {
+            auth.onAuthStateChanged((user) => {
                 const userEmailSpan = document.getElementById('user-email');
                 if (user) {
                     userEmailSpan.innerText = user.email;
                     userEmailSpan.style.color = "#4caf50";
-                    log(user.email + " giriş yaptı.");
-                    // Eğer 3D alan görünmüyorsa (yani yeni login olduysa) başlat
                     if (document.getElementById('main-area').style.display === 'none') {
-                        startStudio();
+                        // Yeni giriş yaptıysa stüdyoyu başlat
+                        window.startStudio(); 
                     }
                 } else {
                     userEmailSpan.innerText = "Misafir Modu";
                     userEmailSpan.style.color = "#fff";
-                    log("Misafir modundasınız.");
                 }
             });
         }
         
-        // --- 4. STÜDYO BAŞLATMA VE KONTROLLER ---
+        // --- 3. STÜDYO BAŞLATMA VE KONTROLLER ---
 
-        function startStudio() {
+        window.startStudio = () => {
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
             
             if (!controls) { 
-                initFullScene(); 
+                window.initFullScene(); 
             } else {
                 renderer.domElement.style.display = 'block'; 
             }
-            // Varsayılan ortamı kur ve Taşıma tool'unu seç
             window.clearScene(false);
-            setupEnvironment('default_template');
-            setTool('translate');
-            log(`LunX Studio hazır.`);
+            window.setupEnvironment('default_template');
+            window.setTool('translate');
+            window.log(`LunX Studio hazır.`);
         }
 
         window.setTool = (mode) => {
@@ -265,10 +265,10 @@
             document.getElementById(`tool-${mode}`).classList.add('active');
 
             transformControls.setMode(mode);
-            log("Tool: " + mode.charAt(0).toUpperCase() + mode.slice(1));
+            window.log("Tool: " + mode.charAt(0).toUpperCase() + mode.slice(1));
         }
 
-        function initFullScene() {
+        window.initFullScene = () => {
              try {
                 const viewport = document.getElementById('viewport');
                 scene = new THREE.Scene();
@@ -283,7 +283,6 @@
                 transformControls = new THREE.TransformControls(camera, renderer.domElement);
                 scene.add(transformControls);
 
-                // **Gizmo hareketi sırasında OrbitControls'u devre dışı bırak**
                 transformControls.addEventListener('dragging-changed', function (event) {
                     controls.enabled = !event.value;
                 });
@@ -294,18 +293,18 @@
                 dirLight.position.set(5, 10, 7);
                 scene.add(dirLight);
 
-                window.addEventListener('resize', onWindowResize);
-                viewport.addEventListener('mousedown', onMouseDown);
-                window.addEventListener('keydown', onKeyDown); 
-                animate();
+                window.addEventListener('resize', window.onWindowResize);
+                viewport.addEventListener('mousedown', window.onMouseDown);
+                window.addEventListener('keydown', window.onKeyDown); 
+                window.animate();
 
             } catch (e) {
                 console.error("3D İNİT KRİTİK HATASI:", e);
-                log("KRİTİK HATA: 3D motoru başlatılamadı.");
+                window.log("KRİTİK HATA: 3D motoru başlatılamadı.");
             }
         }
         
-        function setupEnvironment(env) {
+        window.setupEnvironment = (env) => {
             scene.background = new THREE.Color(0x87CEEB); 
             scene.children = scene.children.filter(child => child.isLight || child.isTransformControls || (child.isMesh && objects.includes(child)));
 
@@ -319,60 +318,103 @@
             scene.add(gridHelper);
         }
 
-        window.addShape = (type) => {
+        window.addShape = (type, existingData = null) => {
             if (!scene) return;
-            let geometry, material;
-            const color = Math.random() * 0xffffff;
-            const position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
+            let geometry, material, mesh;
+            let color, position, script;
+            
+            if (existingData) {
+                color = existingData.color;
+                position = existingData.position;
+                script = existingData.script;
+            } else {
+                color = Math.random() * 0xffffff;
+                position = { x: (Math.random() - 0.5) * 4, y: 1.5, z: (Math.random() - 0.5) * 4 }; 
+                script = "";
+            }
 
             material = new THREE.MeshStandardMaterial({ color: color });
             if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
             else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
             else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
             
-            const mesh = new THREE.Mesh(geometry, material);
+            mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(position.x, position.y, position.z);
             mesh.name = type.charAt(0).toUpperCase() + type.slice(1) + "_" + objects.length;
-            mesh.userData = { script: "", compiled: null, type: type };
+            mesh.userData = { script: script, compiled: null, type: type };
+
+            if (script) window.applyScript(mesh, script);
 
             scene.add(mesh);
             objects.push(mesh);
-            selectObject(mesh);
+            
+            if(!existingData) window.selectObject(mesh);
         }
 
         window.clearScene = (showConfirm = true) => {
             if (showConfirm && !confirm("Tüm sahne silinecek! Emin misiniz?")) return;
             objects.forEach(obj => scene.remove(obj));
             objects = [];
-            selectObject(null);
-            log("Sahne temizlendi.");
+            window.selectObject(null);
+            window.log("Sahne temizlendi.");
         }
         
-        // --- 5. ETKİLEŞİM VE SEÇİM ---
+        // --- 4. VERİTABANI VE ETKİLEŞİM FONKSİYONLARI ---
 
-        function onKeyDown(event) {
+        window.saveScene = async () => {
+            const user = auth.currentUser;
+            if (!user) { window.log("Hata: Kaydetmek için giriş yapmalısınız!"); return; }
+            const sceneData = objects.map(obj => ({
+                type: obj.userData.type,
+                position: obj.position.clone(),
+                color: obj.material.color.getHex(),
+                script: obj.userData.script || ""
+            }));
+            try {
+                await db.ref('scenes/' + user.uid).set(sceneData);
+                window.log("Sahne başarıyla buluta kaydedildi!");
+            } catch (error) { window.log("Hata (Kaydetme): " + error.message); }
+        }
+
+        window.loadScene = async () => {
+            const user = auth.currentUser;
+            if (!user) { window.log("Hata: Yüklemek için giriş yapmalısınız!"); return; }
+            try {
+                const snapshot = await db.ref('scenes/' + user.uid).once('value');
+                if (snapshot.exists()) {
+                    const savedObjects = snapshot.val();
+                    window.clearScene(false); 
+                    savedObjects.forEach(data => {
+                        window.addShape(data.type, data);
+                    });
+                    window.log("Sahne buluttan yüklendi!");
+                } else {
+                    window.log("Bulutta kayıtlı sahne bulunamadı.");
+                }
+            } catch (error) { window.log("Hata (Yükleme): " + error.message); }
+        }
+
+        window.onKeyDown = (event) => {
             const key = event.key.toLowerCase();
-            
             if (key === 'delete' && selectedObject) {
                 if (confirm(`'${selectedObject.name}' nesnesini silmek istediğinize emin misiniz?`)) {
                     scene.remove(selectedObject);
                     objects = objects.filter(obj => obj !== selectedObject);
-                    selectObject(null);
-                    log("Nesne silindi.");
+                    window.selectObject(null);
+                    window.log("Nesne silindi.");
                 }
             } 
-            else if (key === 'q') { setTool("rotate"); }
-            else if (key === 'w') { setTool("translate"); }
-            else if (key === 'e') { setTool("scale"); }
+            else if (key === 'q') { window.setTool("rotate"); }
+            else if (key === 'w') { window.setTool("translate"); }
+            else if (key === 'e') { window.setTool("scale"); }
         }
 
-        function onMouseDown(event) {
+        window.onMouseDown = (event) => {
             if (!renderer || !renderer.domElement) return;
 
             const viewport = document.getElementById('viewport');
             const rect = renderer.domElement.getBoundingClientRect();
             
-            // Gizmo sürükleniyorsa nesne seçme işlemini atla
             if (transformControls && transformControls.dragging) return;
 
             mouse.x = ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1;
@@ -382,84 +424,44 @@
             const intersects = raycaster.intersectObjects(objects); 
 
             if (intersects.length > 0) {
-                selectObject(intersects[0].object);
+                window.selectObject(intersects[0].object);
             } else if (transformControls && !transformControls.dragging) {
-                // Boşluğa tıklama
-                selectObject(null); 
+                window.selectObject(null); 
             }
         }
         
-        function selectObject(obj) {
+        window.selectObject = (obj) => {
             if (!transformControls) return;
-            // Önceki nesnenin vurgusunu kaldır
             if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
             selectedObject = obj;
-            updateUI();
+            window.updateUI();
             
             if (obj) {
-                obj.material.emissive.setHex(0x333333); // Yeni nesneyi vurgula
-                transformControls.attach(obj); // Gizmo'yu nesneye ekle
-                // Seçilen tool modunu koru
+                obj.material.emissive.setHex(0x333333);
+                transformControls.attach(obj); 
             } else {
-                if(transformControls) transformControls.detach(); // Nesne yoksa gizmo'yu kaldır
+                if(transformControls) transformControls.detach(); 
             }
-        }
-
-        // --- 6. YARDIMCI VE SAVE/LOAD FONKSİYONLARI ---
-        
-        // saveScene, loadScene, saveScript, applyScript, updateUI, log, onWindowResize, animate fonksiyonları önceki versiyonlarla aynı mantıkta çalışır.
-
-        window.saveScene = async () => {
-            const user = auth.currentUser;
-            if (!user) { log("Hata: Kaydetmek için giriş yapmalısınız!"); return; }
-            const sceneData = objects.map(obj => ({
-                type: obj.userData.type,
-                position: obj.position.clone(),
-                color: obj.material.color.getHex(),
-                script: obj.userData.script || ""
-            }));
-            try {
-                await set(ref(db, 'scenes/' + user.uid), sceneData);
-                log("Sahne başarıyla buluta kaydedildi!");
-            } catch (error) { log("Hata (Kaydetme): " + error.message); }
-        }
-
-        window.loadScene = async () => {
-            const user = auth.currentUser;
-            if (!user) { log("Hata: Yüklemek için giriş yapmalısınız!"); return; }
-            try {
-                const snapshot = await get(ref(db, 'scenes/' + user.uid));
-                if (snapshot.exists()) {
-                    const savedObjects = snapshot.val();
-                    window.clearScene(false); 
-                    savedObjects.forEach(data => {
-                        window.addShape(data.type, data); // Yüklerken addShape'i kullanmalıyız
-                    });
-                    log("Sahne buluttan yüklendi!");
-                } else {
-                    log("Bulutta kayıtlı sahne bulunamadı.");
-                }
-            } catch (error) { log("Hata (Yükleme): " + error.message); }
         }
 
         window.saveScript = () => {
             if (!selectedObject) return;
             const codeText = document.getElementById('code-editor').value;
-            applyScript(selectedObject, codeText);
+            window.applyScript(selectedObject, codeText);
         }
         
-        function applyScript(object, codeText) {
+        window.applyScript = (object, codeText) => {
             object.userData.script = codeText;
             try {
                 object.userData.compiled = new Function('object', 'time', codeText);
-                log(object.name + " için script çalışıyor!");
+                window.log(object.name + " için script çalışıyor!");
             } catch (e) {
-                log("Script Hatası: " + e.message);
+                window.log("Script Hatası: " + e.message);
                 object.userData.compiled = null;
             }
         }
 
-        function updateUI() { 
+        window.updateUI = () => { 
             const infoDiv = document.getElementById('object-info');
             const scriptPanel = document.getElementById('script-panel');
             const editor = document.getElementById('code-editor');
@@ -472,19 +474,22 @@
                 scriptPanel.style.display = 'none';
             }
         }
-        function log(msg) { 
+        
+        window.log = (msg) => { 
             const statusEl = document.getElementById('status');
             statusEl.innerText = msg; 
             console.log(msg); 
         }
-        function onWindowResize() {
+        
+        window.onWindowResize = () => {
             const viewport = document.getElementById('viewport');
             camera.aspect = viewport.clientWidth / viewport.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
         }
-        function animate() {
-            requestAnimationFrame(animate);
+        
+        window.animate = () => {
+            requestAnimationFrame(window.animate);
             const time = performance.now();
             objects.forEach(obj => {
                 if (obj.userData && obj.userData.compiled) {
@@ -493,13 +498,13 @@
             });
             if (controls) controls.update(); 
             if (renderer && scene && camera) renderer.render(scene, camera);
-            if (selectedObject) { updateUI(); }
+            if (selectedObject) { window.updateUI(); }
         }
         
-        // Uygulama yüklendiğinde KAYIT OL ekranını göster
+        // --- UYGULAMA BAŞLANGICI ---
         window.onload = () => {
-            showAuth('register');
-            log("LunX Studio V0.4 yüklendi.");
+            window.showAuth('register');
+            window.log("LunX Studio V0.5 yüklendi.");
         };
     </script>
 </body>
