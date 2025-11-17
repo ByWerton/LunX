@@ -9,7 +9,7 @@
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         
-        /* 1. AUTH CONTAINER DÜZELTMESİ (Hizalama Sorununu Çözer) */
+        /* 1. AUTH CONTAINER DÜZELTMESİ */
         .auth-container, .settings-panel { 
             background: #252526; 
             padding: 40px; 
@@ -20,36 +20,45 @@
             border: 2px solid #007acc; 
             text-align: center; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.5); 
-            /* YENİ EKLENTİLER */
             display: flex;
             flex-direction: column;
-            align-items: center; /* Tüm içeriği ortala */
-            gap: 10px; /* Elemanlar arası boşluk */
+            align-items: center; 
+            gap: 15px; /* Daha fazla boşluk */
+            box-sizing: border-box; /* Padding'in genişliğe dahil olmasını sağla */
         }
         
-        /* 2. INPUT DÜZELTMESİ (Marjinleri Kaldırır) */
+        /* 2. INPUT DÜZELTMESİ */
         .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select { 
             width: 90%; 
             padding: 12px; 
-            /* margin: 10px 0; KALDIRILDI - Artık GAP ile yönetiliyor */
             background: #333; 
             border: 1px solid #555; 
             color: white; 
             border-radius: 4px; 
             box-sizing: border-box;
+            font-size: 14px;
         }
         
         /* 3. INITIAL SETTINGS DÜZELTMESİ (Cinsiyet Seçimi Kutusu) */
         #initial-settings {
             width: 90%; 
             text-align: left; 
+            padding-left: 5px;
+            margin-top: -5px; /* Boşluğu dengele */
+        }
+        #initial-settings label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #initial-settings input[type="radio"] {
+            margin-right: 5px;
         }
 
         .auth-container textarea { height: 80px; resize: vertical; font-size: 10px; }
-        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 90%; }
-        .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
+        #auth-error { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 90%; box-sizing: border-box;}
+        .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; display: inline-block; }
         
-        /* 4. START BUTTON DÜZELTMESİ (Marjini Kaldırır) */
+        /* 4. START BUTTON DÜZELTMESİ */
         .start-btn { 
             background-color: #007acc; 
             width: 90%; 
@@ -58,7 +67,6 @@
             color: white; 
             cursor: pointer; 
             border-radius: 4px; 
-            /* margin-top: 20px; KALDIRILDI - Artık GAP ile yönetiliyor */
         }
         
         #toolbar { background-color: #252526; display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
@@ -75,7 +83,7 @@
         #customize-editor { flex-grow: 1; background: #1e1e1e; padding: 20px; border-radius: 0 8px 8px 0; display: none; flex-direction: row; height: 80vh; max-width: 700px; }
         .customize-panel { width: 50%; padding: 10px; }
         #customize-viewport { height: 100%; flex-grow: 1; background: #000; border: 1px solid #007acc; }
-        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; }
+        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; line-height: 50px; text-align: center; font-size: 10px;}
         .file-upload-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;}
         .file-upload-container .upload-btn { flex-shrink: 0; margin-left: 10px; padding: 6px 10px; font-size: 12px; }
         .file-upload-container label { font-weight: bold; font-size: 12px; }
@@ -102,8 +110,8 @@
 
     <div id="auth-screen" class="full-screen-container" style="display: flex;">
         <div id="auth-container" class="auth-container">
-            <h1 class="logo" style="font-size: 36px; margin-bottom: 20px;">LUNX STUDIO</h1>
-            <h2 id="auth-title" style="color:#007acc; margin-bottom: 20px;"></h2>
+            <h1 class="logo" style="font-size: 36px; margin-bottom: 10px;">LUNX STUDIO</h1>
+            <h2 id="auth-title" style="color:#007acc; margin-bottom: 10px;"></h2>
             <div id="auth-error" style="display: none;"></div>
             <input type="text" id="auth-username-input" placeholder="Kullanıcı Adı (Sadece Kayıt İçin)" style="display: none;">
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
@@ -113,7 +121,7 @@
                 <input type="radio" id="gender-male" name="gender-auth" value="male" checked> Erkek
                 <input type="radio" id="gender-female" name="gender-auth" value="female" style="margin-left: 15px;"> Kız
             </div>
-            <button id="auth-submit-btn" class="tool-btn" style="width: 95%; background-color:#007acc;" onclick="window.handleAuthSubmit()"></button>
+            <button id="auth-submit-btn" class="start-btn" onclick="window.handleAuthSubmit()"></button>
             <a id="auth-switch-link" class="switch-auth" onclick="window.switchAuthMode()"></a>
         </div>
     </div>
@@ -304,6 +312,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
+          // ÖNEMLİ: Bu bilgileri kendi Firebase projenizle değiştirin!
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
@@ -628,8 +637,11 @@
 
         window.initCustomization3D = () => {
             const viewport = document.getElementById('customize-viewport');
-            if (customRenderer) { customRenderer.dispose(); viewport.innerHTML = ''; } // Temizle
+            
+            // Eğer daha önce oluşturulmuş bir renderer varsa temizle
+            if (customRenderer) { customRenderer.dispose(); viewport.innerHTML = ''; } 
 
+            // 3D sahneyi başlat
             customScene = new THREE.Scene();
             customCamera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 100);
             customCamera.position.set(0, 2, 3);
@@ -646,12 +658,14 @@
             customControls.minDistance = 2;
             customControls.target.set(0, 1, 0);
 
+            // Işıkları ekle
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             customScene.add(ambientLight);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(2, 5, 4);
             customScene.add(dirLight);
 
+            // Zemin ekle (opsiyonel)
             const ground = new THREE.Mesh( new THREE.PlaneGeometry(5, 5), new THREE.MeshStandardMaterial({ color: 0x222222 }) );
             ground.rotation.x = -Math.PI / 2;
             customScene.add(ground);
@@ -688,7 +702,7 @@
                     texture.wrapS = THREE.RepeatWrapping;
                     texture.wrapT = THREE.RepeatWrapping;
                     texture.repeat.set(1, 1); 
-                    return new THREE.MeshStandardMaterial({ map: texture });
+                    return new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide }); // DoubleSide dokunun her iki tarafta da görünmesini sağlar
                 } catch (e) {
                     console.error("Doku yüklenirken hata:", e);
                     return new THREE.MeshStandardMaterial({ color: color }); 
@@ -708,35 +722,40 @@
             const finalArmMat = new THREE.MeshStandardMaterial({ color: currentCustomization.skinColor });
             const finalLegMat = new THREE.MeshStandardMaterial({ color: currentCustomization.legColor });
             
+            // KARAKTER BOYUTLARI
             const limbWidth = 0.4;
             const limbHeight = 1.0;
             const headSize = 0.8;
             const torsoHeight = 1.0;
 
+            // Kafa
             const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), finalHeadMat);
-            head.position.y = 1.7; 
+            head.position.y = 1.7; // Yüksekliği gövdenin üzerine yerleştir
             head.name = "Head";
             group.add(head);
 
+            // Gövde
             const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), finalTorsoMat);
-            torso.position.y = 1.0;
+            torso.position.y = 1.0; // Yüksekliği bacakların üzerine yerleştir
             torso.name = "Torso";
             group.add(torso);
             
+            // Kollar
             const createArm = (side) => {
                 const arm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), finalArmMat);
                 arm.position.set(side * 0.6, 1.5, 0); 
-                arm.geometry.translate(0, -limbHeight / 2, 0); 
+                arm.geometry.translate(0, -limbHeight / 2, 0); // Pozisyonu merkez yerine üst omuzdan başlat
                 arm.name = side === 0.6 ? "RightArm" : "LeftArm";
                 return arm;
             };
             group.add(createArm(0.6));
             group.add(createArm(-0.6));
 
+            // Bacaklar
             const createLeg = (side) => {
                 const leg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), finalLegMat);
                 leg.position.set(side * 0.2, 0.5, 0); 
-                leg.geometry.translate(0, -limbHeight / 2, 0); 
+                leg.geometry.translate(0, -limbHeight / 2, 0); // Pozisyonu merkez yerine kalçadan başlat
                 leg.name = side === 0.2 ? "RightLeg" : "LeftLeg";
                 return leg;
             };
@@ -745,6 +764,10 @@
             
             group.userData.totalHeight = 2.0; 
             group.userData.limbHeight = limbHeight;
+            
+            // Karakteri ortala
+            group.position.y = 0.5;
+            
             return group;
         };
         
@@ -1361,9 +1384,8 @@
         // --- 6. UYGULAMA BAŞLANGICI ---
         const initializeApp = async () => {
             if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
-                // Eğer kütüphaneler yüklenemezse auth ekranını gösterip hata ver
                 window.showAuth('login');
-                window.showError("KRİTİK HATA: Kütüphaneler yüklenemedi. İnternet bağlantınızı kontrol edin.");
+                window.showError("KRİTİK HATA: Gerekli kütüphaneler (Firebase/Three.js) yüklenemedi. İnternet bağlantınızı kontrol edin.");
                 return;
             }
 
@@ -1373,7 +1395,6 @@
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
                 
-                // Yüklenme ekranı kaldırıldığı için beklemeye gerek yok, direkt durumu dinle
                 auth.onAuthStateChanged((user) => {
                     if (user) {
                         window.log("Oturum Açık: " + user.email);
@@ -1389,7 +1410,8 @@
 
             } catch(e) {
                 window.showAuth('login');
-                window.showError("KRİTİK HATA: Firebase yapılandırma hatası.");
+                window.showError("KRİTİK HATA: Firebase yapılandırma hatası veya sunucu bağlantı sorunu.");
+                console.error("Firebase Başlatma Hatası:", e);
             }
         };
 
