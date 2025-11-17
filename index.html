@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio - Online RTDB</title>
+    <title>LunX Studio</title>
     <style>
-        /* CSS stilleri aynı kalır */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; height: 100vh; }
         #sidebar-left { width: 200px; background-color: #252526; border-right: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         .logo { font-size: 24px; font-weight: bold; color: #007acc; text-align: center; margin-bottom: 10px; letter-spacing: 2px; }
@@ -22,17 +21,42 @@
         #code-editor { width: 100%; height: 200px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 10px; box-sizing: border-box; }
         .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; width: 100%; padding: 8px; border: none; color: white; cursor: pointer; }
         #status { font-size: 12px; color: #888; margin-top: auto; }
-        #auth-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        
+        /* Modal Stilleri */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #252526; padding: 20px; width: 300px; border-radius: 8px; border: 1px solid #007acc; text-align: center; }
         .modal-content input { width: 90%; padding: 10px; margin: 5px 0; background: #333; border: 1px solid #555; color: white; }
         #auth-error { color: #ff4444; font-size: 12px; margin-top: 5px; display: none; }
-        .btn-save { background-color: #007acc; }
-        .btn-load { background-color: #c99400; }
+        
+        /* Yeni Proje Modal Stilleri */
+        #start-modal { background: rgba(0,0,0,0.9); z-index: 2000; }
+        #start-modal .modal-content { max-width: 500px; width: 90%; background: #1e1e1e; }
+        .env-btn { transition: border 0.2s, background-color 0.2s; border: 3px solid transparent !important; }
+        .env-btn.selected { border: 4px solid #FFD700 !important; } 
     </style>
 </head>
 <body>
 
-    <div id="auth-modal">
+    <div id="start-modal" class="modal flex">
+        <div class="modal-content p-8">
+            <h3 class="text-3xl font-bold mb-6 text-gray-200 text-center">LunX Studio</h3>
+            <p class="text-gray-400 mb-6 text-center text-lg">Hoş geldin! Bir proje başlatmak için seçeneğini belirle.</p>
+            
+            <div id="project-options" class="space-y-4 mb-8">
+                <button onclick="selectEnvironment('flat')" class="env-btn w-full p-4 bg-indigo-500 text-white rounded-lg font-semibold hover:bg-indigo-600 transition shadow-lg">📐 Düz Zemin (Flat)</button>
+                <button onclick="selectEnvironment('grass')" class="env-btn w-full p-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg">🌳 Düz Çimen (Grass)</button>
+                <button onclick="selectEnvironment('space')" class="env-btn w-full p-4 bg-blue-800 text-white rounded-lg font-semibold hover:bg-blue-900 transition shadow-lg">🌌 Uzay (Space)</button>
+            </div>
+
+            <div id="project-naming" class="hidden">
+                <input type="text" id="project-name-input" placeholder="Proje Adı (Örn: Benim İlk Oyunum)" class="w-full p-3 border border-gray-300 rounded-lg mb-4 text-gray-800 bg-gray-700">
+                <button onclick="startProject()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition">▶️ Başlat</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="auth-modal" class="modal">
         <div class="modal-content">
             <div id="auth-error"></div>
             <input type="email" id="email-input" placeholder="E-posta Adresi">
@@ -52,10 +76,16 @@
             <button id="logout-btn-sidebar" class="auth-btn logout" style="display:none;" onclick="window.logoutUser()">Çıkış Yap</button>
         </div>
 
-        <h4>SAHNE YÖNETİMİ</h4>
+        <h4>PROJE YÖNETİMİ</h4>
+        <button class="tool-btn" onclick="document.getElementById('start-modal').style.display='flex';">🆕 Yeni Proje</button>
         <button class="tool-btn btn-save" onclick="window.saveScene()">💾 Sahneyi Kaydet</button>
         <button class="tool-btn btn-load" onclick="window.loadScene()">📂 Sahneyi Yükle</button>
         <button class="tool-btn" style="background-color:#c92c2c;" onclick="window.clearScene(true)">🗑️ Hepsini Sil</button>
+        
+        <h4>KONTROLLER (Q/W/E)</h4>
+        <button class="tool-btn" onclick="transformControls.setMode('translate'); log('Mod: Taşıma (W)')">↔️ Taşı (W)</button>
+        <button class="tool-btn" onclick="transformControls.setMode('rotate'); log('Mod: Çevirme (Q)')">🔄 Çevir (Q)</button>
+        <button class="tool-btn" onclick="transformControls.setMode('scale'); log('Mod: Boyutlandırma (E)')">↕️ Boyut (E)</button>
         
         <h4>NESNELER</h4>
         <button class="tool-btn" onclick="window.addShape('cube')">🟦 Küp Ekle</button>
@@ -75,11 +105,12 @@
             <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
             <button class="run-btn" onclick="window.saveScript()">⚡ Kodu Çalıştır</button>
         </div>
-        <div id="status">LunX Studio v1.2 Yüklendi.</div>
+        <div id="status">LunX Studio v1.2 Yükleniyor...</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script> 
 
     <script type="module">
         // --- 1. FIREBASE SDK KURULUMU ---
@@ -87,9 +118,9 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        // !!! API Anahtarı ve diğer yapılandırma bilgileri eklendi. !!!
+        // API Anahtarı ve diğer yapılandırma bilgileri (Senin projene ait)
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // <-- Senink API Anahtarı buraya yerleştirildi
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
             authDomain: "lunxstudio.firebaseapp.com",
             databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
             projectId: "lunxstudio",
@@ -97,19 +128,95 @@
             messagingSenderId: "810358489202",
             appId: "1:810358489202:web:301dbd444bf4608f2782eb"
         };
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        
         let app, auth, db; 
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getDatabase(app); 
             console.log("Firebase bağlandı ve Realtime Database hazır!");
+            log("Firebase bağlandı. Lütfen Yeni Proje başlatın.");
         } catch(e) {
-            console.error("Firebase başlatma hatası: Config bilgilerini kontrol et.", e);
+            console.error("Firebase başlatma hatası:", e);
+            log("HATA: Firebase bağlantısı kurulamadı. Konsolu kontrol et.");
         }
 
-        // --- 2. KİMLİK DOĞRULAMA ---
+        // --- 2. GLOBAL DURUMLAR VE DEĞİŞKENLER ---
+
+        let scene, camera, renderer, controls, transformControls;
+        let objects = []; 
+        let selectedObject = null;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Proje durumu
+        let currentEnvironment = null;
+        let currentProjectName = "Yeni Proje";
+
+        // --- 3. PROJE BAŞLATMA AKIŞI (MODAL) ---
+
+        window.selectEnvironment = (env) => {
+            currentEnvironment = env;
+            
+            // UI'ı bir sonraki aşamaya geçir
+            document.getElementById('project-options').classList.add('hidden');
+            document.getElementById('project-naming').classList.remove('hidden');
+            document.getElementById('project-name-input').focus();
+            
+            // Seçilen butonu vurgula
+            document.querySelectorAll('.env-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelector(`[onclick="selectEnvironment('${env}')"]`).classList.add('selected');
+        }
+
+        window.startProject = () => {
+            const projectNameInput = document.getElementById('project-name-input');
+            const projectName = projectNameInput.value.trim();
+            
+            if (currentEnvironment === null) {
+                log("Hata: Lütfen bir ortam seçin.");
+                return;
+            }
+
+            if (projectName) {
+                currentProjectName = projectName;
+            }
+            
+            // Başlangıç modalını kapat, 3D'yi başlat
+            document.getElementById('start-modal').style.display = 'none';
+            document.title = `LunX Studio - ${currentProjectName}`;
+            
+            if (!renderer) { // Sadece ilk kez çağrıldığında init yap
+                init();
+            }
+            
+            // Ortamı ayarla ve sahneyi temizle (eski objeler kalmasın)
+            window.clearScene(false); 
+            setupEnvironment(currentEnvironment);
+            log(`Proje başlatıldı: ${currentProjectName}`);
+        }
+
+        function setupEnvironment(env) {
+            const defaultColor = 0x222222;
+            scene.background = new THREE.Color(defaultColor);
+            
+            // Sahne elemanlarını temizle (ızgarayı/zemini kaldır)
+            scene.children = scene.children.filter(child => child.isLight || child instanceof THREE.Mesh);
+
+            if (env === 'flat') {
+                const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+                scene.add(gridHelper);
+            } else if (env === 'grass') {
+                const groundGeometry = new THREE.PlaneGeometry(30, 30);
+                const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                scene.add(ground);
+            } else if (env === 'space') {
+                scene.background = new THREE.Color(0x000000);
+            }
+        }
+        
+        // --- 4. KİMLİK DOĞRULAMA FONKSİYONLARI ---
         
         window.registerUser = async () => {
             const email = document.getElementById('email-input').value;
@@ -143,18 +250,18 @@
                     userEmailSpan.style.color = "#4caf50";
                     loginBtn.style.display = 'none';
                     logoutBtn.style.display = 'block';
-                    log(user.email + " giriş yaptı. Sahne yüklenebilir.");
+                    log(user.email + " giriş yaptı.");
                 } else {
                     userEmailSpan.innerText = "Misafir Modu";
                     userEmailSpan.style.color = "#fff";
                     loginBtn.style.display = 'block';
                     logoutBtn.style.display = 'none';
-                    log("Misafir modundasınız. Kaydetmek için giriş yapın.");
+                    log("Misafir modundasınız.");
                 }
             });
         }
-
-        // --- 3. VERİTABANI FONKSİYONLARI (RTDB) ---
+        
+        // --- 5. VERİTABANI FONKSİYONLARI (RTDB) ---
 
         window.saveScene = async () => {
             const user = auth.currentUser;
@@ -193,6 +300,9 @@
                 if (snapshot.exists()) {
                     const savedObjects = snapshot.val();
                     window.clearScene(false); 
+                    
+                    // Yeni bir ortam seçilmediyse bileşenleri temizledikten sonra varsayılan ortamı kur
+                    setupEnvironment(currentEnvironment || 'flat'); 
 
                     savedObjects.forEach(data => {
                         window.addShape(data.type, data);
@@ -207,26 +317,29 @@
             }
         }
 
-        // --- 4. LUNX 3D ENGINE ---
+        // --- 6. LUNX 3D ENGINE İŞLEMLERİ ---
         
-        let scene, camera, renderer, controls;
-        let objects = []; 
-        let selectedObject = null;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
         function init() {
             const viewport = document.getElementById('viewport');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111111);
-            const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
-            scene.add(gridHelper);
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
             viewport.appendChild(renderer.domElement);
+            
             controls = new THREE.OrbitControls(camera, renderer.domElement);
+            
+            // Gizmo (TransformControls) kurulumu
+            transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            scene.add(transformControls);
+
+            // Gizmo'nun OrbitControls ile çakışmasını engelleme
+            transformControls.addEventListener('dragging-changed', function (event) {
+                controls.enabled = !event.value;
+            });
+            
+            // Işıklar
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -235,6 +348,7 @@
 
             window.addEventListener('resize', onWindowResize);
             viewport.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('keydown', onKeyDown); // Klavye tuşları
             animate();
         }
 
@@ -272,10 +386,74 @@
 
         window.clearScene = (showConfirm = true) => {
             if (showConfirm && !confirm("Tüm sahne silinecek! Emin misiniz?")) return;
+            // Sahneden sadece mesh (nesne) olanları kaldır
             objects.forEach(obj => scene.remove(obj));
             objects = [];
             selectObject(null);
             log("Sahne temizlendi.");
+        }
+
+        // --- 7. KONTROL VE YARDIMCI FONKSİYONLAR ---
+
+        function onKeyDown(event) {
+            const key = event.key.toLowerCase();
+            
+            if (key === 'delete' && selectedObject) {
+                if (confirm(`'${selectedObject.name}' nesnesini silmek istediğinize emin misiniz?`)) {
+                    scene.remove(selectedObject);
+                    objects = objects.filter(obj => obj !== selectedObject);
+                    selectObject(null);
+                    log("Nesne silindi.");
+                }
+            } 
+            else if (key === 'q') { // Q: Çevirme (Rotate)
+                transformControls.setMode("rotate");
+                log("Gizmo modu: Çevirme (Rotate)");
+            }
+            else if (key === 'w') { // W: Taşıma (Translate)
+                transformControls.setMode("translate");
+                log("Gizmo modu: Taşıma (Translate)");
+            }
+            else if (key === 'e') { // E: Boyutlandırma (Scale)
+                transformControls.setMode("scale");
+                log("Gizmo modu: Boyutlandırma (Scale)");
+            }
+        }
+
+        function onMouseDown(event) {
+            const viewport = document.getElementById('viewport');
+            const rect = renderer.domElement.getBoundingClientRect();
+            
+            // Gizmo'ya tıklanıp tıklanmadığını kontrol et
+            if (transformControls.dragging) return;
+
+            mouse.x = ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Sadece nesnelere bak (TransformControls'u hariç tut)
+            const intersects = raycaster.intersectObjects(objects); 
+
+            if (intersects.length > 0) {
+                selectObject(intersects[0].object);
+            } else if (!transformControls.dragging) {
+                selectObject(null); // Hiçbir şeye tıklanmadıysa seçimi kaldır
+            }
+        }
+        
+        function selectObject(obj) {
+            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
+            selectedObject = obj;
+            updateUI();
+            
+            // Gizmo'yu güncelle
+            if (obj) {
+                obj.material.emissive.setHex(0x333333);
+                transformControls.attach(obj); 
+                transformControls.setMode("translate"); // Yeni seçilen nesne varsayılan olarak taşınsın
+            } else {
+                if(transformControls) transformControls.detach(); // Nesne seçili değilse Gizmo'yu kaldır
+            }
         }
 
         window.saveScript = () => {
@@ -295,28 +473,12 @@
             }
         }
 
-        // --- 5. YARDIMCI VE DÖNGÜ FONKSİYONLARI ---
-        function onMouseDown(event) {
-            const viewport = document.getElementById('viewport');
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects);
-            if (intersects.length > 0) selectObject(intersects[0].object);
-        }
-        function selectObject(obj) {
-            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
-            selectedObject = obj;
-            updateUI();
-            if (obj) obj.material.emissive.setHex(0x333333);
-        }
         function updateUI() {
             const infoDiv = document.getElementById('object-info');
             const scriptPanel = document.getElementById('script-panel');
             const editor = document.getElementById('code-editor');
             if (selectedObject) {
-                infoDiv.innerHTML = `<strong>${selectedObject.name}</strong>`;
+                infoDiv.innerHTML = `<strong>${selectedObject.name}</strong><br>Pozisyon: x${selectedObject.position.x.toFixed(1)} y${selectedObject.position.y.toFixed(1)} z${selectedObject.position.z.toFixed(1)}`;
                 scriptPanel.style.display = 'block';
                 editor.value = selectedObject.userData.script || "";
             } else {
@@ -324,7 +486,13 @@
                 scriptPanel.style.display = 'none';
             }
         }
-        function log(msg) { document.getElementById('status').innerText = msg; console.log(msg); }
+        
+        function log(msg) { 
+            const statusEl = document.getElementById('status');
+            statusEl.innerText = msg; 
+            console.log(msg); 
+        }
+        
         function onWindowResize() {
             const viewport = document.getElementById('viewport');
             camera.aspect = viewport.clientWidth / viewport.clientHeight;
@@ -335,16 +503,28 @@
         function animate() {
             requestAnimationFrame(animate);
             const time = performance.now();
+            
+            // Script'leri çalıştırma
             objects.forEach(obj => {
                 if (obj.userData && obj.userData.compiled) {
                     try { obj.userData.compiled(obj, time); } catch (err) {}
                 }
             });
+            
             controls.update();
             renderer.render(scene, camera);
+            
+            // Seçilen nesnenin pozisyon bilgisini sürekli güncelle
+            if (selectedObject) {
+                updateUI();
+            }
         }
 
-        init();
+        // Uygulama yüklendiğinde
+        window.onload = () => {
+            // Hiçbir şey yapma, kullanıcı Yeni Proje başlatana kadar beklet.
+            log("Başlamak için 'Yeni Proje'ye tıklayın.");
+        };
     </script>
 </body>
 </html>
