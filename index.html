@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.3 - Hierarchy Entegre</title>
+    <title>LunX Studio V2.4 - Stabil Giriş/Çıkış</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -13,13 +13,13 @@
         #loading-screen { display: flex; flex-direction: column; color: #007acc; font-size: 24px; }
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .auth-container input, #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
-        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; display: none; }
+        #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; }
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
         
         /* Proje Ekranı Stili */
         #project-screen { background-color: #252526; justify-content: flex-start; align-items: stretch; flex-direction: column; }
         .project-header { background-color: #1e1e1e; padding: 20px 40px; border-bottom: 1px solid #007acc; display: flex; justify-content: space-between; align-items: center; }
-        .user-panel button { background-color: #c92c2c; padding: 8px 15px; }
+        .user-panel button { background-color: #c92c2c; padding: 8px 15px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         .project-content { display: flex; padding: 20px; flex-grow: 1; }
         .template-area { width: 300px; padding: 10px; border-right: 1px solid #3e3e42; }
         .my-projects-area { flex-grow: 1; padding: 10px 20px; }
@@ -140,9 +140,9 @@
     </div>
     
     <div id="context-menu" style="display: none; position: fixed; background: #3e3e42; border: 1px solid #007acc; border-radius: 4px; z-index: 9000; padding: 5px;">
-        <div class="context-item" onclick="window.runSelectedScript()">⚡ Kodu Çalıştır</div>
-        <div class="context-item" onclick="window.deleteSelectedObject()">❌ Sil</div>
-        <div class="context-item" onclick="window.duplicateSelectedObject()">➕ Çoğalt</div>
+        <div class="context-item" onclick="window.runSelectedScript()">Kodu Çalıştır</div>
+        <div class="context-item" onclick="window.deleteSelectedObject()">Sil</div>
+        <div class="context-item" onclick="window.duplicateSelectedObject()">Çoğalt</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -157,7 +157,8 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
-          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrOoctk", // API KEY'İNİZ BURADA
+          // BURAYI KENDİ API KEY'İNİZLE DEĞİŞTİRİN
+          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
           projectId: "lunxstudio",
@@ -183,6 +184,14 @@
             document.getElementById('project-screen').style.display = 'none';
             document.getElementById('toolbar').style.display = 'none';
             document.getElementById('main-area').style.display = 'none';
+            document.getElementById('auth-error').style.display = 'none'; // Ek hata temizleme
+        }
+
+        window.showError = (msg) => { 
+            const errDiv = document.getElementById('auth-error');
+            errDiv.innerText = "Hata: " + msg; 
+            errDiv.style.display = 'block';
+            window.log("Auth Hatası: " + msg);
         }
 
         window.showAuth = (mode) => {
@@ -192,7 +201,6 @@
             const authTitle = document.getElementById('auth-title');
             const authSubmitBtn = document.getElementById('auth-submit-btn');
             const authSwitchLink = document.getElementById('auth-switch-link');
-            document.getElementById('auth-error').style.display = 'none';
 
             if (mode === 'register') {
                 authMode = 'register';
@@ -207,20 +215,26 @@
             }
         }
         
+        window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
+
         window.showProjectScreen = () => {
             window.hideAllScreens();
             document.getElementById('project-screen').style.display = 'flex';
         }
 
         window.logoutUser = async () => { 
+            if (!auth) return;
             await auth.signOut(); 
             window.showAuth('login');
         };
         
         window.handleAuthSubmit = async () => {
+            if (!auth) { window.showError("Firebase Bağlantısı Yok."); return; }
+            
             const email = document.getElementById('auth-email-input').value;
             const pass = document.getElementById('auth-password-input').value;
-            
+            document.getElementById('auth-error').style.display = 'none';
+
             if (!email || !pass) {
                 window.showError("Lütfen e-posta ve şifreyi girin.");
                 return;
@@ -232,11 +246,28 @@
                 } else {
                     await auth.signInWithEmailAndPassword(email, pass);
                 }
-                window.log("Giriş/Kayıt başarılı. Yönlendiriliyor...");
+                window.log("Giriş/Kayıt başarılı.");
             } catch (error) { 
                 window.showError(error.message); 
             }
         };
+
+        if(typeof firebase !== 'undefined') {
+            auth = firebase.auth();
+            auth.onAuthStateChanged((user) => {
+                const userEmail = user ? user.email : "Misafir Modu";
+                document.getElementById('user-email').innerText = userEmail;
+                document.getElementById('project-user-email').innerText = userEmail;
+
+                if (user) {
+                    window.showProjectScreen(); 
+                } else {
+                    if (document.getElementById('loading-screen').style.display !== 'flex') {
+                        window.showAuth('login');
+                    }
+                }
+            });
+        }
         
         // --- 3. STÜDYO BAŞLATMA VE KONTROLLER ---
 
@@ -259,7 +290,7 @@
             
             window.setTool('select'); 
             window.log(`LunX Studio hazır.`);
-            window.updateHierarchyList(); // Listeyi başlat
+            window.updateHierarchyList(); 
         }
 
         window.setTool = (mode) => {
@@ -361,7 +392,7 @@
             scene.add(mesh);
             objects.push(mesh);
             
-            window.updateHierarchyList(); // Listeyi güncelle
+            window.updateHierarchyList(); 
             
             if(!existingData) window.selectObject(mesh);
         }
@@ -372,7 +403,7 @@
             objects = [];
             window.selectObject(null);
             
-            window.updateHierarchyList(); // Listeyi güncelle
+            window.updateHierarchyList(); 
 
             window.log("Sahne temizlendi.");
         }
@@ -433,7 +464,7 @@
                 item.style.border = '1px solid transparent';
             });
             if (obj) {
-                obj.material.emissive.setHex(0x333333); // Highlight in 3D
+                obj.material.emissive.setHex(0x333333); 
                 const listItem = document.getElementById('item-' + obj.name);
                 if (listItem) {
                     listItem.style.backgroundColor = '#007acc';
@@ -636,17 +667,14 @@
                 db = app.database(); 
                 window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
 
-                auth.onAuthStateChanged((user) => {
-                    const userEmail = user ? user.email : "Misafir Modu";
-                    document.getElementById('user-email').innerText = userEmail;
-                    document.getElementById('project-user-email').innerText = userEmail;
-
-                    if (user) {
-                        window.showProjectScreen(); 
-                    } else {
-                        window.showAuth('login');
+                // onAuthStateChanged zaten tanımlı olduğu için, Firebase'in kullanıcıyı otomatik yönlendirmesini bekleriz.
+                // Eğer kullanıcı durumu hemen kontrol edilemezse, manuel olarak Giriş ekranına yönlendiririz.
+                setTimeout(() => {
+                    if (!auth.currentUser) {
+                         window.showAuth('login');
                     }
-                });
+                }, 2000); // 2 saniye bekleme süresi
+                
 
             } catch(e) {
                 window.hideAllScreens();
