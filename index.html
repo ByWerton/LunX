@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.14 - Karakter ve Çarpışma</title>
+    <title>LunX Studio V2.20 - Karakter ve Çarpışma</title>
     <style>
         /* Ana Stil */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
@@ -11,11 +11,18 @@
         
         /* Auth ve Loading Stil */
         #loading-screen { display: flex; flex-direction: column; color: #007acc; font-size: 24px; }
-        .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
+        .auth-container { background: #252526; padding: 40px; width: 400px; max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
+        .auth-container textarea { height: 80px; resize: vertical; font-size: 10px; }
         #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; }
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; margin-top: 15px; display: inline-block; }
         
+        /* Karakter Özelleştirme Alanı */
+        #customize-section { margin-top: 20px; padding: 15px; border: 1px dashed #007acc; border-radius: 4px; display: none; }
+        #customize-section h4 { color: #2da042; margin-top: 0; }
+        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; display: inline-block; margin-left: 10px; vertical-align: middle; }
+
+
         /* Proje Ekranı Stili */
         #project-screen { background-color: #252526; justify-content: flex-start; align-items: stretch; flex-direction: column; }
         .project-header { background-color: #1e1e1e; padding: 10px 40px; border-bottom: 1px solid #007acc; display: flex; justify-content: space-between; align-items: center; height: 60px;}
@@ -166,6 +173,20 @@
                 <input type="radio" id="gender-female" name="gender" value="female" style="margin-left: 15px;"> Kız (Pembe)
             </div>
 
+            <div id="customize-section">
+                <h4>KARAKTER GÖRÜNÜMÜ (Base64/URL)</h4>
+                <p style="font-size: 11px; color: #aaa; text-align: left; margin: 5px 0 10px 0; padding-left: 5%;">
+                    Kafa ve Gövde için Base64/URL yapıştırın. Resim yoksa varsayılan renk kullanılır.
+                </p>
+                <div style="text-align: left; padding-left: 5%;">
+                    <label style="font-weight: bold; font-size: 12px;">Kafa Resmi:</label> <div id="head-preview" class="custom-preview"></div>
+                    <textarea id="head-texture-input" placeholder="Kafa Base64 veya URL... (örn: data:image/png;base64,iVBOR...)" onchange="window.updatePreview('head')"></textarea>
+                    
+                    <label style="font-weight: bold; font-size: 12px;">Gövde Resmi:</label> <div id="torso-preview" class="custom-preview"></div>
+                    <textarea id="torso-texture-input" placeholder="Gövde Base64 veya URL... (örn: data:image/png;base64,iVBOR...)" onchange="window.updatePreview('torso')"></textarea>
+                </div>
+            </div>
+
             <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
             <input type="password" id="auth-password-input" placeholder="Şifre">
             <button id="auth-submit-btn" class="tool-btn" style="width: 95%; background-color:#007acc;" onclick="window.handleAuthSubmit()"></button>
@@ -301,7 +322,8 @@
         let joystickActive = false; 
         let joystickX = 0, joystickY = 0; 
         let authStateChecked = false; 
-        
+        let currentCustomization = {}; // Mevcut karakter özelleştirmesi
+
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let authMode = 'register'; 
@@ -342,6 +364,8 @@
             const authSwitchLink = document.getElementById('auth-switch-link');
             const usernameInput = document.getElementById('auth-username-input'); 
             const genderSelect = document.getElementById('gender-selection'); 
+            const customizeSection = document.getElementById('customize-section'); 
+
 
             if (mode === 'register') {
                 authMode = 'register';
@@ -351,6 +375,7 @@
                 
                 usernameInput.style.display = 'block'; 
                 genderSelect.style.display = 'block'; 
+                customizeSection.style.display = 'block';
 
             } else { 
                 authMode = 'login';
@@ -360,11 +385,27 @@
 
                 usernameInput.style.display = 'none'; 
                 genderSelect.style.display = 'none'; 
+                customizeSection.style.display = 'none';
             }
             authStateChecked = true; 
         }
         
         window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
+
+        window.updatePreview = (part) => {
+            const input = document.getElementById(`${part}-texture-input`).value;
+            const preview = document.getElementById(`${part}-preview`);
+            currentCustomization[`${part}Texture`] = input;
+            
+            if (input && (input.startsWith('data:image/') || input.startsWith('http'))) {
+                 preview.style.backgroundImage = `url('${input}')`;
+                 preview.innerText = "";
+            } else {
+                 preview.style.backgroundImage = 'none';
+                 preview.innerText = "Boş";
+            }
+        }
+
 
         window.showProjectScreen = (user) => {
              // Kullanıcı bilgilerini günceller ve ekranı gösterir
@@ -388,6 +429,12 @@
              // Veritabanından kullanıcı adını ve cinsiyetini çek
             const snapshot = await db.ref('users/' + user.uid).once('value');
             const userData = snapshot.val() || { username: 'Misafir', gender: 'male' };
+            
+            // Global özelleştirme verisini güncelle
+            currentCustomization = {
+                headTexture: userData.headTexture || "",
+                torsoTexture: userData.torsoTexture || ""
+            };
             
             // Kullanıcı Paneli Güncelleme
             const userPanel = document.getElementById('project-user-email');
@@ -422,6 +469,9 @@
             if (authMode === 'register') {
                 const username = document.getElementById('auth-username-input').value;
                 const gender = document.querySelector('input[name="gender"]:checked').value;
+                const headTexture = document.getElementById('head-texture-input').value;
+                const torsoTexture = document.getElementById('torso-texture-input').value;
+
 
                 if (!username) {
                     window.showError("Lütfen bir kullanıcı adı girin.");
@@ -430,11 +480,13 @@
                 
                 try {
                     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-                    // Kullanıcı verisini veritabanına kaydet
+                    // Kullanıcı verisini veritabanına kaydet (Özelleştirme verileri dahil)
                     await db.ref('users/' + userCredential.user.uid).set({
                         email: email,
                         username: username,
-                        gender: gender
+                        gender: gender,
+                        headTexture: headTexture, // Yeni: Base64/URL veri
+                        torsoTexture: torsoTexture // Yeni: Base64/URL veri
                     });
                     window.log("Kayıt başarılı. Oturum açılıyor...");
                     // onAuthStateChanged tetiklenecek ve bizi Proje Ekranına yönlendirecek.
@@ -1023,6 +1075,23 @@
         }
 
         // --- 4. SİMÜLASYON FONKSİYONLARI ---
+        
+        window.getTextureMaterial = (textureData, defaultColor) => {
+            const defaultMaterial = new THREE.MeshBasicMaterial({ color: defaultColor });
+            if (!textureData) return defaultMaterial;
+
+            try {
+                const loader = new THREE.TextureLoader();
+                const texture = loader.load(textureData);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 1); 
+                return new THREE.MeshBasicMaterial({ map: texture });
+            } catch (e) {
+                console.error("Doku yüklenirken hata:", e);
+                return defaultMaterial; 
+            }
+        }
 
         window.createBlockCharacter = (gender = 'male') => {
             const group = new THREE.Group();
@@ -1031,23 +1100,28 @@
             const limbWidth = 0.4;
             const limbHeight = 1.0;
             
+            // Doku Materyalleri
+            const headMaterial = window.getTextureMaterial(currentCustomization.headTexture, skinColor);
+            const torsoMaterial = window.getTextureMaterial(currentCustomization.torsoTexture, color);
+
             // Baş
             const headSize = 0.8;
-            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), new THREE.MeshBasicMaterial({ color: skinColor }));
+            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), headMaterial);
             head.position.y = 1.7; 
             head.name = "Head";
             group.add(head);
 
             // Gövde (Torso)
             const torsoHeight = 1.0;
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), new THREE.MeshBasicMaterial({ color: color }));
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), torsoMaterial);
             torso.position.y = 1.0;
             torso.name = "Torso";
             group.add(torso);
             
             // Kollar (Rotasyon için pivotu üste taşı)
+            const armMaterial = new THREE.MeshBasicMaterial({ color: skinColor });
             const createArm = (side) => {
-                const arm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: skinColor }));
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), armMaterial);
                 arm.position.set(side * 0.6, 1.5, 0); 
                 arm.geometry.translate(0, -limbHeight / 2, 0); 
                 arm.name = side === 0.6 ? "RightArm" : "LeftArm";
@@ -1057,8 +1131,9 @@
             group.add(createArm(-0.6));
 
             // Bacaklar (Rotasyon için pivotu üste taşı)
+            const legMaterial = new THREE.MeshBasicMaterial({ color: color });
             const createLeg = (side) => {
-                const leg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), new THREE.MeshBasicMaterial({ color: color }));
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), legMaterial);
                 leg.position.set(side * 0.2, 0.5, 0); 
                 leg.geometry.translate(0, -limbHeight / 2, 0); 
                 leg.name = side === 0.2 ? "RightLeg" : "LeftLeg";
@@ -1078,7 +1153,7 @@
             moveForward = moveBackward = moveLeft = moveRight = false;
         }
 
-        window.toggleSimulationMode = async (enable) => { // async yapıldı
+        window.toggleSimulationMode = async (enable) => { 
             isSimulationMode = enable;
             
             document.getElementById('play-button').style.display = enable ? 'none' : 'block';
@@ -1094,15 +1169,15 @@
             if (enable) {
                 // Kamera kontrolünü hareket için kullanmaya devam et
                 controls.enabled = true;
-                controls.enableZoom = false;
+                controls.enableZoom = true; // Zoom aktif
                 controls.enablePan = false; 
                 controls.minDistance = 3; 
                 controls.maxDistance = 6; 
-                await window.startSimulation(); // Karakter oluşturulana kadar bekle
+                await window.startSimulation(); 
             } else {
                 window.stopSimulation();
                 controls.enabled = true;
-                controls.enableZoom = true;
+                controls.enableZoom = true; // Zoom aktif
                 controls.enablePan = true;
                 controls.minDistance = 0.1; 
                 controls.maxDistance = Infinity; 
@@ -1141,6 +1216,7 @@
 
             // Kamerayı karakterin arkasına odakla
             controls.target.copy(player.position);
+            // Kamera pozisyonunu koruyarak target'ı karaktere ayarla
             camera.position.set(player.position.x + 3, player.position.y + 3, player.position.z + 5);
             controls.update();
 
@@ -1167,38 +1243,73 @@
             const speed = 5.0; 
             const gravity = 9.8 * 2.0; 
             const time = clock.getElapsedTime(); 
+            const dampingFactor = 0.8;
 
+            // Yer çekimi
             playerVelocity.y -= gravity * delta;
             
-            let targetDirection = new THREE.Vector3();
             let moveX = 0;
             let moveZ = 0;
+            let isMovingInput = false;
 
+            // Klavye girişi
             if (window.innerWidth > 768) { 
+                if(moveForward || moveBackward || moveLeft || moveRight) isMovingInput = true;
                 moveZ = Number(moveForward) - Number(moveBackward);
                 moveX = Number(moveRight) - Number(moveLeft);
-            } else { 
-                moveZ = -joystickY;
-                moveX = joystickX;
-            }
+            } 
             
-            targetDirection.set(moveX, 0, moveZ).normalize();
+            // Mobil Joystick girişi
+            if (window.innerWidth <= 768 && (Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1)) {
+                 isMovingInput = true;
+                 moveX = joystickX;
+                 moveZ = -joystickY;
+            }
 
-            if (targetDirection.lengthSq() > 0) {
+            // Hızlanma/Yavaşlama
+            const targetVelocityXZ = new THREE.Vector3(moveX, 0, moveZ).normalize().multiplyScalar(speed);
+            
+            // Hızı anlık olarak hedef hıza yaklaştır
+            playerVelocity.x += (targetVelocityXZ.x - playerVelocity.x) * dampingFactor;
+            playerVelocity.z += (targetVelocityXZ.z - playerVelocity.z) * dampingFactor;
+
+
+            if (isMovingInput) {
                 // Kamera Yönüne Göre Hareket Etme (OrbitControls'tan Açıyı Al)
                 const angle = controls.getAzimuthalAngle(); 
-                targetDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+                
+                playerDirection.set(playerVelocity.x, 0, playerVelocity.z).normalize();
+                
+                // Karakterin yönünü belirle
+                if (playerDirection.lengthSq() > 0.1) {
+                    const targetDirection = playerDirection.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+                    
+                    // Pozisyon Güncelleme (Hız vektörünü kullan)
+                    player.position.x += targetDirection.x * speed * delta;
+                    player.position.z += targetDirection.z * speed * delta;
 
-                player.position.x += targetDirection.x * speed * delta;
-                player.position.z += targetDirection.z * speed * delta;
-                
-                // Karakteri yürüme yönüne çevirme
-                const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
-                player.rotation.y += (targetRotation - player.rotation.y) * 8 * delta; 
-                
+                    // Karakteri yürüme yönüne çevirme (Yumuşak dönüş)
+                    const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
+                    player.rotation.y += (targetRotation - player.rotation.y) * 8 * delta; 
+                }
+
                 player.userData.isMoving = true; 
             } else {
-                player.userData.isMoving = false; 
+                 // Hareket girişi yoksa XZ hızını yavaşlat
+                playerVelocity.x *= 0.8; 
+                playerVelocity.z *= 0.8;
+                
+                // Hız yeterince düşükse durdur
+                if (playerVelocity.x < 0.01 && playerVelocity.z < 0.01) {
+                    playerVelocity.x = 0;
+                    playerVelocity.z = 0;
+                    player.userData.isMoving = false; 
+                } else {
+                     // Damping sonrası pozisyon güncellemesi
+                    player.position.x += playerVelocity.x * delta;
+                    player.position.z += playerVelocity.z * delta;
+                    player.userData.isMoving = true; // Damping devam ediyorsa animasyon yapsın
+                }
             }
             
             /* --- BASİT YÜRÜME ANİMASYONU --- */
@@ -1214,11 +1325,11 @@
                 if(legL && legR) { legL.rotation.x = -sineWave; legR.rotation.x = sineWave; }
 
             } else {
-                const damping = 0.9;
-                if(armL) armL.rotation.x *= damping;
-                if(armR) armR.rotation.x *= damping;
-                if(legL) legL.rotation.x *= damping;
-                if(legR) legR.rotation.x *= damping;
+                const dampingAnim = 0.9;
+                if(armL) armL.rotation.x *= dampingAnim;
+                if(armR) armR.rotation.x *= dampingAnim;
+                if(legL) legL.rotation.x *= dampingAnim;
+                if(legR) legR.rotation.x *= dampingAnim;
             }
             /* -------------------------------- */
 
@@ -1236,6 +1347,10 @@
 
             // Sadece çarpışmaya izin veren nesneleri filtrele
             const collidableObjects = objects.filter(obj => obj.userData && obj.userData.canCollide && obj.visible); 
+            // Yer de çarpışma için dahil edilmeli
+            const ground = scene.children.find(c => c.userData.type === 'ground');
+            if(ground && ground.userData.canCollide) collidableObjects.push(ground);
+
             const intersections = playerRaycaster.intersectObjects(collidableObjects, true);
             
             if (intersections.length > 0) {
@@ -1259,46 +1374,82 @@
         // --- MOBİL KONTROL MANTIĞI ---
 
         window.initMobileControls = () => {
+            const viewport = document.getElementById('viewport');
             const joystickArea = document.getElementById('joystick-area');
             const jumpButton = document.getElementById('jump-button');
             const joystickHandle = document.getElementById('joystick-handle');
             const maxRadius = 60; 
             
+            let activeTouchId = -1; // Joystick'i kontrol eden touch ID
+            
+            const getTouch = (e) => {
+                 if (activeTouchId !== -1) {
+                    return Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
+                 }
+                 return null;
+            }
+
+            const getJoystickCenter = () => {
+                const rect = joystickArea.getBoundingClientRect();
+                return {
+                    centerX: rect.left + rect.width / 2,
+                    centerY: rect.top + rect.height / 2
+                };
+            };
+            
             const startMove = (e) => {
                 if (!isSimulationMode) return;
-                // Eğer ekranın sağ yarısına dokunulduysa kamera kontrolü varsayılır
-                if (e.touches && e.touches[0].clientX > window.innerWidth / 2) return; 
-
-                e.preventDefault();
-                joystickActive = true;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 
-                const rect = joystickArea.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                window.updateJoystickPosition(clientX, clientY, centerX, centerY, maxRadius, joystickHandle);
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    // Dokunuş ekranın sol yarısında ve joystick kontrolü aktif değilse
+                    if (touch.clientX < window.innerWidth / 2 && activeTouchId === -1) {
+                        e.preventDefault();
+                        activeTouchId = touch.identifier;
+                        joystickActive = true;
+                        
+                        const { centerX, centerY } = getJoystickCenter();
+                        window.updateJoystickPosition(touch.clientX, touch.clientY, centerX, centerY, maxRadius, joystickHandle);
+                        break;
+                    }
+                }
             };
 
             const move = (e) => {
                 if (!joystickActive || !isSimulationMode) return;
-                e.preventDefault();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-                const rect = joystickArea.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
                 
-                window.updateJoystickPosition(clientX, clientY, centerX, centerY, maxRadius, joystickHandle);
+                const touch = getTouch(e);
+                if (touch) {
+                    e.preventDefault();
+                    const { centerX, centerY } = getJoystickCenter();
+                    window.updateJoystickPosition(touch.clientX, touch.clientY, centerX, centerY, maxRadius, joystickHandle);
+                }
             };
 
-            const endMove = () => {
-                joystickActive = false;
-                window.resetJoystick();
+            const endMove = (e) => {
+                const touch = getTouch(e);
+                if (touch) {
+                    joystickActive = false;
+                    activeTouchId = -1;
+                    window.resetJoystick();
+                }
             };
             
+            // Kamera hareketleri için sağ taraf
+            viewport.addEventListener('touchstart', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.clientX >= window.innerWidth / 2) {
+                        // Eğer dokunuş sağ taraftaysa, OrbitControls'a ilet (bu sayede hem yürüme hem kamera döngüsü çalışır)
+                        controls.domElement.dispatchEvent(new MouseEvent('mousedown', {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY,
+                            button: 0 
+                        }));
+                    }
+                }
+            }, false);
+
             jumpButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                  if (isSimulationMode && player && player.userData.onGround) {
@@ -1307,9 +1458,11 @@
                 }
             }, false);
             
-            joystickArea.addEventListener('touchstart', startMove, false);
-            document.addEventListener('touchmove', move, false);
-            document.addEventListener('touchend', endMove, false);
+            // Joystick Olayları (Sol taraf)
+            viewport.addEventListener('touchstart', startMove, false);
+            viewport.addEventListener('touchmove', move, false);
+            viewport.addEventListener('touchend', endMove, false);
+            viewport.addEventListener('touchcancel', endMove, false);
         }
         
         window.updateJoystickPosition = (clientX, clientY, centerX, centerY, maxRadius, handle) => {
@@ -1361,9 +1514,12 @@
                  
                  // Zemin çarpışması (Zemin objesiyle)
                  const ground = scene.children.find(c => c.userData.type === 'ground');
-                 if(ground && obj.position.y <= 0.5) { // Basit kontrol
-                    obj.position.y = 0.5;
-                    obj.userData.velocity.y = 0; 
+                 if(ground && ground.userData.canCollide) { 
+                     const objHalfHeight = obj.geometry.parameters.height ? obj.geometry.parameters.height / 2 : 0.5; // Basit tahmin
+                     if(obj.position.y <= ground.position.y + objHalfHeight) { 
+                         obj.position.y = ground.position.y + objHalfHeight;
+                         obj.userData.velocity.y = 0; 
+                     }
                  }
             });
             
