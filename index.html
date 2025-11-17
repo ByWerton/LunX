@@ -182,9 +182,9 @@
     <div id="auth-screen" class="full-screen-container" style="display: flex;">
         
         <div id="device-mode-switcher">
-            <button class="mode-btn active" data-mode="pc" onclick="window.setAuthContainerMode('pc', this)">💻 PC</button>
-            <button class="mode-btn" data-mode="tablet" onclick="window.setAuthContainerMode('tablet', this)">📱 Tablet</button>
-            <button class="mode-btn" data-mode="phone" onclick="window.setAuthContainerMode('phone', this)">📞 Telefon</button>
+            <button class="mode-btn active" data-mode="pc">💻 PC</button>
+            <button class="mode-btn" data-mode="tablet">📱 Tablet</button>
+            <button class="mode-btn" data-mode="phone">📞 Telefon</button>
         </div>
         
         <div id="auth-container" class="auth-container sim-pc">
@@ -1372,32 +1372,4 @@
             const doDrag = (e) => {
                 if (!joystickActive) return;
                 const bounds = joystickArea.getBoundingClientRect();
-                const centerX = bounds.left + bounds.width / 2;
-                const centerY = bounds.top + bounds.height / 2;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                window.updateJoystickPosition(clientX, clientY, centerX, centerY, maxRadius, handle);
-            };
-
-            const endDrag = () => {
-                joystickActive = false;
-                window.resetJoystick(handle);
-            };
-
-            joystickArea.addEventListener('mousedown', startDrag);
-            document.addEventListener('mousemove', doDrag);
-            document.addEventListener('mouseup', endDrag);
-
-            joystickArea.addEventListener('touchstart', startDrag);
-            document.addEventListener('touchmove', doDrag);
-            document.addEventListener('touchend', endDrag);
-
-            jumpButton.addEventListener('click', () => {
-                if (player && playerVelocity.y === 0) playerVelocity.y = 10;
-            });
-        }
-
-        window.updateJoystickPosition = (clientX, clientY, centerX, centerY, maxRadius, handle) => {
-            let deltaX = clientX - centerX;
-            let deltaY = clientY - centerY;
+                const
