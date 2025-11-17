@@ -3,45 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio</title>
+    <title>LunX Studio - Online RTDB</title>
     <style>
+        /* CSS stilleri aynı kalır */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; height: 100vh; }
-        
-        /* SOL PANEL: Araçlar */
         #sidebar-left { width: 200px; background-color: #252526; border-right: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .logo { font-size: 24px; font-weight: bold; color: #007acc; text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
-        button { background-color: #3e3e42; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; text-align: left; }
-        button:hover { background-color: #007acc; }
+        .logo { font-size: 24px; font-weight: bold; color: #007acc; text-align: center; margin-bottom: 10px; letter-spacing: 2px; }
+        #user-section { background: #1a1a1a; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #333; margin-bottom: 10px; }
+        #user-email { font-size: 11px; color: #fff; margin-bottom: 5px; word-break: break-all; }
+        .auth-btn { background-color: #007acc; color: white; border: none; padding: 5px 10px; cursor: pointer; font-size: 12px; width: 100%; border-radius: 3px; margin-top: 5px; }
+        .auth-btn.logout { background-color: #d9534f; }
+        button.tool-btn { background-color: #3e3e42; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; text-align: left; width: 100%; }
+        button.tool-btn:hover { background-color: #505050; }
         h4 { margin: 10px 0 5px 0; font-size: 14px; color: #aaa; }
-
-        /* ORTA: 3D Sahne */
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        
-        /* SAĞ PANEL: Özellikler ve Kod */
         #sidebar-right { width: 300px; background-color: #252526; border-left: 1px solid #3e3e42; padding: 10px; display: flex; flex-direction: column; }
         .panel-section { margin-bottom: 20px; }
-        input[type="text"], input[type="number"] { width: 100%; background: #3c3c3c; border: 1px solid #555; color: white; padding: 5px; margin-bottom: 5px; box-sizing: border-box; }
-        
-        /* Kod Editörü Alanı */
-        #code-editor { width: 100%; height: 200px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 10px; box-sizing: border-box; font-size: 12px; resize: vertical; }
-        .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; }
-        .run-btn:hover { background-color: #3fb950; }
-        
+        #code-editor { width: 100%; height: 200px; background-color: #1e1e1e; color: #dcdcdc; border: 1px solid #007acc; font-family: 'Consolas', monospace; padding: 10px; box-sizing: border-box; }
+        .run-btn { background-color: #2da042; text-align: center; margin-top: 5px; width: 100%; padding: 8px; border: none; color: white; cursor: pointer; }
         #status { font-size: 12px; color: #888; margin-top: auto; }
+        #auth-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #252526; padding: 20px; width: 300px; border-radius: 8px; border: 1px solid #007acc; text-align: center; }
+        .modal-content input { width: 90%; padding: 10px; margin: 5px 0; background: #333; border: 1px solid #555; color: white; }
+        #auth-error { color: #ff4444; font-size: 12px; margin-top: 5px; display: none; }
+        .btn-save { background-color: #007acc; }
+        .btn-load { background-color: #c99400; }
     </style>
 </head>
 <body>
 
+    <div id="auth-modal">
+        <div class="modal-content">
+            <div id="auth-error"></div>
+            <input type="email" id="email-input" placeholder="E-posta Adresi">
+            <input type="password" id="password-input" placeholder="Şifre">
+            <button class="auth-btn" onclick="window.loginUser()">Giriş Yap</button>
+            <button class="auth-btn" style="background-color: #444;" onclick="window.registerUser()">Yeni Kayıt</button>
+            <button class="auth-btn logout" style="margin-top:10px;" onclick="document.getElementById('auth-modal').style.display='none'">Kapat</button>
+        </div>
+    </div>
+
     <div id="sidebar-left">
         <div class="logo">LunX</div>
         
-        <h4>NESNELER</h4>
-        <button onclick="addShape('cube')">🟦 Küp Ekle</button>
-        <button onclick="addShape('sphere')">🔵 Küre Ekle</button>
-        <button onclick="addShape('cylinder')">🛢️ Silindir Ekle</button>
+        <div id="user-section">
+            <span id="user-email">Misafir Modu</span>
+            <button id="login-btn-sidebar" class="auth-btn" onclick="document.getElementById('auth-modal').style.display='flex'">Giriş / Kayıt</button>
+            <button id="logout-btn-sidebar" class="auth-btn logout" style="display:none;" onclick="window.logoutUser()">Çıkış Yap</button>
+        </div>
+
+        <h4>SAHNE YÖNETİMİ</h4>
+        <button class="tool-btn btn-save" onclick="window.saveScene()">💾 Sahneyi Kaydet</button>
+        <button class="tool-btn btn-load" onclick="window.loadScene()">📂 Sahneyi Yükle</button>
+        <button class="tool-btn" style="background-color:#c92c2c;" onclick="window.clearScene(true)">🗑️ Hepsini Sil</button>
         
-        <h4>SAHNE</h4>
-        <button onclick="clearScene()">🗑️ Hepsini Sil</button>
+        <h4>NESNELER</h4>
+        <button class="tool-btn" onclick="window.addShape('cube')">🟦 Küp Ekle</button>
+        <button class="tool-btn" onclick="window.addShape('sphere')">🔵 Küre Ekle</button>
+        <button class="tool-btn" onclick="window.addShape('cylinder')">🛢️ Silindir Ekle</button>
     </div>
 
     <div id="viewport"></div>
@@ -51,187 +70,261 @@
             <h4>SEÇİLİ NESNE</h4>
             <div id="object-info">Hiçbir nesne seçili değil.</div>
         </div>
-
         <div class="panel-section" id="script-panel" style="display:none;">
             <h4>LUNX SCRIPT (JS)</h4>
-            <p style="font-size:11px; color:#aaa;">"object" değişkenini kullanarak kod yazın. (Örn: object.rotation.y += 0.05)</p>
-            <textarea id="code-editor" placeholder="// Buraya kod yazın..."></textarea>
-            <button class="run-btn" onclick="saveScript()">💾 Kodu Kaydet & Çalıştır</button>
+            <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
+            <button class="run-btn" onclick="window.saveScript()">⚡ Kodu Çalıştır</button>
         </div>
-        
-        <div id="status">LunX Studio Ready.</div>
+        <div id="status">LunX Studio v1.2 Yüklendi.</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    <script>
-        // === LUNX ÇEKİRDEK ===
+    <script type="module">
+        // --- 1. FIREBASE SDK KURULUMU ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // !!! API Anahtarı ve diğer yapılandırma bilgileri eklendi. !!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // <-- Senink API Anahtarı buraya yerleştirildi
+            authDomain: "lunxstudio.firebaseapp.com",
+            databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
+            projectId: "lunxstudio",
+            storageBucket: "lunxstudio.firebasestorage.app",
+            messagingSenderId: "810358489202",
+            appId: "1:810358489202:web:301dbd444bf4608f2782eb"
+        };
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        let app, auth, db; 
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getDatabase(app); 
+            console.log("Firebase bağlandı ve Realtime Database hazır!");
+        } catch(e) {
+            console.error("Firebase başlatma hatası: Config bilgilerini kontrol et.", e);
+        }
+
+        // --- 2. KİMLİK DOĞRULAMA ---
+        
+        window.registerUser = async () => {
+            const email = document.getElementById('email-input').value;
+            const pass = document.getElementById('password-input').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, pass);
+                document.getElementById('auth-modal').style.display = 'none';
+            } catch (error) { showError(error.message); }
+        };
+        window.loginUser = async () => {
+            const email = document.getElementById('email-input').value;
+            const pass = document.getElementById('password-input').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                document.getElementById('auth-modal').style.display = 'none';
+            } catch (error) { showError(error.message); }
+        };
+        window.logoutUser = async () => { await signOut(auth); };
+        function showError(msg) { 
+            const errDiv = document.getElementById('auth-error');
+            errDiv.innerText = msg; errDiv.style.display = 'block';
+        }
+
+        if(auth) {
+            onAuthStateChanged(auth, (user) => {
+                const userEmailSpan = document.getElementById('user-email');
+                const loginBtn = document.getElementById('login-btn-sidebar');
+                const logoutBtn = document.getElementById('logout-btn-sidebar');
+                if (user) {
+                    userEmailSpan.innerText = user.email;
+                    userEmailSpan.style.color = "#4caf50";
+                    loginBtn.style.display = 'none';
+                    logoutBtn.style.display = 'block';
+                    log(user.email + " giriş yaptı. Sahne yüklenebilir.");
+                } else {
+                    userEmailSpan.innerText = "Misafir Modu";
+                    userEmailSpan.style.color = "#fff";
+                    loginBtn.style.display = 'block';
+                    logoutBtn.style.display = 'none';
+                    log("Misafir modundasınız. Kaydetmek için giriş yapın.");
+                }
+            });
+        }
+
+        // --- 3. VERİTABANI FONKSİYONLARI (RTDB) ---
+
+        window.saveScene = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                log("Hata: Sahneyi kaydetmek için giriş yapmalısınız!");
+                return;
+            }
+
+            const sceneData = objects.map(obj => ({
+                type: obj.userData.type,
+                position: obj.position.clone(),
+                color: obj.material.color.getHex(),
+                script: obj.userData.script || ""
+            }));
+
+            try {
+                const sceneRef = ref(db, 'scenes/' + user.uid);
+                await set(sceneRef, sceneData);
+                log("Sahne başarıyla buluta kaydedildi!");
+            } catch (error) {
+                log("Hata (Kaydetme): " + error.message);
+            }
+        }
+
+        window.loadScene = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                log("Hata: Yüklemek için giriş yapmalısınız!");
+                return;
+            }
+
+            try {
+                const sceneRef = ref(db, 'scenes/' + user.uid);
+                const snapshot = await get(sceneRef);
+
+                if (snapshot.exists()) {
+                    const savedObjects = snapshot.val();
+                    window.clearScene(false); 
+
+                    savedObjects.forEach(data => {
+                        window.addShape(data.type, data);
+                    });
+                    
+                    log("Sahne buluttan yüklendi!");
+                } else {
+                    log("Bulutta kayıtlı sahne bulunamadı.");
+                }
+            } catch (error) {
+                log("Hata (Yükleme): " + error.message);
+            }
+        }
+
+        // --- 4. LUNX 3D ENGINE ---
         
         let scene, camera, renderer, controls;
-        let objects = []; // Sahnedeki tıklanabilir nesneler
+        let objects = []; 
         let selectedObject = null;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Başlatma
         function init() {
             const viewport = document.getElementById('viewport');
-
-            // 1. Sahne
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111111);
-            
-            // Izgara (Grid)
             const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
             scene.add(gridHelper);
-
-            // 2. Kamera
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
-
-            // 3. Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
             viewport.appendChild(renderer.domElement);
-
-            // 4. Kontroller (Orbit)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-
-            // 5. Işıklar
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(5, 10, 7);
             scene.add(dirLight);
 
-            // Event Listeners
             window.addEventListener('resize', onWindowResize);
             viewport.addEventListener('mousedown', onMouseDown);
-
             animate();
         }
 
-        // === NESNE YÖNETİMİ ===
-
-        function addShape(type) {
+        window.addShape = (type, existingData = null) => {
             let geometry, material, mesh;
-            const color = Math.random() * 0xffffff;
-            material = new THREE.MeshStandardMaterial({ color: color });
+            let color, position, script;
 
+            if (existingData) {
+                color = existingData.color;
+                position = existingData.position;
+                script = existingData.script;
+            } else {
+                color = Math.random() * 0xffffff;
+                position = { x: (Math.random() - 0.5) * 4, y: 0.5, z: (Math.random() - 0.5) * 4 };
+                script = "";
+            }
+
+            material = new THREE.MeshStandardMaterial({ color: color });
             if (type === 'cube') geometry = new THREE.BoxGeometry(1, 1, 1);
             else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.6, 32, 16);
             else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-
-            mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set((Math.random() - 0.5) * 4, 0.5, (Math.random() - 0.5) * 4);
-            mesh.name = "LunX_" + type + "_" + objects.length;
             
-            // Script verisi için boş bir alan açalım
-            mesh.userData = { 
-                script: "",     // Kullanıcının yazdığı kod metni
-                compiled: null  // Çalıştırılabilir fonksiyon
-            };
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(position.x, position.y, position.z);
+            mesh.name = "LunX_" + type + "_" + objects.length;
+            mesh.userData = { script: script, compiled: null, type: type };
+
+            if (script) applyScript(mesh, script);
 
             scene.add(mesh);
             objects.push(mesh);
-            selectObject(mesh);
             
-            log("Nesne oluşturuldu: " + type);
+            if(!existingData) selectObject(mesh);
         }
 
-        function clearScene() {
-            // Sadece bizim eklediğimiz objeleri sil (Grid ve Işık kalacak)
+        window.clearScene = (showConfirm = true) => {
+            if (showConfirm && !confirm("Tüm sahne silinecek! Emin misiniz?")) return;
             objects.forEach(obj => scene.remove(obj));
             objects = [];
-            selectedObject = null;
-            updateUI();
+            selectObject(null);
             log("Sahne temizlendi.");
         }
 
-        // === SEÇİM VE UI ===
+        window.saveScript = () => {
+            if (!selectedObject) return;
+            const codeText = document.getElementById('code-editor').value;
+            applyScript(selectedObject, codeText);
+        }
+        
+        function applyScript(object, codeText) {
+            object.userData.script = codeText;
+            try {
+                object.userData.compiled = new Function('object', 'time', codeText);
+                log(object.name + " için script çalışıyor!");
+            } catch (e) {
+                log("Script Hatası: " + e.message);
+                object.userData.compiled = null;
+            }
+        }
 
+        // --- 5. YARDIMCI VE DÖNGÜ FONKSİYONLARI ---
         function onMouseDown(event) {
             const viewport = document.getElementById('viewport');
             const rect = renderer.domElement.getBoundingClientRect();
-            
             mouse.x = ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1;
-
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(objects);
-
-            if (intersects.length > 0) {
-                selectObject(intersects[0].object);
-            } else {
-                // Boşa tıklanırsa seçimi kaldır
-                // (İsteğe bağlı: seçimi kaldırmak istemiyorsan burayı sil)
-                // selectObject(null); 
-            }
+            if (intersects.length > 0) selectObject(intersects[0].object);
         }
-
         function selectObject(obj) {
-            // Eski seçili objeyi normale döndür (varsa)
-            if (selectedObject && selectedObject.material.emissive) {
-                selectedObject.material.emissive.setHex(0x000000);
-            }
-
+            if (selectedObject && selectedObject.material.emissive) selectedObject.material.emissive.setHex(0x000000);
             selectedObject = obj;
             updateUI();
-
-            if (obj) {
-                // Seçili olduğunu belli etmek için parlat
-                obj.material.emissive.setHex(0x333333);
-            }
+            if (obj) obj.material.emissive.setHex(0x333333);
         }
-
         function updateUI() {
             const infoDiv = document.getElementById('object-info');
             const scriptPanel = document.getElementById('script-panel');
             const editor = document.getElementById('code-editor');
-
             if (selectedObject) {
-                infoDiv.innerHTML = `
-                    <strong>İsim:</strong> ${selectedObject.name}<br>
-                    <strong>Pos:</strong> X:${selectedObject.position.x.toFixed(2)} Y:${selectedObject.position.y.toFixed(2)}<br>
-                    <strong>Renk:</strong> #${selectedObject.material.color.getHexString()}
-                `;
+                infoDiv.innerHTML = `<strong>${selectedObject.name}</strong>`;
                 scriptPanel.style.display = 'block';
-                // Varsa kayıtlı kodu editöre yükle
                 editor.value = selectedObject.userData.script || "";
             } else {
-                infoDiv.innerHTML = "Hiçbir nesne seçili değil.";
+                infoDiv.innerHTML = "Seçili değil.";
                 scriptPanel.style.display = 'none';
             }
         }
-
-        // === KODLAMA SİSTEMİ (CORE) ===
-
-        function saveScript() {
-            if (!selectedObject) return;
-            
-            const codeText = document.getElementById('code-editor').value;
-            selectedObject.userData.script = codeText;
-            
-            // Kodu derle (Function constructor kullanarak)
-            // 'object' değişkenini kullanıcının kullanımına sunuyoruz.
-            try {
-                // Kullanıcı kodunu bir fonksiyona çeviriyoruz
-                // Bu fonksiyon her kare (frame) çalışacak
-                selectedObject.userData.compiled = new Function('object', 'time', codeText);
-                log("Script başarıyla kaydedildi ve çalışıyor!");
-            } catch (e) {
-                log("Script Hatası: " + e.message);
-                selectedObject.userData.compiled = null;
-            }
-        }
-
-        function log(msg) {
-            document.getElementById('status').innerText = msg;
-            console.log(msg);
-        }
-
+        function log(msg) { document.getElementById('status').innerText = msg; console.log(msg); }
         function onWindowResize() {
             const viewport = document.getElementById('viewport');
             camera.aspect = viewport.clientWidth / viewport.clientHeight;
@@ -239,32 +332,19 @@
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
         }
 
-        // === OYUN DÖNGÜSÜ (UPDATE) ===
-
         function animate() {
             requestAnimationFrame(animate);
-            
             const time = performance.now();
-
-            // Sahnedeki her nesneyi kontrol et
             objects.forEach(obj => {
-                // Eğer nesnenin derlenmiş bir kodu varsa çalıştır
                 if (obj.userData && obj.userData.compiled) {
-                    try {
-                        obj.userData.compiled(obj, time);
-                    } catch (err) {
-                        // Hata olursa konsola bas (sürekli hata vermemesi için durdurulabilir)
-                    }
+                    try { obj.userData.compiled(obj, time); } catch (err) {}
                 }
             });
-
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Başlat
         init();
-
     </script>
 </body>
 </html>
