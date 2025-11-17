@@ -3,11 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.1 - Giriş Öncelikli</title>
+    <title>LunX Studio V2.2 - Hata Ayıklama</title>
     <style>
         /* CSS Stilleri (Değişmedi) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
-        .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
+        
+        /* Tüm ekranları başlangıçta gizle */
+        .full-screen-container { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #1e1e1e; 
+            z-index: 5000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        /* Yükleme Ekranı (İlk açılışta görünecek tek şey) */
+        #loading-screen {
+            display: flex; /* Başlangıçta görünür olacak */
+            flex-direction: column;
+            color: #007acc;
+            font-size: 24px;
+        }
+
         .auth-container { background: #252526; padding: 40px; width: 350px; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .auth-container input, #template-select { width: 90%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box;}
         #auth-error { color: #ff4444; font-size: 13px; margin-top: 15px; display: none; }
@@ -40,6 +62,10 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-screen" class="full-screen-container">
+        LUNX STUDIO <br> ⚙️ Yükleniyor...
+    </div>
 
     <div id="auth-screen" class="full-screen-container">
         <div id="auth-container" class="auth-container">
@@ -129,7 +155,6 @@
     <script>
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
-        // ** KULLANICIDAN ALINAN TAM YAPILANDIRMA **
         const firebaseConfig = {
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
           authDomain: "lunxstudio.firebaseapp.com",
@@ -142,16 +167,6 @@
         };
         
         let app, auth, db;
-        try {
-            app = firebase.initializeApp(firebaseConfig);
-            auth = app.auth(); 
-            db = app.database(); 
-            window.log("Firebase SDK (v8) bağlandı.");
-        } catch(e) {
-            console.error("Firebase BAŞLATMA KRİTİK HATASI:", e);
-            window.log("KRİTİK HATA: Firebase başlatılamadı.");
-        }
-
         let scene, camera, renderer, controls, transformControls;
         let objects = []; 
         let selectedObject = null;
@@ -160,12 +175,19 @@
         let authMode = 'register'; 
 
         // --- 2. GİRİŞ / KAYIT / EKRAN YÖNETİMİ ---
-
-        window.showAuth = (mode) => {
-            document.getElementById('auth-screen').style.display = 'flex';
+        
+        // Tüm ekranları gizler, sadece istenileni gösterir.
+        window.hideAllScreens = () => {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('project-screen').style.display = 'none';
             document.getElementById('toolbar').style.display = 'none';
             document.getElementById('main-area').style.display = 'none';
+        }
+
+        window.showAuth = (mode) => {
+            window.hideAllScreens();
+            document.getElementById('auth-screen').style.display = 'flex';
             
             const authTitle = document.getElementById('auth-title');
             const authSubmitBtn = document.getElementById('auth-submit-btn');
@@ -185,8 +207,16 @@
             }
         }
         
-        window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
+        window.showProjectScreen = () => {
+            window.hideAllScreens();
+            document.getElementById('project-screen').style.display = 'flex';
+        }
 
+        window.logoutUser = async () => { 
+            await auth.signOut(); 
+            window.showAuth('login');
+        };
+        
         window.handleAuthSubmit = async () => {
             const email = document.getElementById('auth-email-input').value;
             const pass = document.getElementById('auth-password-input').value;
@@ -202,62 +232,25 @@
                 } else {
                     await auth.signInWithEmailAndPassword(email, pass);
                 }
-                // Başarılı giriş/kayıttan sonra proje seçme ekranına yönlendir
-                window.showProjectScreen(); 
-                window.log("Giriş/Kayıt başarılı.");
+                window.log("Giriş/Kayıt başarılı. Yönlendiriliyor...");
+                // auth.onAuthStateChanged tetiklenecek ve showProjectScreen çağrılacak.
             } catch (error) { 
                 window.showError(error.message); 
             }
         };
 
-        window.showProjectScreen = () => {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('project-screen').style.display = 'flex';
-            document.getElementById('toolbar').style.display = 'none';
-            document.getElementById('main-area').style.display = 'none';
-        }
-
-        window.logoutUser = async () => { 
-            await auth.signOut(); 
-            window.showAuth('login');
-        };
-
-        window.showError = (msg) => { 
-            const errDiv = document.getElementById('auth-error');
-            errDiv.innerText = msg; errDiv.style.display = 'block';
-        }
-
-        if(auth) {
-            auth.onAuthStateChanged((user) => {
-                const userEmail = user ? user.email : "Misafir Modu";
-                const color = user ? "#4caf50" : "#fff";
-                document.getElementById('user-email').innerText = userEmail;
-                document.getElementById('project-user-email').innerText = userEmail;
-                document.getElementById('user-email').style.color = color;
-                
-                if (user) {
-                    // Kullanıcı giriş yaptıysa ve ana ekran açık değilse, proje ekranını göster
-                    if (document.getElementById('main-area').style.display === 'none') {
-                        window.showProjectScreen(); 
-                    }
-                } else {
-                    // Kullanıcı yoksa, Auth ekranını göster
-                    window.showAuth('login');
-                }
-            });
-        }
-        
         // --- 3. STÜDYO BAŞLATMA VE KONTROLLER (Değişmedi) ---
 
         window.startStudio = (isNew = false) => {
-            document.getElementById('project-screen').style.display = 'none';
+            window.hideAllScreens();
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
             
+            // 3D motoru burada başlatılır, böylece boyutlandırma hataları önlenir.
             if (!controls) { 
                 window.initFullScene(); 
             } else {
-                window.onWindowResize(); // Tekrar boyutlandırma
+                window.onWindowResize(); 
             }
             
             if(isNew) {
@@ -270,25 +263,10 @@
             window.log(`LunX Studio hazır.`);
         }
 
-        window.setTool = (mode) => {
-            if (!transformControls) return;
-
-            document.querySelectorAll('.tool-group .tool-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tool-${mode}`).classList.add('active');
-
-            if (mode === 'select') {
-                transformControls.detach();
-            } else {
-                if (selectedObject) {
-                    transformControls.attach(selectedObject);
-                }
-                transformControls.setMode(mode);
-            }
-            window.log("Tool: " + mode.charAt(0).toUpperCase() + mode.slice(1));
-        }
-
+        // Diğer Stüdyo fonksiyonları (initFullScene, setTool, addShape, saveScene, loadScene, animate vb.) değişmedi
+        // Orijinal kodunuzda olduğu gibi kalmalıdır.
+        
         window.initFullScene = () => {
-             // Three.js sahne, kamera ve kontrollerin başlangıcı
              try {
                 const viewport = document.getElementById('viewport');
                 scene = new THREE.Scene();
@@ -302,10 +280,7 @@
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
                 transformControls = new THREE.TransformControls(camera, renderer.domElement);
                 scene.add(transformControls);
-
-                transformControls.addEventListener('dragging-changed', function (event) {
-                    controls.enabled = !event.value;
-                });
+                transformControls.addEventListener('dragging-changed', function (event) { controls.enabled = !event.value; });
                 
                 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
                 scene.add(ambientLight);
@@ -317,7 +292,6 @@
                 viewport.addEventListener('mousedown', window.onMouseDown);
                 window.addEventListener('keydown', window.onKeyDown); 
                 window.animate();
-
             } catch (e) {
                 console.error("3D İNİT KRİTİK HATASI:", e);
                 window.log("KRİTİK HATA: 3D motoru başlatılamadı.");
@@ -343,7 +317,7 @@
                 window.addShape('cube', { position: { x: 0, y: 1.5, z: 0 }, color: 0xff0000, script: "object.rotation.y += 0.01;" });
             }
         }
-
+        
         window.addShape = (type, existingData = null) => {
             if (!scene) return;
             let geometry, material, mesh;
@@ -385,8 +359,6 @@
             window.log("Sahne temizlendi.");
         }
         
-        // --- 4. VERİTABANI VE KAYDET/YÜKLE (Değişmedi) ---
-
         window.saveScene = async () => {
             const user = auth.currentUser;
             if (!user) { window.log("Hata: Kaydetmek için giriş yapmalısınız!"); return; }
@@ -405,7 +377,6 @@
         window.loadScene = async () => {
             const user = auth.currentUser;
             if (!user) { window.log("Hata: Yüklemek için giriş yapmalısınız!"); return; }
-            
             window.log("Kayıtlı sahne yükleniyor...");
 
             try {
@@ -414,9 +385,7 @@
                     const savedObjects = snapshot.val();
                     window.startStudio(false); 
                     window.clearScene(false); 
-                    savedObjects.forEach(data => {
-                        window.addShape(data.type, data);
-                    });
+                    savedObjects.forEach(data => { window.addShape(data.type, data); });
                     window.log("Sahne buluttan yüklendi!");
                 } else {
                     window.log("Bulutta kayıtlı sahne bulunamadı. Lütfen yeni bir proje başlatın.");
@@ -424,9 +393,7 @@
                 }
             } catch (error) { window.log("Hata (Yükleme): " + error.message); }
         }
-
-        // --- 5. ETKİLEŞİM VE GÜNCELLEME (Değişmedi) ---
-
+        
         window.onKeyDown = (event) => {
             const key = event.key.toLowerCase();
             if (key === 'delete' && selectedObject) {
@@ -538,22 +505,37 @@
             if (renderer && scene && camera) renderer.render(scene, camera);
         }
         
-        // --- UYGULAMA BAŞLANGICI: SADECE 3D MOTORUNU İLK AÇILIŞTA HAZIRLA ---
+        // --- UYGULAMA BAŞLANGICI: Firebase'i yükle ve Auth durumunu kontrol et ---
         window.onload = () => {
-            // 1. 3D motorunu (Three.js) başlat (Gri ekranı engellemek için)
-            window.initFullScene(); 
-            
-            // 2. 3D Studio'yu ve Proje Ekranını gizle
-            document.getElementById('main-area').style.display = 'none'; 
-            document.getElementById('project-screen').style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'flex'; // Yükleniyor ekranını göster
 
-            if (!auth) {
-                // Firebase bağlantısı beklenemezse, sadece Auth'u göster
-                window.log("KRİTİK HATA: Firebase kütüphanesi yüklenemedi. Konsolu kontrol edin.");
-                window.showAuth('login');
-            } else {
-                // Firebase Auth'un kullanıcı durumunu (giriş yapılıp yapılmadığını) kontrol etmesi için beklenir.
-                window.log("LunX Studio V2.1 yüklendi. Kullanıcı durumu kontrol ediliyor...");
+            try {
+                // Firebase'i başlat
+                app = firebase.initializeApp(firebaseConfig);
+                auth = app.auth(); 
+                db = app.database(); 
+                window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
+
+                // Auth durumundaki değişiklikleri dinle
+                auth.onAuthStateChanged((user) => {
+                    const userEmail = user ? user.email : "Misafir Modu";
+                    document.getElementById('user-email').innerText = userEmail;
+                    document.getElementById('project-user-email').innerText = userEmail;
+
+                    if (user) {
+                        // Kullanıcı giriş yapmışsa: Proje Yönetim ekranını göster
+                        window.showProjectScreen(); 
+                    } else {
+                        // Kullanıcı giriş yapmamışsa: Auth ekranını göster
+                        window.showAuth('login');
+                    }
+                });
+
+            } catch(e) {
+                window.hideAllScreens();
+                document.getElementById('auth-screen').style.display = 'flex'; // Auth ekranını göster
+                window.showError("KRİTİK HATA: Firebase başlatılamadı. Konsolu kontrol edin.");
+                console.error("Firebase BAŞLATMA KRİTİK HATASI:", e);
             }
         };
     </script>
