@@ -3,18 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.32 - Mobil Uyumlu Auth ve Customization</title>
+    <title>LunX Studio V2.32 - Tam Sürüm (Mobil Uyumlu Auth, Customization, Firebase)</title>
     <style>
         /* CSS Stilleri (Giriş Ekranı ve Mobil Düzeltmeleri Dahil) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         
-        /* 1. AUTH CONTAINER DÜZELTMESİ (Responsive için Max-Width eklendi) */
+        /* 1. Cihaz Modu Butonları (Sağ Üst Köşe) */
+        #device-mode-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 5100; 
+        }
+        .mode-btn {
+            background-color: #3e3e42;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .mode-btn:hover {
+            background-color: #505050;
+        }
+        .mode-btn.active {
+            background-color: #007acc;
+            border-color: #007acc;
+        }
+
+        /* 2. AUTH CONTAINER DÜZELTMESİ (Responsive ve Simülasyon Genişlikleri) */
         .auth-container, .settings-panel { 
             background: #252526; 
             padding: 40px; 
             width: 400px; 
-            max-width: 90%; /* Mobil cihazlarda ekranın %90'ını kaplar */
+            max-width: 90%; 
             max-height: 80vh; 
             overflow-y: auto; 
             border-radius: 8px; 
@@ -26,11 +53,25 @@
             align-items: center; 
             gap: 15px; 
             box-sizing: border-box; 
+            transition: width 0.3s; /* Boyut değişimini yumuşatır */
+        }
+
+        /* Simülasyon Modları */
+        .auth-container.sim-phone {
+            width: 375px; 
+        }
+        .auth-container.sim-tablet {
+            width: 768px; 
+            max-width: 90%;
+        }
+        .auth-container.sim-pc {
+            width: 450px; 
+            max-width: 90%;
         }
         
-        /* 2. INPUT & BUTTON DÜZELTMESİ (Genişlik %100 olarak ayarlandı, container max-width'e uyacak) */
+        /* 3. INPUT & BUTTON DÜZELTMESİ */
         .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select, .start-btn { 
-            width: 100%; /* İç elemanlar tam genişlik kullanır */
+            width: 100%; 
             padding: 12px; 
             background: #333; 
             border: 1px solid #555; 
@@ -50,24 +91,20 @@
         #auth-error { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; display: inline-block; }
         
-        /* 3. MOBİL İÇİN DÜZENLEMELER */
+        /* 4. MOBİL İÇİN DÜZENLEMELER */
         @media (max-width: 768px) {
-             /* Auth Container daraltıldığında padding azaltılabilir */
             .auth-container {
                 padding: 20px;
                 gap: 10px;
             }
-             /* Başlıklar küçültülebilir */
             .auth-container h1 { font-size: 28px !important; }
 
-            /* Proje Ekranı (Project Screen) Mobil Uyumlu Yapı */
             .project-content {
-                flex-direction: column; /* Dikey sıralama */
+                flex-direction: column; 
                 gap: 20px;
                 padding: 10px;
             }
 
-            /* 3D Görünüm ve Ayarlar Menüsü */
             #settings-screen { 
                 flex-direction: column; 
                 padding: 10px;
@@ -85,11 +122,14 @@
                 height: auto;
             }
             .customize-panel {
-                width: 100% !important; /* Panel genişliği tam ekran */
+                width: 100% !important; 
             }
             #customize-viewport {
                 width: 100% !important; 
-                height: 300px !important; /* Mobil önizleme yüksekliği */
+                height: 300px !important; 
+            }
+            #mobile-controls {
+                display: block;
             }
         }
         
@@ -129,25 +169,25 @@
             position: absolute; 
             bottom: 10px; 
             left: 10px; 
-            display: none; /* Varsayılan olarak gizli */
+            display: none; 
             z-index: 10;
         }
         #joystick-area { width: 100px; height: 100px; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
         #joystick-handle { width: 40px; height: 40px; background: #007acc; border-radius: 50%; position: absolute; top: 30px; left: 30px; }
         #jump-button { position: absolute; bottom: 10px; right: 10px; width: 60px; height: 60px; background: #2da042; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; z-index: 10; }
-
-        /* Mobil cihazlarda editör açıkken joystick'i göster */
-        @media (max-width: 768px) {
-            #mobile-controls {
-                display: block;
-            }
-        }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="full-screen-container" style="display: flex;">
-        <div id="auth-container" class="auth-container">
+        
+        <div id="device-mode-switcher">
+            <button class="mode-btn active" data-mode="pc" onclick="window.setAuthContainerMode('pc', this)">💻 PC</button>
+            <button class="mode-btn" data-mode="tablet" onclick="window.setAuthContainerMode('tablet', this)">📱 Tablet</button>
+            <button class="mode-btn" data-mode="phone" onclick="window.setAuthContainerMode('phone', this)">📞 Telefon</button>
+        </div>
+        
+        <div id="auth-container" class="auth-container sim-pc">
             <h1 class="logo" style="font-size: 36px; margin-bottom: 10px;">LUNX STUDIO</h1>
             <h2 id="auth-title" style="color:#007acc; margin-bottom: 10px;"></h2>
             <div id="auth-error" style="display: none;"></div>
@@ -1404,41 +1444,21 @@
             }
         }
         
-        // --- 6. UYGULAMA BAŞLANGICI ---
-        const initializeApp = async () => {
-            if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
-                window.showAuth('login');
-                window.showError("KRİTİK HATA: Gerekli kütüphaneler (Firebase/Three.js) yüklenemedi. İnternet bağlantınızı kontrol edin.");
-                return;
-            }
-
-            try {
-                app = firebase.initializeApp(firebaseConfig);
-                auth = app.auth(); 
-                db = app.database(); 
-                window.log("Firebase bağlantısı başarılı. Kullanıcı durumu kontrol ediliyor...");
-                
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        window.log("Oturum Açık: " + user.email);
-                        window.showProjectScreen(user); 
-                    } else {
-                        window.log("Oturum Kapalı. Giriş ekranı açılıyor.");
-                        window.showAuth('login');
-                    }
-                });
-                
-                window.addEventListener('resize', window.onWindowResize, false);
-                window.onWindowResize();
-
-            } catch(e) {
-                window.showAuth('login');
-                window.showError("KRİTİK HATA: Firebase yapılandırma hatası veya sunucu bağlantı sorunu.");
-                console.error("Firebase Başlatma Hatası:", e);
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
-</body>
-</html>
+        // --- 6. CİHAZ ÖNİZLEME FONKSİYONLARI ---
+        
+        window.setAuthContainerMode = (mode, button) => {
+            const container = document.getElementById('auth-container');
+            
+            // Tüm mod sınıflarını temizle
+            container.classList.remove('sim-pc', 'sim-tablet', 'sim-phone');
+            
+            // Yeni mod sınıfını ekle
+            container.classList.add(`sim-${mode}`);
+            
+            // Butonların aktif/pasif durumunu güncelle
+            document.querySelectorAll('#device-mode-switcher .mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            window.log(`${mode.
