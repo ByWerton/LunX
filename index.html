@@ -1364,4 +1364,25 @@
                             obj.userData.scale[axis] = newSize; 
                             
                             // Geometri değişiminden sonra pozisyonu güncelle (merkezleme)
-                            obj.geometry
+                            obj.geometry.attributes.position.needsUpdate = true;
+                            
+                            LunX.tools.saveState(); 
+                        });
+                        
+                        // MESH'e ÖZEL ÖZELLİKLER (Materyal)
+                        LunX.ui.addSectionHeader(div, 'Part');
+                        LunX.ui.addMaterialProperty(div, 'Material', obj.userData.material, (val) => { 
+                            LunX.ui.setMaterial(val, obj.userData.color); 
+                        });
+                        LunX.ui.addPropertyRow(div, 'Color', 'color', `#${obj.userData.color.toString(16).padStart(6, '0')}`, (val) => { 
+                             LunX.ui.setMaterial(obj.userData.material, parseInt(val.replace('#',''), 16));
+                        });
+                        LunX.ui.addPropertyRow(div, 'CanCollide', 'checkbox', obj.userData.canCollide, (val) => { 
+                            obj.userData.canCollide = val; LunX.tools.saveState(); 
+                        });
+                    }
+                },
+                
+                addPropertyRow: (parent, name, type, value, onChange=null) => {
+                    const row = document.createElement('div');
+                    row.className = 'prop
