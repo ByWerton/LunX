@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya</title>
+    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya (Gelişmiş Mobil Kontrol)</title>
     <style>
         /* ==================================================================== */
         /* CSS Stilleri - TAMAMI BURADA BİRLEŞTİRİLDİ */
@@ -79,16 +79,39 @@
             pointer-events: none; width: calc(100% - 20px); justify-content: space-between;
         }
         #mobile-controls.active { pointer-events: auto; }
-        #joystick-wrapper { width: 100px; height: 100px; }
-        #joystick-area { width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
+        #joystick-wrapper { 
+            width: 100px; height: 100px; 
+            /* Mobil cihazlarda sol alt köşeye sabitlenmesi için */
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px;
+        }
+        #joystick-area { 
+            width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.4); 
+            border-radius: 50%; 
+            position: relative; 
+            touch-action: none;
+        }
         #joystick-handle { 
-            width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; 
-            position: absolute; top: 30px; left: 30px; touch-action: none; 
+            width: 40px; height: 40px; 
+            background: var(--primary-color); 
+            border-radius: 50%; 
+            position: absolute; 
+            top: 30px; left: 30px; 
+            touch-action: none; 
         }
         #jump-button { 
-            width: 60px; height: 60px; background: var(--secondary-color); border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; font-size: 30px; 
-            color: white; z-index: 10; 
+            width: 60px; height: 60px; 
+            background: var(--secondary-color); 
+            border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 30px; color: white; z-index: 10; 
+            /* Mobil cihazlarda sağ alt köşeye sabitlenmesi için */
+            position: fixed; 
+            bottom: 30px; 
+            right: 30px;
+            pointer-events: auto; /* Tıklanabilir olmasını sağla */
         }
         
         /* Skybox Panel Stilleri */
@@ -301,6 +324,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/CapsuleGeometry.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/WebGL.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/tween.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -338,12 +364,17 @@
              value: 0x87ceeb // Varsayılan mavi renk
         }; 
         
-        // PLAYER DEĞİŞKENLERİ
+        // PLAYER VE ANİMASYON DEĞİŞKENLERİ (GÜNCELLENDİ)
         let player, playerVelocity, playerDirection; 
         const playerHeight = 1.0; 
         let isOnGround = true; 
         const PLAYER_SPEED = 5.0; // Karakter hareket hızı
         const PLAYER_JUMP_FORCE = 8; // Zıplama gücü
+        
+        let playerMixer = null; // Animasyon Karıştırıcısı
+        let animationActions = {}; // Animasyonlar için aksiyonlar
+        let currentAction = 'idle'; // Varsayılan animasyon durumu
+        const WALK_SPEED_THRESHOLD = 0.05; // Yürüme animasyonuna geçiş eşiği
 
         let moveForward = false;
         let moveBackward = false;
@@ -937,6 +968,7 @@
             return new THREE.MeshStandardMaterial({ color: color });
         }
         
+        // GÜNCELLENDİ: Animasyona uygun hale getirildi (Kollar/Bacaklar ayrı gruplar içinde)
         window.createBlockCharacter = (gender = 'male') => {
             const group = new THREE.Group();
             
@@ -962,27 +994,41 @@
             torso.castShadow = true;
             group.add(torso);
             
-            const createArm = (side) => {
-                const arm = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), finalArmMat);
-                arm.position.set(side * 0.6, 1.5, 0); 
-                arm.geometry.translate(0, -limbHeight / 2, 0); 
-                arm.name = side === 0.6 ? "RightArm" : "LeftArm";
-                arm.castShadow = true;
-                return arm;
-            };
-            group.add(createArm(0.6));
-            group.add(createArm(-0.6));
+            const createLimb = (isArm, side) => {
+                const height = limbHeight;
+                const width = limbWidth;
+                const mat = isArm ? finalArmMat : finalLegMat;
+                const name = (isArm ? (side > 0 ? "RightArm" : "LeftArm") : (side > 0 ? "RightLeg" : "LeftLeg"));
+                
+                // 1. Kapsayıcı Grubu (Dönüş Merkezi)
+                const limbGroup = new THREE.Group();
+                
+                // 2. Mesh (Grup içinde aşağı kaydırılmış)
+                const limbMesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, width), mat);
+                // ÖNEMLİ: Mesh'i merkezin altına kaydır, böylece rotasyon doğru pivot noktasında olur (omuz/kalça).
+                limbMesh.position.y = -height / 2; 
+                limbMesh.castShadow = true;
 
-            const createLeg = (side) => {
-                const leg = new THREE.Mesh(new THREE.BoxGeometry(limbWidth, limbHeight, limbWidth), finalLegMat);
-                leg.position.set(side * 0.2, 0.5, 0); 
-                leg.geometry.translate(0, -limbHeight / 2, 0); 
-                leg.name = side === 0.2 ? "RightLeg" : "LeftLeg";
-                leg.castShadow = true;
-                return leg;
+                limbGroup.add(limbMesh);
+                limbGroup.name = name + "Group";
+                
+                if (isArm) {
+                    // Kol başlangıç pozisyonu
+                    limbGroup.position.set(side * 0.6, 1.5, 0); 
+                } else {
+                    // Bacak başlangıç pozisyonu
+                    limbGroup.position.set(side * 0.2, 0.5, 0);
+                }
+                
+                return limbGroup;
             };
-            group.add(createLeg(0.2));
-            group.add(createLeg(-0.2));
+            
+            const rightArm = createLimb(true, 1);
+            const leftArm = createLimb(true, -1);
+            const rightLeg = createLimb(false, 1);
+            const leftLeg = createLimb(false, -1);
+
+            group.add(rightArm, leftArm, rightLeg, leftLeg);
             
             group.position.y = 0.5; 
             
@@ -997,13 +1043,17 @@
                 
                 scene.remove(player); 
                 
+                // Yeni karakteri oluştur
                 player = window.createBlockCharacter(currentCustomization.gender);
                 
                 player.position.copy(pos);
                 player.rotation.copy(rot);
                 
                 scene.add(player); 
-                window.log("Oyuncu karakteri güncellendi.");
+                window.log("Oyuncu karakteri güncellendi. Animasyonlar sıfırlandı.");
+                
+                // Animasyonları sıfırla ve yeniden başlat
+                window.initPlayerControls(true);
             }
         }
 
@@ -1690,21 +1740,86 @@
             } catch (e) {}
         }
         
-        window.initPlayerControls = () => {
+        // GÜNCELLENDİ: Animasyon başlatma mantığı eklendi
+        window.setAnimation = (name) => {
+            if (currentAction === name || !animationActions[name]) return;
+
+            const newAction = animationActions[name];
+            const oldAction = animationActions[currentAction];
+            
+            newAction.enabled = true;
+            newAction.setEffectiveTimeScale(1);
+            newAction.setEffectiveWeight(1);
+            
+            oldAction.fadeOut(0.2); // Yumuşak geçiş süresi
+            newAction.fadeIn(0.2); 
+            
+            newAction.play();
+            currentAction = name;
+        }
+
+        // GÜNCELLENDİ: Animasyon kurulumu ve player'ın sahneye eklenmesi
+        window.initPlayerControls = (isUpdate = false) => {
             playerVelocity = new THREE.Vector3(0, 0, 0);
             playerDirection = new THREE.Vector3(0, 0, 0);
             
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
             let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
             
-            if (player) { scene.remove(player); } 
+            if (!isUpdate) {
+                if (player) { scene.remove(player); } 
+                player = window.createBlockCharacter(currentCustomization.gender);
+                player.position.copy(startPos);
+                player.position.y = startPos.y + playerHeight * 0.5; 
+                scene.add(player);
+            }
+
+            // --- YENİ: Animasyon Başlatma ---
+            playerMixer = new THREE.AnimationMixer(player);
+            animationActions = {};
+            currentAction = 'idle';
             
-            player = window.createBlockCharacter(currentCustomization.gender);
-            player.position.copy(startPos);
-            player.position.y = startPos.y + playerHeight * 0.5; 
+            const rightArm = player.getObjectByName("RightArmGroup");
+            const leftArm = player.getObjectByName("LeftArmGroup");
+            const rightLeg = player.getObjectByName("RightLegGroup");
+            const leftLeg = player.getObjectByName("LeftLegGroup");
             
-            scene.add(player);
+            if (rightArm && leftArm && rightLeg && leftLeg) {
+                // Yürüme Animasyonu (Walk)
+                const walkClip = new THREE.AnimationClip('walk', -1, [
+                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 0.5, 1], [0, Math.PI * 0.3, 0]),
+                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 0.5, 1], [0, -Math.PI * 0.3, 0]),
+                    new THREE.KeyframeTrack(`${rightLeg.name}.rotation[x]`, [0, 0.5, 1], [0, -Math.PI * 0.3, 0]),
+                    new THREE.KeyframeTrack(`${leftLeg.name}.rotation[x]`, [0, 0.5, 1], [0, Math.PI * 0.3, 0]),
+                ]);
+                animationActions['walk'] = playerMixer.clipAction(walkClip);
+                animationActions['walk'].loop = THREE.LoopRepeat;
+                animationActions['walk'].timeScale = 1.5; // Daha hızlı yürüme
+                
+                // Durma Animasyonu (Idle) - Kolları hafifçe sallama
+                const idleClip = new THREE.AnimationClip('idle', -1, [
+                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 1], [0, 0.05]),
+                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 1], [0, -0.05]),
+                ]);
+                animationActions['idle'] = playerMixer.clipAction(idleClip);
+                animationActions['idle'].loop = THREE.LoopPingPong;
+                animationActions['idle'].timeScale = 0.5;
+                
+                // Zıplama Animasyonu (Jump) - Basit bir poz (kollar yukarı)
+                 const jumpClip = new THREE.AnimationClip('jump', 0.5, [
+                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 0.25], [0, -Math.PI * 0.2]),
+                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 0.25], [0, Math.PI * 0.2]),
+                ]);
+                animationActions['jump'] = playerMixer.clipAction(jumpClip);
+                animationActions['jump'].loop = THREE.LoopOnce;
+                animationActions['jump'].clampWhenFinished = true;
+            } else {
+                window.log("UYARI: Animasyon için gerekli kollar/bacaklar bulunamadı.");
+            }
             
+            window.setAnimation('idle'); // Başlangıç animasyonunu ayarla
+            // --- Animasyon Başlatma Sonu ---
+
             // Kamera pozisyonunu oyuncudan biraz geriye ve yukarıya ayarla (Third Person)
             camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
             controls.target.copy(player.position);
@@ -1723,9 +1838,14 @@
             const jumpButton = document.getElementById('jump-button');
 
             // Olay dinleyicilerini temizle (Birden fazla çağrılmaması için)
-            joystickArea.removeEventListener('mousedown', window.joystickStartHandler);
-            joystickArea.removeEventListener('touchstart', window.joystickStartHandler);
-            jumpButton.removeEventListener('click', window.jumpClickHandler);
+            if (window.joystickStartHandler) {
+                joystickArea.removeEventListener('mousedown', window.joystickStartHandler);
+                joystickArea.removeEventListener('touchstart', window.joystickStartHandler);
+            }
+            if (window.jumpClickHandler) {
+                 jumpButton.removeEventListener('click', window.jumpClickHandler);
+                 jumpButton.removeEventListener('touchstart', window.jumpClickHandler);
+            }
             
             if (!isMobile) {
                 mobileControls.style.display = 'none';
@@ -1746,6 +1866,7 @@
                  }
             };
             jumpButton.addEventListener('click', window.jumpClickHandler);
+            jumpButton.addEventListener('touchstart', window.jumpClickHandler, { passive: false });
 
             // Joystick için yeni handler
             window.joystickStartHandler = (e) => {
@@ -1779,8 +1900,13 @@
                     return (moveEvent) => {
                         moveEvent.preventDefault();
                         const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
-                        const newDx = moveTouch.clientX - centerX;
-                        const newDy = moveTouch.clientY - centerY;
+                        
+                        // Mobil cihazlarda dokunma pozisyonunu kullan
+                        const moveClientX = moveTouch.clientX;
+                        const moveClientY = moveTouch.clientY;
+                        
+                        const newDx = moveClientX - centerX;
+                        const newDy = moveClientY - centerY;
                         const newDistance = Math.sqrt(newDx * newDx + newDy * newDy);
                         
                         let finalDx = newDx;
@@ -1817,8 +1943,8 @@
 
                 document.addEventListener('mousemove', handleMove);
                 document.addEventListener('mouseup', handleEnd);
-                document.addEventListener('touchmove', handleMove, { passive: false });
-                document.addEventListener('touchend', handleEnd);
+                joystickArea.addEventListener('touchmove', handleMove, { passive: false });
+                joystickArea.addEventListener('touchend', handleEnd);
             };
 
             joystickArea.addEventListener('mousedown', window.joystickStartHandler);
@@ -1828,7 +1954,7 @@
 
         
         window.startSimulation = () => {
-            window.initPlayerControls(); 
+            window.initPlayerControls(false); 
             document.getElementById('editor-tools').style.display = 'none';
             document.getElementById('editor-creation-tools').style.display = 'none';
             document.getElementById('sidebar-right').style.display = 'none';
@@ -1842,6 +1968,7 @@
             if (player) {
                 scene.remove(player);
                 player = null;
+                playerMixer = null; 
             }
             document.getElementById('editor-tools').style.display = 'flex';
             document.getElementById('editor-creation-tools').style.display = 'flex';
@@ -1877,10 +2004,14 @@
         }
 
 
+        // GÜNCELLENDİ: Animasyon ve Third Person Kamera Takibi eklendi
         window.updatePlayer = (delta) => {
             if (!player) return;
             
             const GRAVITY = 9.8 * 2; 
+            
+            // Animasyon karıştırıcısını güncelle
+            if (playerMixer) playerMixer.update(delta);
             
             playerDirection.z = 0;
             playerDirection.x = 0;
@@ -1920,6 +2051,23 @@
             playerVelocity.x = moveVector.x * PLAYER_SPEED;
             playerVelocity.z = moveVector.z * PLAYER_SPEED;
             
+            // --- Animasyon Kontrolü ---
+            const isMoving = playerDirection.lengthSq() > WALK_SPEED_THRESHOLD;
+            
+            if (isOnGround) {
+                if (isMoving) {
+                    window.setAnimation('walk');
+                } else {
+                    window.setAnimation('idle');
+                }
+            } else {
+                if (playerVelocity.y < 0) {
+                    // Yere inerken zıplama animasyonunu sabit tut
+                     if (currentAction !== 'jump') window.setAnimation('jump');
+                }
+            }
+            // --- Animasyon Kontrolü Sonu ---
+
             // Karakteri döndürme (sadece hareket varsa)
             if (moveVector.lengthSq() > 0.01) {
                 const targetRotation = Math.atan2(moveVector.x, moveVector.z);
@@ -1949,17 +2097,37 @@
             if (newY < playerHeight * 0.5) { 
                 playerVelocity.y = 0;
                 player.position.y = playerHeight * 0.5;
-                isOnGround = true;
+                if (!isOnGround) {
+                     isOnGround = true;
+                     window.setAnimation(isMoving ? 'walk' : 'idle'); // Yere indiğinde animasyonu düzelt
+                }
             } else {
                 player.position.y = newY;
                 isOnGround = false;
             }
+            
+            // Zıplama tuşuna basıldığında animasyonu ayarla (zıplama kuvveti uygulandıysa)
+            if (playerVelocity.y > 0.1 && currentAction !== 'jump') {
+                 window.setAnimation('jump');
+            }
+
 
             player.position.x += playerVelocity.x * delta;
             player.position.z += playerVelocity.z * delta;
 
-            // Kamera takibi (Kontrollerin hedefini karakterin pozisyonuna ayarla)
-            controls.target.set(player.position.x, player.position.y, player.position.z);
+            // Kamera takibi (Third Person Takip)
+            // İdeal offset: Oyuncunun arkasında, hafif yukarı, kameranın baktığı yöne göre.
+            const idealOffset = new THREE.Vector3(-3, 2, -3); 
+            idealOffset.applyQuaternion(controls.object.quaternion); // Mevcut kamera rotasyonunu uygula
+            idealOffset.add(player.position);
+
+            const idealLookat = new THREE.Vector3(0, playerHeight * 0.8, 0); // Karakterin kafasına odaklan
+            idealLookat.add(player.position);
+            
+            // Kamerayı yumuşak bir şekilde takip et
+            camera.position.lerp(idealOffset, 0.1); 
+            controls.target.lerp(idealLookat, 0.1); 
+            
             controls.update(); 
         }
 
@@ -1978,7 +2146,12 @@
                 if (transformControls) transformControls.update();
             } else {
                 // Simülasyon Modu
-                controls.enabled = false;
+                controls.enabled = true; // Third person kamera için kontrolleri açık bırak
+                controls.enablePan = false; // Kaydırmayı kapat
+                controls.enableZoom = false; // Zoom'u kapat (isteğe bağlı)
+                controls.maxDistance = 6; // Kameranın ne kadar uzakta olabileceği
+                controls.minDistance = 2; // Kameranın ne kadar yakında olabileceği
+                
                 window.updatePlayer(delta);
                 
                 objects.forEach(obj => {
