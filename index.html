@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LunX Studio V2.6 - Nihai Düzeltme ve Arayüz Güncellemesi</title>
     <style>
-        /* CSS Stilleri */
+        /* CSS Stilleri (Önceki kod ile aynı bırakılmıştır) */
         :root {
             --primary-color: #007acc;
             --secondary-color: #2da042;
@@ -259,7 +259,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
-          // ✅ VERİLEN API ANAHTARI ENTEGRE EDİLDİ
+          // ✅ SİZİN VERDİĞİNİZ API ANAHTARI BURAYA ENTEGRE EDİLDİ
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
@@ -276,10 +276,10 @@
         let selectedObject = null;
         let isSimulationMode = false; 
         
-        // ✅ PLAYER DEĞİŞKENLERİ SIFIRLANDI VE İYİLEŞTİRİLDİ
+        // PLAYER DEĞİŞKENLERİ
         let player, playerVelocity, playerDirection; 
-        const playerHeight = 1.0; // Karakterin yarı yüksekliği (tam boyu 2.0)
-        let isOnGround = true; // Yer kontrolü için yeni değişken
+        const playerHeight = 1.0; 
+        let isOnGround = true; 
 
         let moveForward, moveBackward, moveLeft, moveRight; 
         let joystickActive = false; 
@@ -293,26 +293,29 @@
         let customScene, customCamera, customRenderer, customControls, customCharacter;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        let authMode = 'login'; // ✅ Varsayılan Giriş yap olarak ayarlandı
+        let authMode = 'login'; 
         const clock = new THREE.Clock(); 
 
         // --- 2. YARDIMCI FONKSİYONLAR ---
         
         window.log = (msg) => { console.log(`[LunX] ${msg}`); document.getElementById('status').innerText = msg; }
 
+        // ✅ HATA MESAJLARI DAHA KAPSAMLI HALE GETİRİLDİ
         window.showError = (msg, elementId = 'auth-error') => { 
             const errDiv = document.getElementById(elementId);
             if (!errDiv) { console.error("Hata elementi bulunamadı: " + elementId); return; }
 
             // Kullanıcı dostu hata mesajları
-            if (msg.includes("auth/email-already-in-use")) msg = "Bu e-posta adresi zaten kayıtlı.";
-            else if (msg.includes("auth/user-not-found")) msg = "Kullanıcı bulunamadı. E-posta adresi hatalı.";
-            else if (msg.includes("auth/wrong-password")) msg = "Şifre hatalı.";
-            else if (msg.includes("auth/invalid-email")) msg = "Geçersiz e-posta formatı.";
-            else if (msg.includes("auth/weak-password")) msg = "Şifre en az 6 karakter olmalıdır.";
-            else if (msg.includes("Failed to fetch")) msg = "Bağlantı Hatası: İnternet bağlantınızı veya Firebase ayarlarınızı kontrol edin.";
+            let displayMsg = msg;
+            if (msg.includes("auth/email-already-in-use")) displayMsg = "Bu e-posta adresi zaten kayıtlı.";
+            else if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) displayMsg = "E-posta veya şifre hatalı.";
+            else if (msg.includes("auth/invalid-email")) displayMsg = "Geçersiz e-posta formatı.";
+            else if (msg.includes("auth/weak-password")) displayMsg = "Şifre en az 6 karakter olmalıdır.";
+            else if (msg.includes("Failed to fetch")) displayMsg = "Bağlantı Hatası: İnternet bağlantınızı veya Firebase ayarlarınızı kontrol edin.";
+            else if (msg.includes("auth/requires-recent-login")) displayMsg = "Bu işlem için tekrar giriş yapmanız gerekiyor.";
+            else if (msg.includes("auth/missing-email")) displayMsg = "Lütfen e-posta ve şifreyi girin.";
 
-            errDiv.innerText = "Hata: " + msg; 
+            errDiv.innerText = "Hata: " + displayMsg; 
             errDiv.style.display = 'block';
             errDiv.style.color = '#ff4444';
             errDiv.style.backgroundColor = '#301010';
@@ -337,7 +340,7 @@
             document.getElementById('security-status').style.display = 'none';
         }
 
-        // --- 3. YÜKLEME EKRANI YÖNETİMİ (TAKILMA ÖNLEMLİ) ---
+        // --- 3. YÜKLEME EKRANI YÖNETİMİ ---
 
         const loadSteps = [
             { name: "Kütüphane Kontrolü", duration: 1000, percentage: 30, action: () => {
@@ -360,7 +363,7 @@
                         if (!resolved) {
                             resolved = true;
                             if (user) {
-                                window.fetchAndUpdateUser(user).then(() => window.log("Kullanıcı verisi güncelendi."));
+                                window.fetchAndUpdateUser(user).then(() => window.log("Kullanıcı verisi güncellendi."));
                             }
                             unsubscribe(); 
                             resolve(); 
@@ -389,14 +392,15 @@
             document.getElementById('progress-text').innerText = `${text} ${percentage.toFixed(0)}%`;
         }
 
+        // ✅ ANA YÖNLENDİRME BU FONKSİYON İÇİNDE YAPILIR
         window.finishLoading = (user) => {
             clearInterval(loadingInterval);
             window.updateProgress(100, "Hazır.");
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('restart-button').style.display = 'none';
 
-            if (user) {
-                window.showProjectScreen(user); 
+            if (auth.currentUser) {
+                window.showProjectScreen(auth.currentUser); 
             } else {
                 window.showAuth('login');
             }
@@ -468,7 +472,7 @@
             }
         }
 
-        // --- 4. GİRİŞ / KAYIT YÖNETİMİ ---
+        // --- 4. GİRİŞ / KAYIT YÖNETİMİ (DÜZELTİLDİ) ---
 
         window.showAuth = (mode) => {
             window.hideAllScreens();
@@ -501,39 +505,52 @@
         
         window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
 
+        // ✅ GİRİŞ/KAYIT FONKSİYONU DÜZELTİLDİ
         window.handleAuthSubmit = async () => {
             if (!auth) { window.showError("Firebase Bağlantısı Yok."); return; }
-            const email = document.getElementById('auth-email-input').value;
-            const pass = document.getElementById('auth-password-input').value;
+            const email = document.getElementById('auth-email-input').value.trim();
+            const pass = document.getElementById('auth-password-input').value.trim();
             document.getElementById('auth-error').style.display = 'none';
+            
             if (!email || !pass) { window.showError("Lütfen e-posta ve şifreyi girin."); return; }
             
             if (authMode === 'register') {
-                const username = document.getElementById('auth-username-input').value;
+                const username = document.getElementById('auth-username-input').value.trim();
                 const gender = document.querySelector('input[name="gender-auth"]:checked').value;
                 if (!username) { window.showError("Lütfen bir kullanıcı adı girin."); return; }
                 
                 try {
                     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+                    const user = userCredential.user;
                     const defaultColor = gender === 'male' ? "#007acc" : "#ff4aff";
                     
-                    await db.ref('users/' + userCredential.user.uid).set({
+                    // Kullanıcı verisini veritabanına kaydet
+                    await db.ref('users/' + user.uid).set({
                         email: email, username: username, gender: gender, headTexture: "", torsoTexture: "",
                         torsoColor: defaultColor, legColor: defaultColor, skinColor: "#f0c0b0"
                     });
                     window.log("Kayıt başarılı. Oturum açılıyor...");
+                    window.finishLoading(user); // Başarıyla kayıt olduysa ana ekrana yönlendir
                 } catch (error) { window.showError(error.message); }
             } else {
                 try {
-                    await auth.signInWithEmailAndPassword(email, pass);
+                    const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                    const user = userCredential.user;
                     window.log("Giriş başarılı. Yönlendiriliyor...");
+                    window.finishLoading(user); // Başarıyla giriş yaptıysa ana ekrana yönlendir
                 } catch (error) { window.showError(error.message); }
             }
         };
 
         window.logoutUser = async () => { 
             if (!auth) return;
-            await auth.signOut(); 
+            try {
+                await auth.signOut(); 
+                window.log("Çıkış yapıldı.");
+                window.showAuth('login'); 
+            } catch (error) {
+                window.log("Çıkış yapma hatası: " + error.message);
+            }
         };
 
         // --- 5. EKRAN VE MOD YÖNETİMİ ---
@@ -568,6 +585,7 @@
         }
         
         window.showProjectScreen = (user) => {
+            if (!user) { window.showAuth('login'); return; }
             window.fetchAndUpdateUser(user).then(() => {
                 window.hideAllScreens();
                 document.getElementById('project-screen').style.display = 'flex';
@@ -877,14 +895,14 @@
             }
         }
         
-        // ✅ 3D SAHNE İLK BAŞLATMA VE IŞIKLANDIRMA DÜZELTMESİ
+        // 3D SAHNE İLK BAŞLATMA
         window.initFullScene = () => {
             const viewport = document.getElementById('viewport');
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
-            scene.background = new THREE.Color(0x222222); // Hafif koyu gri arka plan
+            scene.background = new THREE.Color(0x222222); 
 
             // Işıklandırma
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -1196,7 +1214,7 @@
                 case 'KeyQ': if(!isSimulationMode) window.setTool('rotate'); break;
                 case 'KeyE': if(!isSimulationMode) window.setTool('scale'); break;
                 case 'KeyR': if(!isSimulationMode) window.setTool('select'); break; 
-                case 'Space': if (isSimulationMode && isOnGround) { playerVelocity.y = 8; isOnGround = false; } break; // Zıplama gücü 8 olarak ayarlandı
+                case 'Space': if (isSimulationMode && isOnGround) { playerVelocity.y = 8; isOnGround = false; } break; 
                 case 'Delete': window.deleteSelectedObject(); break;
             }
         }
@@ -1294,8 +1312,8 @@
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
             let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
             
-            // Oyuncu pozisyonu zemin seviyesinde (playerHeight) başlar
-            startPos.y = playerHeight; 
+            player.position.copy(startPos); 
+            player.position.y = playerHeight; 
 
             player = window.createBlockCharacter(currentCustomization.gender);
             player.position.copy(startPos);
@@ -1305,11 +1323,16 @@
             controls.target.copy(player.position);
             controls.update();
 
-            isOnGround = true; // Başlangıçta yerde kabul et
+            isOnGround = true; 
             window.initMobileControls();
         }
         
         window.toggleSimulationMode = async (enable) => {
+            if (!auth.currentUser) {
+                window.showError("Simülasyonu başlatmak için giriş yapmanız gerekiyor.");
+                return;
+            }
+
             isSimulationMode = enable;
             transformControls.detach();
             controls.enabled = !enable; 
@@ -1353,12 +1376,12 @@
             document.getElementById('viewport').style.cursor = 'default';
         }
 
-        // ✅ PLAYER HAREKET VE ÇARPIŞMA MANTIĞI İYİLEŞTİRİLDİ
+        // PLAYER HAREKET VE ÇARPIŞMA MANTIĞI İYİLEŞTİRİLDİ
         window.updatePlayerMovement = (delta) => {
             if (!player || !isSimulationMode) return;
             
             const speed = 5.0; 
-            const gravity = -20.0; // Daha gerçekçi yerçekimi
+            const gravity = -20.0; 
             const friction = 0.9;
             
             // 1. Yerçekimi Uygula
