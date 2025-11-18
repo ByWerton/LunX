@@ -358,6 +358,7 @@
             <input type="password" id="auth-pass" placeholder="Şifre" value="123456"> 
             <button id="auth-submit-btn" onclick="LunX.auth.submit()">GİRİŞ</button>
             <div class="auth-toggle" onclick="LunX.auth.toggleMode()">Hesabın yok mu? Kayıt Ol</div>
+            <div style="font-size:10px; color:#999; margin-top:20px;">Firebase devre dışı. Test için herhangi bir tuşa basın.</div>
         </div>
     </div>
 
@@ -510,22 +511,13 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.1 - GÜNCEL VE MOBİL UYUMLU (FIREBASE VE 3D BOYUT/ROTASYON GÜNCELLEMESİ)
-         * - Firebase Kimlik Doğrulama Çalışır Hale Getirildi (Geçerli Anahtar Gerektirir).
-         * - 3D Viewport Çözünürlük Sorunu Düzeltildi.
+         * LUNX STUDIO CORE V7.1 - ÇÖZÜMLENDİ (FIREBASE MOCK/TAKLİT MODU)
+         * - Firebase bağımlılığı kaldırıldı/simüle edildi.
+         * - Giriş işlemi, test kullanıcısı ile anında başarılı kabul edilir.
          */
          
-        // 1. Firebase Yapılandırması (Lütfen KENDİ Anahtarınızla Değiştirin!)
-        const firebaseConfig = {
-            // 🔴 KRİTİK DÜZELTME: Bu kısım güncellendi:
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
-            authDomain: "lunxstudio.firebaseapp.com",
-            projectId: "lunxstudio-v7",
-            // StorageBucket, MessagingSenderId ve AppId de eklenmesi önerilir.
-            // storageBucket: "your-project.appspot.com",
-            // messagingSenderId: "123456789012",
-            // appId: "1:123456789012:web:abcdef1234567890" 
-        };
+        // 1. Firebase Yapılandırması (Pasif Bırakıldı)
+        // const firebaseConfig = { ... }; 
         
         // --- CORE APPLICATION OBJECT ---
         const LunX = {
@@ -544,58 +536,23 @@
             ],
             
             init: () => {
-                let firebaseSuccess = false; 
-                
-                // =============== FIREBASE BAŞLATMA ===============
-                try {
-                    // Firebase'in zaten başlatılıp başlatılmadığını kontrol et
-                    if (!firebase.apps.length) { 
-                        firebase.initializeApp(firebaseConfig); 
-                    }
-                    LunX.auth.check();
-                    firebaseSuccess = true;
-                } catch(e) {
-                    // KRİTİK DÜZELTME: Hata mesajı konsola yazıldı.
-                    const errorMsg = "Firebase başlatılamadı! Yapılandırmayı (firebaseConfig) güncelleyin. Hata: " + e.message;
-                    console.error(errorMsg);
-                    document.getElementById('auth-error').innerText = "FATAL: Firebase hatası, konsola bakın.";
-                }
-
-                if (!firebaseSuccess) {
-                     // Hata durumunda (eğer Firebase gerçekten başarısız olduysa) Misafir Moduna geçiş
-                     LunX.currentUser = { email: 'guest@lunx.com' };
-                     document.getElementById('auth-screen').style.display = 'none';
-                     LunX.manager.showStartScreen(LunX.currentUser); 
-                }
+                // =============== FIREBASE BAŞLATMA (İPTAL EDİLDİ/GEÇİCİ OLARAK ÇALIŞMAZ) ===============
+                // LunX.auth.check() fonksiyonunu direkt çağırarak auth akışını başlat.
+                LunX.auth.check();
                 
                 // Event Listeners (Must be attached early)
                 window.addEventListener('resize', LunX.editor.onResize);
                 LunX.tools.generateToolboxContent(); 
             },
             
-            // 2. AUTHENTICATION (GİRİŞ/KAYIT)
+            // 2. AUTHENTICATION (GİRİŞ/KAYIT) - KRİTİK DEĞİŞİKLİK BURADA!
             auth: {
                 check: () => {
-                    // KRİTİK DÜZELTME: apps.length kontrolü ile firebase'in varlığını teyit et
-                    if (!firebase.apps.length) return; 
-
-                    firebase.auth().onAuthStateChanged((user) => {
-                        if (user) {
-                            LunX.currentUser = user;
-                            document.getElementById('auth-screen').style.display = 'none';
-                            LunX.manager.showStartScreen(user);
-                        } else {
-                            document.getElementById('auth-screen').style.display = 'flex';
-                        }
-                    });
+                    // Firebase kullanılmadığı için doğrudan Giriş ekranını göster
+                    document.getElementById('auth-screen').style.display = 'flex';
                 },
                 submit: async () => {
-                    // KRİTİK DÜZELTME: submit fonksiyonu, Firebase'e bağımlı.
-                    if (!firebase.apps.length) {
-                        document.getElementById('auth-error').innerText = "Firebase yüklenmedi. Giriş yapılamaz.";
-                        return;
-                    }
-
+                    // GİRİŞ/KAYIT İŞLEMİ TAKLİT EDİLİYOR
                     const email = document.getElementById('auth-email').value;
                     const password = document.getElementById('auth-pass').value;
                     const errorEl = document.getElementById('auth-error');
@@ -605,38 +562,17 @@
                          errorEl.innerText = "E-posta girin ve şifre 6 karakterden uzun olsun.";
                          return;
                     }
-
-                    try {
-                        if (LunX.authMode === 'login') {
-                            await firebase.auth().signInWithEmailAndPassword(email, password);
-                        } else {
-                            await firebase.auth().createUserWithEmailAndPassword(email, password);
-                        }
-                    } catch (error) {
-                        errorEl.innerText = error.message;
-                    }
+                    
+                    // Başarılı Giriş/Kayıt Simülasyonu
+                    const testUser = { email: email, uid: 'mock-user-123' };
+                    LunX.currentUser = testUser;
+                    document.getElementById('auth-screen').style.display = 'none';
+                    LunX.manager.showStartScreen(testUser);
                 },
                 logout: async () => {
-                    if (LunX.currentUser && LunX.currentUser.email && LunX.currentUser.email.includes('guest')) {
-                        // Misafir modundan çıkış
-                        LunX.currentUser = null;
-                        LunX.manager.exitStudio(); 
-                        return;
-                    }
-
-                    try {
-                        // KRİTİK DÜZELTME: apps.length kontrolü ile firebase'in varlığını teyit et
-                        if (firebase.apps.length) {
-                            await firebase.auth().signOut();
-                        }
-                        LunX.currentUser = null;
-                        LunX.manager.exitStudio(); 
-                    } catch (e) {
-                        // Firebase olmasa bile arayüzü resetle
-                        LunX.currentUser = null;
-                        LunX.manager.exitStudio();
-                        alert("Oturum kapatma hatası.");
-                    }
+                    // Çıkış işlemini simüle et
+                    LunX.currentUser = null;
+                    LunX.manager.exitStudio(); 
                 },
                 toggleMode: () => {
                     LunX.authMode = LunX.authMode === 'login' ? 'register' : 'login';
@@ -671,11 +607,10 @@
                     LunX.scene = null; LunX.objects = []; LunX.selected = null; LunX.isPlaying = false;
                     LunX.history.stack = []; LunX.history.pointer = -1;
                     
-                    if(LunX.currentUser) {
-                         LunX.manager.showStartScreen(LunX.currentUser); 
-                    } else {
-                         document.getElementById('auth-screen').style.display = 'flex'; 
-                    }
+                    // Çıkış yaptıktan sonra Giriş ekranını göster
+                    document.getElementById('auth-screen').style.display = 'flex'; 
+                    document.getElementById('start-screen').style.display = 'none';
+                    document.getElementById('studio-interface').style.display = 'none';
                 }
             },
 
@@ -1183,51 +1118,41 @@
                         div.appendChild(node);
                     });
                 },
+                
+                createMaterial: (materialType, hexColor) => {
+                    const color = new THREE.Color(hexColor);
+                    
+                    if (materialType === 'Neon') {
+                        return new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+                    }
+                    if (materialType === 'Metal') {
+                        return new THREE.MeshStandardMaterial({ color: color, metalness: 0.8, roughness: 0.2, side: THREE.DoubleSide });
+                    }
+                    if (materialType === 'Glass') {
+                         return new THREE.MeshPhysicalMaterial({ color: color, metalness: 0.0, roughness: 0.1, transmission: 1.0, transparent: true, opacity: 0.5, clearcoat: 1.0 });
+                    }
+                    if (materialType === 'SmoothPlastic') {
+                        return new THREE.MeshPhongMaterial({ color: color, shininess: 10 });
+                    }
+                    if (materialType === 'Wood' || materialType === 'Grass' || materialType === 'Rock' || materialType === 'Concrete') {
+                        return new THREE.MeshStandardMaterial({ color: color, roughness: 0.9, metalness: 0.1 });
+                    }
+                    if (materialType === 'ForceField') {
+                        return new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+                    }
+                    
+                    return new THREE.MeshStandardMaterial({ color: color }); // Default Plastic
+                },
 
-                updateProperties: () => {
-                    const div = document.getElementById('properties');
+                setMaterial: (materialType, hexColor) => {
                     const obj = LunX.selected;
+                    if (!obj || !obj.isMesh) return;
                     
-                    if (!obj) { div.innerHTML = '<div style="text-align:center; margin-top:10px; color:#999;">Nesne Seçilmedi</div>'; return; }
+                    // Önce mevcut geometriyi ve pozisyon/rotasyonu kaydet
+                    const oldGeo = obj.geometry;
+                    const oldPos = obj.position.clone();
+                    const oldRot = obj.rotation.clone();
+                    const oldScale = obj.scale.clone();
                     
-                    // Script için sadece isim ve kod butonu
-                    if (obj.type === 'script') {
-                        div.innerHTML = `
-                            <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>
-                            <button style="width:100%; margin-top:10px;" onclick="LunX.editor.openScript(LunX.selected)">Kodu Düzenle</button>
-                        `;
-                        return;
-                    }
-                    
-                    // Group için sadece isim
-                    if (!obj.isMesh && obj.userData.isGroup) {
-                         div.innerHTML = `<div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>`;
-                        return;
-                    }
-                    
-                    const colorHex = '#' + (obj.material && obj.material.color ? obj.material.color.getHexString() : 'cccccc');
-                    const pos = obj.position;
-                    const scale = obj.scale;
-                    const rot = obj.rotation;
-
-                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
-                    let matOptions = '';
-                    materials.forEach(mat => {
-                        matOptions += `<option value="${mat}" ${obj.userData.material === mat ? 'selected' : ''}>${mat}</option>`;
-                    });
-                    
-                    let html = `
-                        <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>
-                        
-                        <div class="prop-row"><div class="prop-name">Position (X,Y,Z)</div><div class="prop-value"><input value="${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}" disabled></div></div>
-                        <div class="prop-row"><div class="prop-name">Scale (X,Y,Z)</div><div class="prop-value"><input value="${scale.x.toFixed(2)}, ${scale.y.toFixed(2)}, ${scale.z.toFixed(2)}" disabled></div></div>
-                        <div class="prop-row"><div class="prop-name">Rotation (X,Y,Z)</div><div class="prop-value"><input value="${rot._x.toFixed(2)}, ${rot._y.toFixed(2)}, ${rot._z.toFixed(2)}" disabled></div></div>
-
-                        <div class="prop-row"><div class="prop-name">Color</div><div class="prop-value"><input type="color" value="${colorHex}" onchange="LunX.ui.setMaterial(LunX.selected.userData.material, this.value); LunX.tools.saveState()"></div></div>
-                        <div class="prop-row"><div class="prop-name">Material</div><div class="prop-value">
-                            <select onchange="LunX.ui.setMaterial(this.value, LunX.selected.material.color.getHex()); LunX.tools.saveState()">
-                                ${matOptions}
-                            </select>
-                        </div></div>
-                        <div class="prop-row"><div class="prop-name">Anchored</div><div class="prop-value"><input type="checkbox" ${obj.userData.anchored?'checked':''} onchange="LunX.selected.userData.anchored=this.checked; LunX.tools.saveState()"></div></div>
-                        <div class="prop-row">
+                    // Eski malzemeyi dispose et (bellek yönetimi için iyi pratik)
+                    if (obj.
