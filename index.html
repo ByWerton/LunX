@@ -338,7 +338,7 @@
             <div class="panel-section" id="script-panel" style="display:none; margin-top: 20px;">
                 <h4>LUNX SCRIPT (JS)</h4>
                 <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
-                <button class="run-btn start-btn" onclick="window.saveScript()" style="background-color: var(--secondary-color); margin-top: 5px;">⚡ Kodu Kaydet</button>
+                <button class="run-btn start-btn" onclick="window.saveScript()" style="background-color: var(--secondary-color); margin-top: 5px;" title="Kaydet (Ctrl+S)">⚡ Kodu Kaydet</button>
                 <button class="run-btn start-btn" onclick="window.runSelectedScript()" style="background-color: #f7931e; margin-top: 5px;">▶️ Kodu Test Et</button>
             </div>
         </div>
@@ -1824,6 +1824,20 @@
         }
         
         window.onKeyDown = (event) => {
+            // Tarayıcının Kaydetme iletişim kutusunu engelle (Ctrl+S / Cmd+S)
+            if ((event.ctrlKey || event.metaKey) && event.code === 'KeyS') {
+                event.preventDefault(); 
+                if (!isSimulationMode) {
+                    // Kaydetme kısayolu: Seçili nesnenin script'ini kaydet
+                    window.saveScript(); 
+                    window.log("Script Kaydedildi (Ctrl+S)");
+                } else {
+                     // Simülasyon modunda tüm sahneyi kaydetmek de mantıklı olabilir
+                     // Veya sadece loglama
+                     window.log("Simülasyon modunda Kaydetme devre dışı.");
+                }
+            }
+
             if (isSimulationMode) {
                 switch (event.code) {
                     case 'KeyW': moveForward = true; break;
@@ -2319,3 +2333,58 @@
                 if (!isOnGround) {
                      isOnGround = true;
                      window.setAnimation(isMoving ? 'walk' : 'idle'); // Yere indiğinde animasyonu düzelt
+                }
+            } else {
+                 player.position.y = newY;
+            }
+            
+            // Yatay hareket
+            player.position.x += playerVelocity.x * delta;
+            player.position.z += playerVelocity.z * delta;
+
+            // Kamera Takibi (Third Person)
+            const relativeCameraOffset = new THREE.Vector3(0, 2.5, -4);
+            const cameraOffset = relativeCameraOffset.applyMatrix4( player.matrixWorld );
+            
+            // Kamera pozisyonunu yumuşak bir şekilde takip et
+            camera.position.lerp(cameraOffset, 0.1); 
+            
+            // Kamera hedefi oyuncunun biraz yukarısı
+            const targetPosition = player.position.clone();
+            targetPosition.y += 1.2; // Omuz hizası
+            
+            // Kamera hedefini yumuşak bir şekilde takip et
+            controls.target.lerp(targetPosition, 0.1);
+            controls.update();
+        }
+
+        window.animate = () => {
+            requestAnimationFrame(window.animate);
+            const delta = clock.getDelta();
+            
+            if (isSimulationMode) {
+                 window.updatePlayer(delta);
+            } else {
+                 controls.update(); 
+                 // Düzenleyici modunda nesneye script varsa çalıştır
+                 objects.forEach(obj => {
+                     if (obj.userData.script) {
+                         window.applyScript(obj, obj.userData.script);
+                     }
+                 });
+            }
+
+            if (TWEEN) TWEEN.update(); 
+
+            if (renderer) renderer.render(scene, camera);
+        }
+
+        // --- UYGULAMA BAŞLANGICI ---
+        window.onload = () => {
+             // Three.js ve Firebase kütüphanelerinin yüklenmesini bekleyerek uygulamayı başlat
+             loadApplicationStep();
+        };
+
+    </script>
+</body>
+</html>
