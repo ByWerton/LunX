@@ -337,6 +337,7 @@
         
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
+        // **ÖNEMLİ:** Buradaki API Anahtarını kendi Firebase projenizinkiyle değiştirin.
         const firebaseConfig = {
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
@@ -1998,26 +1999,4 @@
             if (!isSimulationMode) {
                 // Düzenleme Modu
                 const isMobile = window.innerWidth <= 768;
-                controls.enabled = !isMobile;
-                if (controls.enabled) controls.update(); 
-                if (transformControls) transformControls.update();
-            } else {
-                // Simülasyon Modu
-                controls.enabled = false;
-                window.updatePlayer(delta);
-                
-                objects.forEach(obj => {
-                    if (obj.userData.script) {
-                        window.applyScript(obj, obj.userData.script);
-                    }
-                });
-            }
-
-            renderer.render(scene, camera);
-        }
-        
-        // --- Başlatma ---
-        window.onload = loadApplicationStep;
-    </script>
-</body>
-</html>
+                controls.enabled = !isMobile
