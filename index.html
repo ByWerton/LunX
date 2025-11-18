@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.8 - Skybox ve Karakter Düzeltmesi</title>
+    <title>LunX Studio V2.8 - Full Kontrol ve Skybox</title>
     <style>
         /* CSS Stilleri (Önceki kod ile aynı bırakılmıştır) */
         :root {
@@ -61,11 +61,34 @@
         .file-upload-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;}
         
         /* Mobile Controls */
-        #mobile-controls { position: absolute; bottom: 10px; left: 10px; display: none; z-index: 10; gap: 20px;}
+        #mobile-controls { 
+            position: absolute; 
+            bottom: 10px; 
+            left: 10px; 
+            display: none; 
+            z-index: 10; 
+            gap: 20px;
+            /* Mobil için tam ekran, PC'de devre dışı kalacak */
+            width: 90%; 
+            justify-content: space-between; 
+            align-items: flex-end;
+        }
         #joystick-wrapper { width: 100px; height: 100px; }
         #joystick-area { width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
         #joystick-handle { width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; position: absolute; top: 30px; left: 30px; }
-        #jump-button { position: absolute; bottom: 10px; right: 10px; width: 60px; height: 60px; background: var(--secondary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; z-index: 10; }
+        #jump-button { 
+            width: 60px; 
+            height: 60px; 
+            background: var(--secondary-color); 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 30px; 
+            color: white; 
+            z-index: 10; 
+            cursor: pointer;
+        }
         
         /* Skybox Panel Stilleri */
         #skybox-gallery { 
@@ -193,7 +216,7 @@
                         <div id="joystick-handle"></div>
                     </div>
                 </div>
-                <div id="jump-button" style="margin-left: auto;">^</div>
+                <div id="jump-button">^</div>
             </div>
         </div>
         <div id="sidebar-right">
@@ -304,6 +327,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
+          // *** BURAYA KENDİ FIREBASE AYARLARINIZI GİRİN ***
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
@@ -954,6 +978,7 @@
             
             const mobileControls = document.getElementById('mobile-controls');
             if (mobileControls) {
+                // Simülasyon modundaysa ve mobil cihaz ise göster
                 mobileControls.style.display = isMobile && isSimulationMode ? 'flex' : 'none';
             }
         }
@@ -963,14 +988,12 @@
             window.log("3D Sahne (initFullScene) başlatılıyor...");
             const viewport = document.getElementById('viewport');
             
-            // WebGL kontrolü (Kritik Kontrol)
             if (!THREE.WEBGL.isWebGLAvailable()) {
                 window.showError("Cihazınız WebGL'i desteklemiyor. 3D sahne görüntülenemiyor.", 'status');
                 return;
             }
             
             scene = new THREE.Scene();
-            // Sahne arka planı (Skybox) init'ten sonra setSkybox ile ayarlanacak.
             
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
@@ -990,20 +1013,20 @@
             dirLight.shadow.camera.bottom = -20;
             scene.add(dirLight);
 
-            // Renderer oluşturma (Kritik Kontrol)
             try {
                 renderer = new THREE.WebGLRenderer({ antialias: true });
                 renderer.setSize(viewport.clientWidth, viewport.clientHeight);
                 renderer.shadowMap.enabled = true; 
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
                 
-                // viewport'un içine canvas ekleme (Kritik Kontrol)
                 if (viewport.children.length > 0) {
-                     // Var olan canvas'ı bul ve kaldır (eğer varsa)
                      const existingCanvas = viewport.querySelector('canvas');
                      if (existingCanvas) viewport.removeChild(existingCanvas);
                 }
-                viewport.appendChild(renderer.domElement);
+                // Mobil Kontroller elementi en son eklenmeli (z-index'i korumak için)
+                const mobileControlsEl = document.getElementById('mobile-controls');
+                if(mobileControlsEl) viewport.insertBefore(renderer.domElement, mobileControlsEl);
+                else viewport.appendChild(renderer.domElement);
                 
                 window.log("Renderer ve Canvas eklendi.");
                 
@@ -1027,7 +1050,9 @@
             document.addEventListener('mousedown', window.onMouseDown, false);
             document.addEventListener('contextmenu', (e) => e.preventDefault()); 
             
-            window.onWindowResize(); // Başlangıçta boyutları ayarla
+            window.initMobileControls(); // ✅ Joystick olaylarını dinlemeye başla
+            
+            window.onWindowResize(); 
             window.log("3D Sahne Hazır ve Kontroller kuruldu.");
         }
 
@@ -1036,13 +1061,7 @@
             let skyConfig;
 
             if (customBase64) {
-                // Base64 ile yükleme: 6 yüzeyi ayrı ayrı yüklemeyi gerektirdiğinden karmaşık, bu örnekte tek Base64'ü renk olarak kabul edebiliriz
-                // veya sadece bir uyarı gösterip varsayılana dönebiliriz.
                  window.log("Özelleştirilmiş Base64 yükleniyor...");
-                 // Basitlik için sadece arka plan rengini ayarlayalım
-                 skyConfig = { type: 'color', value: 0x87ceeb }; 
-                 
-                 // THREE.CubeTextureLoader ile 6 ayrı URL/Base64 gereklidir. Bu örnekte URL yüklemeyi kullanacağız.
                  window.showError("Base64 yükleme, 6 ayrı yüz resmi gerektirir. Örnek dokular veya URL kullanın.", 'status');
                  skyKey = 'default_sky';
                  skyConfig = skyboxTextures[skyKey];
@@ -1057,9 +1076,8 @@
             if (skyConfig.type === 'color') {
                 scene.background = new THREE.Color(skyConfig.value);
             } else if (skyConfig.type === 'cube') {
-                 // Küp doku (Skybox) yükleme
                  const loader = new THREE.CubeTextureLoader();
-                 loader.setPath(skyConfig.value); // Yol ayarlandı (Bridge2/ veya pisa/ gibi)
+                 loader.setPath(skyConfig.value); 
 
                  const textureUrls = [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ];
                  
@@ -1068,7 +1086,6 @@
                  
             }
             
-            // Sky nesnesi seçiliyse özellikleri güncelle
             const skyObject = objects.find(obj => obj.name === "Gökyüzü");
             if (skyObject) {
                  skyObject.userData.skyboxKey = skyKey;
@@ -1089,7 +1106,6 @@
         }
         
         window.handleSkyboxUpload = (fileInput) => {
-             // Basitlik için sadece varsayılanı çağıralım
              window.showError("Tek bir resim yüklenmesi şu an için sadece renk olarak uygulanabilir. Skybox için 6 yüzey gereklidir. Lütfen galeriden seçin.", 'status');
              fileInput.value = '';
         }
@@ -1097,13 +1113,9 @@
         window.setupEnvironment = (env) => {
             window.clearScene(false);
             
-            // 1. Gökyüzü (Sky) Nesnesi Ekleme (Ortam Nesnesi)
-            // Three.js'te gökyüzü, sahnenin arka planına atanır (scene.background).
-            // Ancak Editörde görünür bir 'Gökyüzü' objesine ihtiyacımız var.
             let skyObject = objects.find(obj => obj.name === "Gökyüzü");
             
             if (!skyObject) {
-                // Görünmez, sanal bir nesne ekle
                 skyObject = new THREE.Object3D(); 
                 skyObject.name = "Gökyüzü";
                 skyObject.userData.isEnvironment = true;
@@ -1112,10 +1124,9 @@
                 objects.push(skyObject);
             }
             
-            window.setSkybox(skyObject.userData.skyboxKey); // Varsayılan gökyüzünü ayarla
+            window.setSkybox(skyObject.userData.skyboxKey); 
 
             if (env === 'default_template' || env === 'simple_cube' || env === 'empty') {
-                // 2. Zemin ve Grid
                 const plane = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x444444, side: THREE.DoubleSide }));
                 plane.rotation.x = -Math.PI / 2;
                 plane.receiveShadow = true;
@@ -1129,7 +1140,7 @@
                 gridHelper.userData.isEnvironment = true;
                 scene.add(gridHelper);
                 
-                // 3. Başlangıç Noktası (Spawn Point)
+                // Başlangıç Noktası (Spawn Point)
                 const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
                 scene.add(spawnMesh);
                 objects.push(spawnMesh);
@@ -1147,17 +1158,15 @@
             spawnMesh.name = "OyuncuBaşlangıçNoktası";
             spawnMesh.position.copy(position);
             spawnMesh.userData.isSpawnPoint = true;
-            spawnMesh.userData.isEnvironment = false; // Kullanıcı silebilir
+            spawnMesh.userData.isEnvironment = false; 
             return spawnMesh;
         }
 
-        // ✅ startStudio'nun mantığı güçlendirildi
         window.startStudio = (isNew = false) => {
             if (!renderer) {
                  window.initFullScene();
             }
             
-            // Eğer renderer başarılı bir şekilde oluşturulamadıysa (WebGL hatası vb.), devam etme
             if (!renderer) {
                  window.log("3D Renderer oluşturulamadığı için Studio başlatılamıyor.");
                  return; 
@@ -1171,12 +1180,11 @@
                 const template = document.getElementById('template-select').value;
                 window.setupEnvironment(template);
             } else if (objects.length === 0) {
-                 // Eğer sahne yüklenecek ve objects boşsa varsayılanı kur
                  window.setupEnvironment('default_template');
             }
             
-            window.animate(); // Render döngüsünü başlat
-            window.onWindowResize(); // Ekran boyutlarını tekrar ayarla
+            window.animate(); 
+            window.onWindowResize(); 
             window.updateHierarchyList();
             window.log("LunX Studio başarıyla başlatıldı.");
         }
@@ -1241,9 +1249,8 @@
             
             transformControls.detach();
             if (player) { scene.remove(player); player = null; }
-            window.setSkybox('default_sky'); // Skybox'ı varsayılana çek
+            window.setSkybox('default_sky'); 
 
-            // scene'den tüm nesneleri kaldır
             objects.forEach(obj => scene.remove(obj));
             objects = [];
             
@@ -1268,7 +1275,6 @@
                     return null; 
                 }
 
-                // Skybox verisini özel olarak kaydet
                 if (type === 'sky') {
                     return {
                         name: obj.name,
@@ -1304,7 +1310,7 @@
                 const sceneData = snapshot.val();
                 
                 window.clearScene(false);
-                window.startStudio(false); // Sadece 3D sistemi başlat
+                window.startStudio(false); 
 
                 if (sceneData) {
                     sceneData.forEach(data => {
@@ -1318,9 +1324,7 @@
                             window.addShape('spawn', data);
                         } else if (data.type === 'cube' || data.type === 'sphere') {
                              window.addShape(data.type, data);
-                        } else if (data.name === 'Zemin' || data.name === 'Grid') {
-                            // Ortam nesneleri tekrar eklenmesin, zaten setupEnvironment'ta ekleniyor
-                        }
+                        } 
                     });
                     
                     window.log("Kayıtlı sahne başarıyla yüklendi! 📂");
@@ -1353,15 +1357,12 @@
 
             if (obj) {
                  if (obj.userData.isSkybox) {
-                    // Gökyüzü seçildi
                     transformControls.detach();
                     skyPanel.style.display = 'block';
                     window.updateSkyboxPanel(obj.userData.skyboxKey);
                 } else if (obj.userData.isEnvironment && obj.name !== "OyuncuBaşlangıçNoktası") {
-                     // Zemin/Grid seçildi
                      transformControls.detach();
                 } else {
-                    // Normal obje veya Spawn Point seçildi
                     transformControls.attach(obj);
                     if (!obj.userData.isSpawnPoint && !obj.userData.isEnvironment) {
                         scriptPanel.style.display = 'block';
@@ -1459,37 +1460,45 @@
         }
         
         window.onKeyDown = (event) => {
-            switch (event.code) {
-                case 'KeyW': moveForward = true; if(!isSimulationMode) window.setTool('translate'); break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'KeyQ': if(!isSimulationMode) window.setTool('rotate'); break;
-                case 'KeyE': if(!isSimulationMode) window.setTool('scale'); break;
-                case 'KeyR': if(!isSimulationMode) window.setTool('select'); break; 
-                case 'Space': if (isSimulationMode && isOnGround) { playerVelocity.y = 8; isOnGround = false; } break; 
-                case 'Delete': window.deleteSelectedObject(); break;
+            if (!isSimulationMode) {
+                 switch (event.code) {
+                    case 'KeyW': window.setTool('translate'); break;
+                    case 'KeyQ': window.setTool('rotate'); break;
+                    case 'KeyE': window.setTool('scale'); break;
+                    case 'KeyR': window.setTool('select'); break; 
+                    case 'Delete': window.deleteSelectedObject(); break;
+                 }
+            } else {
+                 switch (event.code) {
+                    case 'KeyW': moveForward = true; break;
+                    case 'KeyS': moveBackward = true; break;
+                    case 'KeyA': moveLeft = true; break;
+                    case 'KeyD': moveRight = true; break;
+                    case 'Space': if (isOnGround) { playerVelocity.y = 8; isOnGround = false; } break; 
+                 }
             }
         }
 
         window.onKeyUp = (event) => {
-            switch (event.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
+             if (isSimulationMode) {
+                switch (event.code) {
+                    case 'KeyW': moveForward = false; break;
+                    case 'KeyS': moveBackward = false; break;
+                    case 'KeyA': moveLeft = false; break;
+                    case 'KeyD': moveRight = false; break;
+                }
             }
         }
         
         window.onMouseDown = (event) => {
             document.getElementById('context-menu').style.display = 'none';
             if (event.button === 2) { 
-                if (selectedObject) window.showContextMenu(event.clientX, event.clientY);
+                if (selectedObject && !isSimulationMode) window.showContextMenu(event.clientX, event.clientY);
                 event.preventDefault(); 
                 return;
             }
 
-            if (transformControls.dragging) return;
+            if (transformControls.dragging || isSimulationMode) return;
             if (event.target !== renderer.domElement) return;
 
             const rect = renderer.domElement.getBoundingClientRect();
@@ -1571,19 +1580,20 @@
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
             let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
             
-            if (player) { scene.remove(player); } // Eski player'ı kaldır
+            if (player) { scene.remove(player); } 
             player = window.createBlockCharacter(currentCustomization.gender);
             player.position.copy(startPos);
-            player.position.y = startPos.y + playerHeight * 0.5; // Karakterin yarım boyu kadar yukarıda başlat.
+            player.position.y = startPos.y + playerHeight * 0.5; 
             
             scene.add(player);
             
+            // Kamerayı başlangıç pozisyonunda ayarla (Player'ın biraz gerisinde)
             camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
             controls.target.copy(player.position);
             controls.update();
 
             isOnGround = true; 
-            window.initMobileControls();
+            window.initMobileControls(); // Gerekli değil ama güvenlik için kalsın
         }
         
         window.toggleSimulationMode = async (enable) => {
@@ -1612,6 +1622,7 @@
                 document.getElementById('play-button').classList.add('active');
                 document.getElementById('stop-button').classList.remove('active');
                 document.getElementById('status').innerText = "Simülasyon Modu: Açık";
+                // Mobil kontrolleri sadece simülasyon modunda ve mobil ise göster
                 if (isMobile) document.getElementById('mobile-controls').style.display = 'flex';
             } else {
                 window.stopSimulation();
@@ -1621,7 +1632,7 @@
                 document.getElementById('stop-button').classList.add('active');
                 document.getElementById('play-button').classList.remove('active');
                 document.getElementById('status').innerText = "Editör Modu: Hazır";
-                if (isMobile) document.getElementById('mobile-controls').style.display = 'none';
+                document.getElementById('mobile-controls').style.display = 'none';
                 window.onWindowResize();
             }
         }
@@ -1640,15 +1651,16 @@
             controls.update();
             document.getElementById('viewport').style.cursor = 'default';
         }
-
+        
+        // ✅ GÜNCELLENMİŞ HAREKET FONKSİYONU
         window.updatePlayerMovement = (delta) => {
             if (!player || !isSimulationMode) return;
             
             const speed = 5.0; 
             const gravity = -20.0; 
-            const friction = 0.9;
+            const friction = 0.8; 
             
-            playerVelocity.y += gravity * delta;
+            playerVelocity.y += gravity * delta; 
             
             playerDirection.z = 0;
             playerDirection.x = 0;
@@ -1663,6 +1675,7 @@
                 inputVector.normalize();
             }
 
+            // Kameranın baktığı yöne göre hareket yönünü hesapla
             const cameraDirectionY = controls.getAzimuthalAngle(); 
             const rotationMatrix = new THREE.Matrix4().makeRotationY(cameraDirectionY);
             
@@ -1682,28 +1695,30 @@
             const groundPlane = objects.find(obj => obj.name === "Zemin");
             const groundY = groundPlane ? groundPlane.position.y : 0; 
             
-            // Karakterin alt sınırının hesaplanması
             const playerBottomY = player.position.y - playerHeight * 0.5;
 
             if (playerBottomY <= groundY) {
                 playerVelocity.y = 0;
-                player.position.y = groundY + playerHeight * 0.5; // Tam zemin seviyesinde tut
+                player.position.y = groundY + playerHeight * 0.5; 
                 if (!isOnGround) {
                     isOnGround = true;
                 }
             } else {
                 isOnGround = false;
             }
-
-            if (playerVelocity.x !== 0 || playerVelocity.z !== 0) {
-                 const angle = Math.atan2(-playerVelocity.x, -playerVelocity.z);
-                 player.rotation.y = angle + Math.PI; 
+            
+            // Karakterin Yüzünü Döndür
+            if (inputVector.lengthSq() > 0.01) { 
+                 const angle = Math.atan2(desiredMovement.x, desiredMovement.z);
+                 player.rotation.y = angle; 
             }
 
+            // Kamerayı Karakteri Takip Edecek Şekilde Ayarla
             const targetPosition = player.position.clone();
             controls.target.copy(targetPosition);
             
             const offset = new THREE.Vector3(-3, 2, -3); 
+            
             const cameraFollowRotation = new THREE.Matrix4().makeRotationY(controls.getAzimuthalAngle());
             offset.applyMatrix4(cameraFollowRotation);
             
@@ -1741,15 +1756,24 @@
                 window.resetJoystick(handle);
             };
 
+            // Fare Olayları
             joystickArea.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', doDrag);
             document.addEventListener('mouseup', endDrag);
 
+            // Dokunmatik Olaylar
             joystickArea.addEventListener('touchstart', startDrag);
             document.addEventListener('touchmove', doDrag);
             document.addEventListener('touchend', endDrag);
 
             jumpButton.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                if (player && isOnGround) { 
+                    playerVelocity.y = 8;
+                    isOnGround = false;
+                }
+            });
+             jumpButton.addEventListener('touchstart', (e) => {
                 e.preventDefault(); 
                 if (player && isOnGround) { 
                     playerVelocity.y = 8;
@@ -1782,63 +1806,3 @@
             handle.style.top = '30px';
             joystickX = 0;
             joystickY = 0;
-        }
-
-        // ✅ animate döngüsü güçlendirildi
-        window.animate = () => {
-            if (!renderer) {
-                window.log("Renderer mevcut değil. Animasyon durdu.");
-                return;
-            }
-            
-            requestAnimationFrame(window.animate);
-            const delta = clock.getDelta();
-
-            if (isSimulationMode) {
-                window.updatePlayerMovement(delta);
-                objects.forEach(obj => {
-                    if (obj.userData.script) {
-                        window.applyScript(obj, obj.userData.script);
-                    }
-                });
-            } else {
-                 controls.update();
-            }
-            
-            try {
-               renderer.render(scene, camera);
-            } catch(e) {
-                 // Büyük bir hata varsa (WebGL context kaybolması vb.) render döngüsünü durdur.
-                 if (e.message.includes('context')) {
-                     window.log("KRİTİK HATA: WebGL Context kayboldu. Studio durduruldu.");
-                     return; 
-                 }
-                 window.log(`Render Hatası: ${e.message}`);
-            }
-        }
-        
-        // --- Ekstra WebGL Kontrolü ---
-        THREE.WEBGL = (function () {
-            return {
-                isWebGLAvailable: function () {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-                    } catch (e) {
-                        return false;
-                    }
-                }
-            };
-        })();
-
-
-        // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            window.addEventListener('resize', window.onWindowResize, false);
-            document.getElementById('restart-button').addEventListener('click', window.restartLoad);
-            loadApplicationStep();
-        });
-    </script>
-</body>
-</html>
