@@ -355,7 +355,7 @@
             <h2 style="color: var(--accent-blue);" id="auth-title">Giriş Yap</h2>
             <div id="auth-error" style="color:red; font-size:12px; margin-bottom:10px;"></div>
             <input type="email" id="auth-email" placeholder="E-posta" value="test@lunx.com">
-            <input type="password" id="auth-pass" placeholder="Şifre" value="123456">
+            <input type="password" id="auth-pass" placeholder="Şifre" value="123456"> 
             <button id="auth-submit-btn" onclick="LunX.auth.submit()">GİRİŞ</button>
             <div class="auth-toggle" onclick="LunX.auth.toggleMode()">Hesabın yok mu? Kayıt Ol</div>
         </div>
@@ -511,16 +511,20 @@
     <script>
         /**
          * LUNX STUDIO CORE V7.1 - GÜNCEL VE MOBİL UYUMLU (FIREBASE VE 3D BOYUT/ROTASYON GÜNCELLEMESİ)
-         * - Firebase Kimlik Doğrulama Çalışır Hale Getirildi.
+         * - Firebase Kimlik Doğrulama Çalışır Hale Getirildi (Geçerli Anahtar Gerektirir).
          * - 3D Viewport Çözünürlük Sorunu Düzeltildi.
          */
          
         // 1. Firebase Yapılandırması (Lütfen KENDİ Anahtarınızla Değiştirin!)
         const firebaseConfig = {
-            // Demo anahtarı, bu anahtarı kendi projenizinkiyle değiştirin.
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", 
+            // 🔴 KRİTİK DÜZELTME: Bu kısım güncellendi:
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
             authDomain: "lunxstudio.firebaseapp.com",
-            projectId: "lunxstudio-v7"
+            projectId: "lunxstudio-v7",
+            // StorageBucket, MessagingSenderId ve AppId de eklenmesi önerilir.
+            // storageBucket: "your-project.appspot.com",
+            // messagingSenderId: "123456789012",
+            // appId: "1:123456789012:web:abcdef1234567890" 
         };
         
         // --- CORE APPLICATION OBJECT ---
@@ -544,18 +548,24 @@
                 
                 // =============== FIREBASE BAŞLATMA ===============
                 try {
-                    firebase.initializeApp(firebaseConfig); 
+                    // Firebase'in zaten başlatılıp başlatılmadığını kontrol et
+                    if (!firebase.apps.length) { 
+                        firebase.initializeApp(firebaseConfig); 
+                    }
                     LunX.auth.check();
                     firebaseSuccess = true;
                 } catch(e) {
-                    const errorMsg = "Firebase yüklenemedi. (Hata: " + e.message + "). Misafir modunda başlıyor.";
-                    document.getElementById('auth-error').innerText = errorMsg;
+                    // KRİTİK DÜZELTME: Hata mesajı konsola yazıldı.
+                    const errorMsg = "Firebase başlatılamadı! Yapılandırmayı (firebaseConfig) güncelleyin. Hata: " + e.message;
+                    console.error(errorMsg);
+                    document.getElementById('auth-error').innerText = "FATAL: Firebase hatası, konsola bakın.";
                 }
 
                 if (!firebaseSuccess) {
-                     // Hata durumunda doğrudan Misafir Moduna geçiş
+                     // Hata durumunda (eğer Firebase gerçekten başarısız olduysa) Misafir Moduna geçiş
+                     LunX.currentUser = { email: 'guest@lunx.com' };
                      document.getElementById('auth-screen').style.display = 'none';
-                     LunX.manager.showStartScreen({email: 'guest@lunx.com'}); 
+                     LunX.manager.showStartScreen(LunX.currentUser); 
                 }
                 
                 // Event Listeners (Must be attached early)
@@ -566,6 +576,9 @@
             // 2. AUTHENTICATION (GİRİŞ/KAYIT)
             auth: {
                 check: () => {
+                    // KRİTİK DÜZELTME: apps.length kontrolü ile firebase'in varlığını teyit et
+                    if (!firebase.apps.length) return; 
+
                     firebase.auth().onAuthStateChanged((user) => {
                         if (user) {
                             LunX.currentUser = user;
@@ -577,6 +590,12 @@
                     });
                 },
                 submit: async () => {
+                    // KRİTİK DÜZELTME: submit fonksiyonu, Firebase'e bağımlı.
+                    if (!firebase.apps.length) {
+                        document.getElementById('auth-error').innerText = "Firebase yüklenmedi. Giriş yapılamaz.";
+                        return;
+                    }
+
                     const email = document.getElementById('auth-email').value;
                     const password = document.getElementById('auth-pass').value;
                     const errorEl = document.getElementById('auth-error');
@@ -598,11 +617,22 @@
                     }
                 },
                 logout: async () => {
+                    if (LunX.currentUser && LunX.currentUser.email && LunX.currentUser.email.includes('guest')) {
+                        // Misafir modundan çıkış
+                        LunX.currentUser = null;
+                        LunX.manager.exitStudio(); 
+                        return;
+                    }
+
                     try {
-                        await firebase.auth().signOut();
+                        // KRİTİK DÜZELTME: apps.length kontrolü ile firebase'in varlığını teyit et
+                        if (firebase.apps.length) {
+                            await firebase.auth().signOut();
+                        }
                         LunX.currentUser = null;
                         LunX.manager.exitStudio(); 
                     } catch (e) {
+                        // Firebase olmasa bile arayüzü resetle
                         LunX.currentUser = null;
                         LunX.manager.exitStudio();
                         alert("Oturum kapatma hatası.");
@@ -622,7 +652,7 @@
                 showStartScreen: (user) => {
                     document.getElementById('studio-interface').style.display = 'none';
                     document.getElementById('start-screen').style.display = 'flex';
-                    const username = user.email ? user.email.split('@')[0] : 'Guest';
+                    const username = user && user.email ? user.email.split('@')[0] : 'Guest';
                     document.getElementById('username-display').innerText = username;
                     LunX.currentUser = user; 
                 },
@@ -641,9 +671,7 @@
                     LunX.scene = null; LunX.objects = []; LunX.selected = null; LunX.isPlaying = false;
                     LunX.history.stack = []; LunX.history.pointer = -1;
                     
-                    if(LunX.currentUser && LunX.currentUser.email && LunX.currentUser.email.includes('guest')) {
-                         LunX.manager.showStartScreen(LunX.currentUser); 
-                    } else if (LunX.currentUser) {
+                    if(LunX.currentUser) {
                          LunX.manager.showStartScreen(LunX.currentUser); 
                     } else {
                          document.getElementById('auth-screen').style.display = 'flex'; 
@@ -742,6 +770,7 @@
                     
                     if (intersects.length > 0) {
                         let selectedObj = intersects[0].object;
+                        // En üstteki Mesh veya Group nesnesini seç
                         while (selectedObj.parent && selectedObj.parent.name !== 'Scene' && selectedObj.parent.name !== '') {
                             selectedObj = selectedObj.parent;
                         }
@@ -753,7 +782,7 @@
                 
                 select: (obj) => {
                     LunX.selected = obj;
-                    if (obj && obj.userData.locked !== true) {
+                    if (obj && obj.userData.locked !== true && obj.isObject3D) {
                         LunX.transform.attach(obj);
                     } else {
                         LunX.transform.detach();
@@ -861,10 +890,12 @@
                     if(type=='box') { 
                         geo = new THREE.BoxGeometry(4, 1, 4); 
                         defaultScale = {x: 1, y: 1, z: 1}; 
+                        name = "Part";
                     }
                     else if(type=='sphere') { 
                         geo = new THREE.SphereGeometry(1,32,32); name="Sphere"; 
                         defaultScale = {x: 1, y: 1, z: 1}; 
+                        name = "Sphere";
                     }
                     
                     const mesh = new THREE.Mesh(geo, mat);
@@ -909,7 +940,7 @@
                 },
                 
                 group: () => {
-                    if (!LunX.selected || LunX.selected.userData.isBase) return;
+                    if (!LunX.selected || LunX.selected.userData.isBase || !LunX.selected.isObject3D) return;
                     LunX.tools.saveState();
                     
                     const group = new THREE.Group();
@@ -921,9 +952,15 @@
                     
                     group.position.copy(LunX.selected.position);
                     parent.add(group);
+                    
+                    // Seçili nesneyi gruptan çıkarıp yeni gruba ekle
                     parent.remove(LunX.selected);
+                    LunX.selected.position.set(0,0,0); // Gruba eklenen objenin pozisyonunu sıfırla
                     group.add(LunX.selected);
                     
+                    // Grubun pozisyonunu, çocuk objenin eski pozisyonuna ayarla
+                    group.position.copy(LunX.selected.position);
+
                     LunX.objects.push(group);
                     LunX.editor.select(group);
                     LunX.tools.saveState();
@@ -939,9 +976,17 @@
                     LunX.transform.detach();
                     LunX.editor.select(null);
                     
+                    // Grubun altındaki tüm objeleri ana sahneye/üst nesneye aktar
                     while(group.children.length > 0) {
                         const child = group.children[0];
                         group.remove(child);
+                        
+                        // Pozisyon hesaplaması: Objenin global pozisyonunu koru
+                        child.updateMatrixWorld();
+                        child.position.setFromMatrixPosition(child.matrixWorld);
+                        child.rotation.setFromRotationMatrix(new THREE.Matrix4().extractRotation(child.matrixWorld));
+                        child.scale.setFromMatrixScale(child.matrixWorld);
+                        
                         parent.add(child);
                     }
                     
@@ -952,7 +997,14 @@
                     LunX.tools.saveState();
                 },
                 
+                // Durum Kaydetme: Obje pozisyonları, renkleri ve userDatası dahil
                 saveState: () => {
+                    // JSON'a çevirmeden önce TransformControls'daki değişiklikleri kaydet (Opsiyonel)
+                    if (LunX.selected && LunX.transform.object) {
+                        LunX.selected.userData.rot = { x: LunX.selected.rotation.x, y: LunX.selected.rotation.y, z: LunX.selected.rotation.z };
+                        LunX.selected.userData.scale = { x: LunX.selected.scale.x, y: LunX.selected.scale.y, z: LunX.selected.scale.z };
+                    }
+
                     const state = LunX.objects.map(obj => {
                         let objData = {
                             name: obj.name,
@@ -985,6 +1037,7 @@
                     LunX.history.pointer = LunX.history.stack.length - 1;
                 },
                 
+                // Durum Uygulama: Geçmişten veriyi yükler
                 applyState: (state) => {
                     const parsedState = JSON.parse(state);
                     
@@ -996,6 +1049,7 @@
                         let newObj = null;
                         if (newState.type === 'Mesh') {
                             let geo;
+                            // Basit bir geometrinin korunması
                             if (newState.name.toLowerCase().includes('sphere')) {
                                 geo = new THREE.SphereGeometry(1, 32, 32);
                             } else {
@@ -1016,6 +1070,7 @@
                         } else if (newState.type === 'Group') {
                             newObj = new THREE.Group();
                         } else if (newState.type === 'Script') {
+                            // Scriptler 3D nesne olmadığı için sadece obje olarak tutulur
                             newObj = { name: newState.name, type: "script", uuid: newState.uuid, userData: newState.userData };
                         }
 
@@ -1027,6 +1082,7 @@
                             if (newObj.isObject3D) {
                                 if (newState.pos) newObj.position.set(newState.pos.x, newState.pos.y, newState.pos.z);
                                 if (newState.rot) newObj.rotation.set(newState.rot.x, newState.rot.y, newState.rot.z);
+                                // Boyut/Ölçek
                                 if (newState.scale) newObj.scale.set(newState.scale.x, newState.scale.y, newState.scale.z); 
 
                                 LunX.scene.add(newObj);
@@ -1061,7 +1117,7 @@
                     const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
                     const types = ['box', 'sphere'];
                     
-                    // Daha fazla öğe ekleyerek scroll bar testini etkinleştirir
+                    // Daha fazla öğe ekleniyor
                     while (LunX.toolboxItems.length < 30) { 
                         const mat = materials[Math.floor(Math.random() * materials.length)];
                         const type = types[Math.floor(Math.random() * types.length)];
@@ -1108,7 +1164,7 @@
             ui: {
                 refreshExplorer: () => {
                     const div = document.getElementById('explorer');
-                    div.innerHTML = `<div class="tree-node" style="font-weight:bold; cursor:pointer; padding:5px;" onclick="LunX.editor.select(null)">Workspace</div>`;
+                    div.innerHTML = `<div class="tree-node" style="font-weight:bold; cursor:pointer; padding:5px; background: ${LunX.selected === null ? 'var(--selection-bg)' : 'white'};" onclick="LunX.editor.select(null)">Workspace</div>`;
                     
                     LunX.objects.forEach(obj => {
                         const node = document.createElement('div');
@@ -1174,27 +1230,4 @@
                             </select>
                         </div></div>
                         <div class="prop-row"><div class="prop-name">Anchored</div><div class="prop-value"><input type="checkbox" ${obj.userData.anchored?'checked':''} onchange="LunX.selected.userData.anchored=this.checked; LunX.tools.saveState()"></div></div>
-                        <div class="prop-row"><div class="prop-name">CanCollide</div><div class="prop-value"><input type="checkbox" ${obj.userData.canCollide!==false?'checked':''} onchange="LunX.selected.userData.canCollide=this.checked; LunX.tools.saveState()"></div></div>
-                    `;
-                    div.innerHTML = html;
-                },
-                
-                // Malzeme oluşturma fonksiyonu (Aynı Bırakıldı)
-                createMaterial: (matName, hexColor) => {
-                    const color = new THREE.Color(hexColor);
-                    
-                    switch(matName) {
-                        case 'Neon':
-                            return new THREE.MeshBasicMaterial({ color: color });
-                        case 'Metal':
-                            return new THREE.MeshPhongMaterial({ color: color, specular: 0x333333, shininess: 100 });
-                        case 'Glass':
-                             return new THREE.MeshPhysicalMaterial({ color: color, transmission: 0.9, roughness: 0.1, metalness: 0, transparent: true });
-                        case 'Wood':
-                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0.1 });
-                        case 'Grass':
-                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 });
-                        case 'Ice':
-                            return new THREE.MeshPhysicalMaterial({ color: 0xADD8E6, transmission: 0.9, roughness: 0.05, metalness: 0, transparent: true });
-                        case 'ForceField':
-                            return new THREE.MeshBasic
+                        <div class="prop-row">
