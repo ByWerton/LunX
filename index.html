@@ -15,6 +15,15 @@
             --panel-bg: #252526;
             --text-color: #ddd;
             --border-color: #3e3e42;
+            /* YENİ: UI Boyut değişkenleri */
+            --default-font-size: 14px;
+            --compact-font-size: 11px;
+            --default-padding: 10px;
+            --compact-padding: 5px;
+            --default-sidebar-width: 250px;
+            --compact-sidebar-width: 150px;
+            --default-toolbar-height: 40px;
+            --compact-toolbar-height: 30px;
         }
 
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background-dark); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; }
@@ -48,16 +57,31 @@
         .switch-auth { color: var(--primary-color); cursor: pointer; font-size: 14px; display: inline-block; }
         
         /* Editor/Studio Styles */
-        #toolbar { background-color: var(--panel-bg); display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid var(--border-color); height: 40px; }
+        #toolbar { 
+            background-color: var(--panel-bg); display: none; align-items: center; 
+            padding: 5px var(--default-padding); border-bottom: 1px solid var(--border-color); 
+            height: var(--default-toolbar-height); font-size: var(--default-font-size);
+            transition: all 0.2s ease-in-out;
+        }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
-        .tool-btn { background-color: #3e3e42; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .tool-btn { 
+            background-color: #3e3e42; color: white; border: none; 
+            padding: 5px 10px; cursor: pointer; border-radius: 4px; 
+            transition: 0.2s; font-size: var(--default-font-size); 
+            display: flex; align-items: center; justify-content: center; line-height: 1; 
+        }
         .tool-btn:hover { background-color: #505050; }
         .tool-btn.active { background-color: var(--primary-color); }
         
         #main-area { flex-grow: 1; display: none; overflow: hidden; position: relative; }
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        #sidebar-right { width: 250px; background-color: var(--panel-bg); padding: 10px; border-left: 1px solid var(--border-color); overflow-y: auto; }
-        .hierarchy-item { padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #sidebar-right { 
+            width: var(--default-sidebar-width); background-color: var(--panel-bg); 
+            padding: var(--default-padding); border-left: 1px solid var(--border-color); 
+            overflow-y: auto; font-size: var(--default-font-size);
+            transition: all 0.2s ease-in-out;
+        }
+        .hierarchy-item { padding: 5px; cursor: pointer; border-radius: 3px; font-size: var(--default-font-size); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .hierarchy-item.selected { background-color: var(--primary-color); }
         .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .prop-row input { width: 60%; }
@@ -127,9 +151,71 @@
         }
         .skybox-thumbnail.selected { border-color: var(--primary-color); }
         .skybox-thumbnail img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+
+        /* YENİ: UI Boyutu Küçültme Stilleri */
+        .compact-ui #toolbar { 
+            height: var(--compact-toolbar-height); 
+            padding: 2px var(--compact-padding);
+            font-size: var(--compact-font-size);
+        }
+        .compact-ui .tool-btn { 
+            padding: 3px 6px; 
+            font-size: var(--compact-font-size);
+        }
+        .compact-ui .logo { font-size: 14px; margin-right: 10px; }
+        .compact-ui #sidebar-right {
+            width: var(--compact-sidebar-width);
+            padding: var(--compact-padding);
+            font-size: var(--compact-font-size);
+        }
+        .compact-ui .hierarchy-item, .compact-ui .prop-row span, .compact-ui .prop-row input, .compact-ui textarea {
+            font-size: var(--compact-font-size);
+        }
+        .compact-ui h4 { font-size: 14px; }
+        
+        /* YENİ: UI Kontrol Düğmesi Stili */
+        #ui-control-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            z-index: 100;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            padding: 5px 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            line-height: 1;
+        }
+        #ui-control-btn:hover { background-color: #006bbd; }
+        
+        /* YENİ: Mobil Kontrol Ayar Paneli Stili */
+        #mobile-control-menu {
+             background: var(--panel-bg); 
+             padding: 15px; 
+             border-radius: 6px; 
+             box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+             position: absolute;
+             top: 45px;
+             left: 5px;
+             z-index: 101;
+             display: none;
+             flex-direction: column;
+             gap: 10px;
+        }
+        #mobile-control-menu .menu-item {
+             padding: 8px;
+             background-color: #3e3e42;
+             border-radius: 4px;
+             cursor: pointer;
+             transition: background-color 0.2s;
+             font-size: 14px;
+        }
+        #mobile-control-menu .menu-item:hover { background-color: #505050; }
+        #mobile-control-menu .menu-item.active { background-color: var(--secondary-color); }
     </style>
 </head>
-<body>
+<body id="lunx-body">
 
     <div id="loading-screen" class="full-screen-container" style="display: flex;">
         <h1 style="color: var(--primary-color); font-size: 40px; margin-bottom: 20px;">LUNX STUDIO</h1>
@@ -188,6 +274,8 @@
     </div>
     
     <div id="toolbar">
+        <div id="ui-control-btn" onclick="window.showUIControlMenu()">🎛️</div>
+        
         <div class="logo">LunX</div>
         <div class="tool-group">
             <button id="play-button" class="tool-btn active" onclick="window.toggleSimulationMode(true)" title="Oyunu Başlat">▶️ Oynat</button>
@@ -317,6 +405,16 @@
         <div class="context-item tool-btn" onclick="window.deleteSelectedObject()" style="margin-bottom: 5px;">Sil</div>
         <div class="context-item tool-btn" onclick="window.duplicateSelectedObject()">Çoğalt</div>
     </div>
+    
+    <div id="mobile-control-menu">
+        <strong>UI Boyutu Ayarı</strong>
+        <div class="menu-item" data-size="default" onclick="window.toggleUISize(false)">Büyük UI (Varsayılan)</div>
+        <div class="menu-item" data-size="compact" onclick="window.toggleUISize(true)">Küçük UI (Kompakt)</div>
+        <hr style="border-color: #3e3e42; margin: 5px 0;">
+        <strong>Mobil Kontrol Tipi (Oynat Modu)</strong>
+        <div class="menu-item active" data-control="joystick" onclick="window.setMobileControlMode('joystick')">🕹️ Joystick + Zıplama</div>
+        <div class="menu-item" data-control="none" onclick="window.setMobileControlMode('none')">❌ Kontrolsüz</div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -410,6 +508,10 @@
         const mouse = new THREE.Vector2();
         let authMode = 'login'; 
         const clock = new THREE.Clock(); 
+        
+        // YENİ: UI VE KONTROL DEĞİŞKENLERİ
+        let isCompactUI = false;
+        let mobileControlMode = 'joystick'; // 'joystick' veya 'none'
 
         // --- 2. YARDIMCI FONKSİYONLAR ---
         
@@ -455,6 +557,7 @@
             document.getElementById('settings-screen').style.display = 'none';
             document.getElementById('auth-error').style.display = 'none'; 
             document.getElementById('security-status').style.display = 'none';
+            document.getElementById('mobile-control-menu').style.display = 'none';
         }
 
         // --- 3. YÜKLEME EKRANI YÖNETİMİ ---
@@ -1057,11 +1160,57 @@
             }
         }
 
+        // --- YENİ: UI VE KONTROL YÖNETİMİ FONKSİYONLARI ---
+        
+        // UI Boyutunu Değiştirme
+        window.toggleUISize = (isCompact) => {
+            const body = document.getElementById('lunx-body');
+            isCompactUI = isCompact;
+            if (isCompact) {
+                body.classList.add('compact-ui');
+                document.querySelector('#mobile-control-menu .menu-item[data-size="default"]').classList.remove('active');
+                document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]').classList.add('active');
+            } else {
+                body.classList.remove('compact-ui');
+                document.querySelector('#mobile-control-menu .menu-item[data-size="default"]').classList.add('active');
+                document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]').classList.remove('active');
+            }
+            window.onWindowResize(); // Yeniden boyutlandırma olayını tetikle
+            window.log(`UI Boyutu: ${isCompact ? 'Kompakt' : 'Varsayılan'} olarak ayarlandı.`);
+        }
+        
+        // Mobil Kontrol Modunu (Joystick) Ayarlama
+        window.setMobileControlMode = (mode) => {
+            mobileControlMode = mode;
+            document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`#mobile-control-menu .menu-item[data-control="${mode}"]`).classList.add('active');
+            
+            if (isSimulationMode) {
+                window.initMobileControls(); // Simülasyon modundaysa anında güncelle
+            }
+            window.log(`Mobil Kontrol Modu: ${mode.toUpperCase()} olarak ayarlandı.`);
+        }
+        
+        // UI Kontrol Menüsünü Göster/Gizle
+        window.showUIControlMenu = () => {
+             const menu = document.getElementById('mobile-control-menu');
+             if (menu.style.display === 'flex') {
+                 menu.style.display = 'none';
+             } else {
+                 menu.style.display = 'flex';
+             }
+        }
+        
         // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI ---
         
         window.onWindowResize = () => {
             const isMobile = window.innerWidth <= 768;
             const mobileControls = document.getElementById('mobile-controls');
+            const joystickWrapper = document.getElementById('joystick-wrapper');
+            const uiControlBtn = document.getElementById('ui-control-btn');
+            const toolbar = document.getElementById('toolbar');
 
             if (renderer && camera) {
                 const viewport = document.getElementById('viewport');
@@ -1083,10 +1232,26 @@
                 if (isMobile && isSimulationMode) {
                     mobileControls.style.display = 'flex';
                     mobileControls.classList.add('active');
+                    
+                    // Joystick moduna göre görünürlüğü ayarla
+                    if (joystickWrapper) {
+                         joystickWrapper.style.display = mobileControlMode === 'joystick' ? 'block' : 'none';
+                    }
                 } else {
                     mobileControls.style.display = 'none';
                     mobileControls.classList.remove('active');
                 }
+            }
+            
+            // UI Kontrol Düğmesini ayarla
+            if (uiControlBtn) {
+                 if (toolbar && toolbar.style.display === 'flex') {
+                      uiControlBtn.style.display = 'block';
+                      // Toolbar'ın padding'i kadar sol kaydır (düğme yer kaplamamalı)
+                      uiControlBtn.style.left = isCompactUI ? '2px' : '5px';
+                 } else {
+                      uiControlBtn.style.display = 'none';
+                 }
             }
             
             // Simülasyon modunda kontrolleri doğru ayarla
@@ -1094,6 +1259,7 @@
                  if (controls) controls.enabled = false;
                  if (transformControls) transformControls.enabled = false;
             } else {
+                 // Editör modunda, mobilse OrbitControls kapatılır.
                  if (controls) controls.enabled = !isMobile;
                  if (transformControls) transformControls.enabled = !isMobile;
             }
@@ -1304,6 +1470,19 @@
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
             
+            // UI Kontrol Düğmesini göster
+            document.getElementById('ui-control-btn').style.display = 'block';
+            
+            // UI Boyutunu başlangıçta kontrol et
+            window.toggleUISize(isCompactUI);
+            
+            // Mobil Kontrol Modu menüsünün durumunu güncelle
+            document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`#mobile-control-menu .menu-item[data-control="${mobileControlMode}"]`).classList.add('active');
+
+
             if (isNew) {
                 const template = document.getElementById('template-select').value;
                 window.setupEnvironment(template);
@@ -1832,6 +2011,7 @@
         window.initMobileControls = () => {
             const isMobile = window.innerWidth <= 768;
             const mobileControls = document.getElementById('mobile-controls');
+            const joystickWrapper = document.getElementById('joystick-wrapper');
             
             // Önceki ayarları temizle
             const joystickArea = document.getElementById('joystick-area');
@@ -1855,6 +2035,11 @@
             mobileControls.style.display = isSimulationMode ? 'flex' : 'none';
             if (isSimulationMode) mobileControls.classList.add('active'); else mobileControls.classList.remove('active');
             
+            // Joystick moduna göre görünürlüğü ayarla
+            if (joystickWrapper) {
+                 joystickWrapper.style.display = mobileControlMode === 'joystick' ? 'block' : 'none';
+            }
+            
             const joystickHandle = document.getElementById('joystick-handle');
             
             // Zıplama Butonu için yeni handler
@@ -1868,87 +2053,89 @@
             jumpButton.addEventListener('click', window.jumpClickHandler);
             jumpButton.addEventListener('touchstart', window.jumpClickHandler, { passive: false });
 
-            // Joystick için yeni handler
-            window.joystickStartHandler = (e) => {
-                e.preventDefault();
-                joystickActive = true;
-                
-                const touch = e.touches ? e.touches[0] : e;
-                const rect = joystickArea.getBoundingClientRect();
-                
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                const maxDistance = rect.width / 2;
-                const handleSizeHalf = 20;
-
-                const updateJoystick = (cClientX, cClientY) => {
-                    let dx = cClientX - centerX;
-                    let dy = cClientY - centerY;
+            // Joystick için yeni handler (Sadece joystick modu seçiliyse ekle)
+            if (mobileControlMode === 'joystick') {
+                window.joystickStartHandler = (e) => {
+                    e.preventDefault();
+                    joystickActive = true;
                     
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance > maxDistance) {
-                        dx = (dx / distance) * maxDistance;
-                        dy = (dy / distance) * maxDistance;
-                    }
-
-                    joystickHandle.style.left = `${dx + maxDistance - handleSizeHalf}px`; 
-                    joystickHandle.style.top = `${dy + maxDistance - handleSizeHalf}px`;
-
-                    joystickX = dx / maxDistance; 
-                    joystickY = dy / maxDistance; 
+                    const touch = e.touches ? e.touches[0] : e;
+                    const rect = joystickArea.getBoundingClientRect();
                     
-                    return (moveEvent) => {
-                        moveEvent.preventDefault();
-                        const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const maxDistance = rect.width / 2;
+                    const handleSizeHalf = 20;
+
+                    const updateJoystick = (cClientX, cClientY) => {
+                        let dx = cClientX - centerX;
+                        let dy = cClientY - centerY;
                         
-                        // Mobil cihazlarda dokunma pozisyonunu kullan
-                        const moveClientX = moveTouch.clientX;
-                        const moveClientY = moveTouch.clientY;
-                        
-                        const newDx = moveClientX - centerX;
-                        const newDy = moveClientY - centerY;
-                        const newDistance = Math.sqrt(newDx * newDx + newDy * newDy);
-                        
-                        let finalDx = newDx;
-                        let finalDy = newDy;
-                        
-                        if (newDistance > maxDistance) {
-                            finalDx = (newDx / newDistance) * maxDistance;
-                            finalDy = (newDy / newDistance) * maxDistance;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance > maxDistance) {
+                            dx = (dx / distance) * maxDistance;
+                            dy = (dy / distance) * maxDistance;
                         }
+
+                        joystickHandle.style.left = `${dx + maxDistance - handleSizeHalf}px`; 
+                        joystickHandle.style.top = `${dy + maxDistance - handleSizeHalf}px`;
+
+                        joystickX = dx / maxDistance; 
+                        joystickY = dy / maxDistance; 
                         
-                        joystickHandle.style.left = `${finalDx + maxDistance - handleSizeHalf}px`;
-                        joystickHandle.style.top = `${finalDy + maxDistance - handleSizeHalf}px`;
-                        
-                        joystickX = finalDx / maxDistance;
-                        joystickY = finalDy / maxDistance;
+                        return (moveEvent) => {
+                            moveEvent.preventDefault();
+                            const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
+                            
+                            // Mobil cihazlarda dokunma pozisyonunu kullan
+                            const moveClientX = moveTouch.clientX;
+                            const moveClientY = moveTouch.clientY;
+                            
+                            const newDx = moveClientX - centerX;
+                            const newDy = moveClientY - centerY;
+                            const newDistance = Math.sqrt(newDx * newDx + newDy * newDy);
+                            
+                            let finalDx = newDx;
+                            let finalDy = newDy;
+                            
+                            if (newDistance > maxDistance) {
+                                finalDx = (newDx / newDistance) * maxDistance;
+                                finalDy = (newDy / newDistance) * maxDistance;
+                            }
+                            
+                            joystickHandle.style.left = `${finalDx + maxDistance - handleSizeHalf}px`;
+                            joystickHandle.style.top = `${finalDy + maxDistance - handleSizeHalf}px`;
+                            
+                            joystickX = finalDx / maxDistance;
+                            joystickY = finalDy / maxDistance;
+                        };
                     };
-                };
 
-                let moveListener = updateJoystick(touch.clientX, touch.clientY);
-                const handleMove = (e) => moveListener(e);
-                
-                const handleEnd = (e) => {
-                    joystickActive = false;
-                    joystickX = 0;
-                    joystickY = 0;
-                    joystickHandle.style.left = '30px'; 
-                    joystickHandle.style.top = '30px'; 
+                    let moveListener = updateJoystick(touch.clientX, touch.clientY);
+                    const handleMove = (e) => moveListener(e);
                     
-                    document.removeEventListener('mousemove', handleMove);
-                    document.removeEventListener('mouseup', handleEnd);
-                    document.removeEventListener('touchmove', handleMove);
-                    document.removeEventListener('touchend', handleEnd);
+                    const handleEnd = (e) => {
+                        joystickActive = false;
+                        joystickX = 0;
+                        joystickY = 0;
+                        joystickHandle.style.left = '30px'; 
+                        joystickHandle.style.top = '30px'; 
+                        
+                        document.removeEventListener('mousemove', handleMove);
+                        document.removeEventListener('mouseup', handleEnd);
+                        document.removeEventListener('touchmove', handleMove);
+                        document.removeEventListener('touchend', handleEnd);
+                    };
+
+                    document.addEventListener('mousemove', handleMove);
+                    document.addEventListener('mouseup', handleEnd);
+                    joystickArea.addEventListener('touchmove', handleMove, { passive: false });
+                    joystickArea.addEventListener('touchend', handleEnd);
                 };
 
-                document.addEventListener('mousemove', handleMove);
-                document.addEventListener('mouseup', handleEnd);
-                joystickArea.addEventListener('touchmove', handleMove, { passive: false });
-                joystickArea.addEventListener('touchend', handleEnd);
-            };
-
-            joystickArea.addEventListener('mousedown', window.joystickStartHandler);
-            joystickArea.addEventListener('touchstart', window.joystickStartHandler, { passive: false });
+                joystickArea.addEventListener('mousedown', window.joystickStartHandler);
+                joystickArea.addEventListener('touchstart', window.joystickStartHandler, { passive: false });
+            }
         }
 
 
@@ -2019,10 +2206,11 @@
             let inputX = 0;
             let inputZ = 0;
 
-            if (joystickActive) {
+            if (mobileControlMode === 'joystick' && joystickActive) {
                 inputX = joystickX;
                 inputZ = -joystickY; // Mobil joystick'te Y ters olabilir.
             } else {
+                // Klavye kontrolleri her zaman aktif
                 if (moveForward) inputZ += 1;
                 if (moveBackward) inputZ -= 1;
                 if (moveLeft) inputX -= 1;
