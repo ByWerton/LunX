@@ -3,145 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Web Tabanlı Fizik Stüdyosu - Canvasli Sürüm</title>
+    <title>Sadece 3D Görünüm</title>
     <style>
-        /* Ekranın Tamamını Kaplama ve Mobil Kaydırmayı Engelleme */
+        /* Ekranın Tamamını Kaplama */
         body { margin: 0; overflow: hidden; touch-action: none; } 
-        #renderCanvas { display: block; width: 100vw; height: 100vh; } /* Canvas'ı tam ekran yap */
-
-        /* Kontrol Butonları için basit stil */
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 10;
-        }
-        #controls button {
-            padding: 10px;
-            margin-right: 5px;
-            cursor: pointer;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
+        #renderCanvas { display: block; width: 100vw; height: 100vh; } 
     </style>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas> 
     
-    <div id="controls">
-        <button id="translate">Hareket Ettir</button>
-        <button id="rotate">Döndür</button>
-        <button id="scale">Büyüt/Küçült</button>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://threejs.org/examples/js/controls/TransformControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.min.js"></script>
 
     <script>
         // --- 1. Temel Tanımlamalar ---
-        let scene, camera, renderer, controls, transformControls;
-        let activeCube;
-        let world; 
-        let cubeBody; 
-        const timeStep = 1 / 60; 
-        let lastTime;
-
-        function initCannon() {
-            world = new CANNON.World();
-            world.gravity.set(0, -9.82, 0); 
-            
-            // Zemin (Fiziksel)
-            const groundShape = new CANNON.Plane();
-            const groundBody = new CANNON.Body({ mass: 0 }); 
-            groundBody.addShape(groundShape);
-            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); 
-            world.addBody(groundBody);
-        }
+        let scene, camera, renderer, controls;
 
         function initThree() {
-            const canvas = document.getElementById('renderCanvas'); // TANIMLANAN CANVAS'I SEÇ
+            const canvas = document.getElementById('renderCanvas');
             
-            // Sahne: Parlak Mavi Gökyüzü
+            // Sahne: Mavi Gökyüzü
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xADD8E6); 
+            scene.background = new THREE.Color(0xADD8E6); // Açık Mavi
             
             // Işıklandırma
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.6);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.7); // Ortam Işığı
             scene.add(hemiLight);
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5); // Güneş Işığı
             sunLight.position.set(5, 10, 5);
-            sunLight.castShadow = true;
             scene.add(sunLight);
 
             // Kamera
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 2, 5); 
+            camera.position.set(0, 2, 5); // Küpün tam önünde, biraz yukarıda
             camera.lookAt(0, 0.5, 0);
 
-            // Renderer: Canvas'ı belirterek başlatıyoruz!
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); // BURADA DEĞİŞİKLİK YAPILDI
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            // renderer.domElement'i artık body'ye eklememize gerek yok, zaten canvas'ı kullanıyor.
 
-            // ... (Diğer Nesne ve Kontrol Tanımlamaları Aynı) ...
-            
-            // --- Görünür Zemin (Geniş) ---
+            // --- Görünür Zemin ---
             const floorGeometry = new THREE.PlaneGeometry(30, 30);
-            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x556B2F }); 
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x556B2F }); // Koyu Yeşil Zemin
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
             scene.add(floor);
             
-            // --- Ana Küp (Görsel - Parlak Kırmızı) ---
+            // --- Ana Küp ---
             const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
             const cubeMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xff0000,
+                color: 0xff0000, // Parlak Kırmızı
                 metalness: 0.1, 
                 roughness: 0.8
             }); 
-            activeCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            activeCube.castShadow = true;
-            scene.add(activeCube);
+            const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.position.set(0, 0.5, 0); // Zeminin üstünde duran küp
+            scene.add(cube);
 
-            // Küpün Fiziksel Cismi
-            const cubeShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
-            cubeBody = new CANNON.Body({ mass: 5, shape: cubeShape }); 
-            cubeBody.position.set(0, 5, 0); 
-            world.addBody(cubeBody);
-
-            // --- Kontroller ---
+            // --- Kontroller (Kamera Gezinmesi) ---
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true; 
+            controls.enableDamping = true; // Daha akıcı hareket
             controls.dampingFactor = 0.05;
-
-            transformControls = new THREE.TransformControls(camera, renderer.domElement);
-            transformControls.attach(activeCube); 
-            scene.add(transformControls);
-
-            // Kontrol kullanılırken fizik simülasyonunu yönet
-            transformControls.addEventListener('dragging-changed', function (event) {
-                controls.enabled = !event.value;
-                if (!event.value) { // Düzenleme bitince
-                    cubeBody.type = CANNON.Body.DYNAMIC; 
-                    cubeBody.position.copy(activeCube.position);
-                    cubeBody.quaternion.copy(activeCube.quaternion);
-                    cubeBody.velocity.set(0, 0, 0);
-                    cubeBody.angularVelocity.set(0, 0, 0);
-                } else {
-                    cubeBody.type = CANNON.Body.STATIC; // Düzenleme başlayınca
-                }
-            });
-            
-            // --- Butonları Bağlama ---
-            document.getElementById('translate').addEventListener('click', () => { transformControls.setMode('translate'); });
-            document.getElementById('rotate').addEventListener('click', () => { transformControls.setMode('rotate'); });
-            document.getElementById('scale').addEventListener('click', () => { transformControls.setMode('scale'); });
 
             window.addEventListener('resize', onWindowResize, false);
         }
@@ -152,25 +75,18 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 3. Ana Döngü ---
-        function animate(time) {
+        // --- 2. Ana Döngü ---
+        function animate() {
             requestAnimationFrame(animate);
 
-            if (lastTime !== undefined) {
-                const dt = (time - lastTime) / 1000;
-                world.step(timeStep, dt);
-            }
-
-            activeCube.position.copy(cubeBody.position);
-            activeCube.quaternion.copy(cubeBody.quaternion);
-
+            // Kamera hareketlerini güncelle
             controls.update(); 
+            
+            // Sahneyi çiz
             renderer.render(scene, camera);
-            lastTime = time;
         }
 
         // Uygulamaları Başlat
-        initCannon(); 
         initThree();
         animate(); 
     </script>
