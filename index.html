@@ -492,12 +492,12 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.1 - GÜNCELLENMİŞ VE MOBİL UYUMLU
+         * LUNX STUDIO CORE V7.1 - GÜNCEL VE MOBİL UYUMLU (PARÇA EKLEME GÜNCELLEMESİ)
          */
          
         // 1. Firebase Yapılandırması
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // Kullanıcının sağladığı key
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", // Kullanıcının sağladığı key (Değiştirildi)
             authDomain: "lunxstudio.firebaseapp.com",
             projectId: "lunxstudio-v7"
         };
@@ -823,7 +823,7 @@
                     LunX.ui.refreshExplorer();
                 },
                 
-                // ... (addPart ve addScript mevcut haliyle iyi)
+                // GÜNCELLEME BURADA
                 addPart: (type, color=null, material='Plastic') => {
                     let geo, mat;
                     let name = type.charAt(0).toUpperCase() + type.slice(1);
@@ -835,11 +835,15 @@
                     mat = LunX.ui.createMaterial(material, hexColor);
                     
                     // Geometri belirleme
-                    if(type=='box') { geo = new THREE.BoxGeometry(2,2,2); }
+                    if(type=='box') { 
+                        // 💡 GÜNCELLEME: Varsayılan boyutu (4, 1, 4) olarak ayarla
+                        geo = new THREE.BoxGeometry(4, 1, 4); 
+                    }
                     else if(type=='sphere') { geo = new THREE.SphereGeometry(1,32,32); name="Sphere"; }
                     
                     const mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.y = 5;
+                    // 💡 GÜNCELLEME: Başlangıç Y pozisyonunu 1 olarak ayarla
+                    mesh.position.y = 1; 
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
                     mesh.name = name;
@@ -958,7 +962,8 @@
                                 geo = new THREE.SphereGeometry(1, 32, 32);
                                 meshType = 'sphere';
                             } else {
-                                geo = new THREE.BoxGeometry(2, 2, 2);
+                                // Default olarak (4, 1, 4) boyutunu kullanıyoruz
+                                geo = new THREE.BoxGeometry(4, 1, 4);
                                 meshType = 'box';
                             }
                             
