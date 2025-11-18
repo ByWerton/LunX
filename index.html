@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.4 - Tam Entegre Sürüm</title>
+    <title>LunX Studio V2.5 - Nihai Entegre Sürüm</title>
     <style>
-        /* CSS Stilleri (Daha önce gönderilen stil seti korunmuştur) */
+        /* CSS Stilleri */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         
@@ -45,8 +45,15 @@
         #sidebar-right { width: 250px; background-color: #252526; padding: 10px; border-left: 1px solid #3e3e42; overflow-y: auto; }
         .hierarchy-item { padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .hierarchy-item.selected { background-color: #007acc; }
+        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .prop-row input { width: 60%; }
 
         /* Customization Styles */
+        .settings-menu { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
+        .settings-menu .menu-item { padding: 10px; cursor: pointer; background: #252526; border-radius: 4px; transition: 0.2s; }
+        .settings-menu .menu-item:hover { background: #3e3e42; }
+        .settings-menu .menu-item.active { background: #007acc; }
+
         .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
         .color-row input[type="color"] { width: 50px; height: 30px; border: none; padding: 0; }
         .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; line-height: 50px; text-align: center; font-size: 10px;}
@@ -102,6 +109,7 @@
             <div class="logo">LunX Studio</div>
             <div class="user-panel" style="display: flex; align-items: center; gap: 10px;">
                  <span id="project-user-email" style="font-size: 14px;"></span>
+                <button id="settings-btn" class="tool-btn" onclick="window.showSettingsScreen('profile')">⚙️ Ayarlar</button>
                 <button class="tool-btn" onclick="window.logoutUser()">Çıkış Yap</button>
             </div>
         </div>
@@ -147,7 +155,6 @@
             <span id="status">Hazır.</span>
             <span id="user-email" style="color:#4caf50; margin-left: 15px;"></span>
         </div>
-        <button id="settings-btn" class="tool-btn" style="margin-left: 15px;" onclick="window.showSettingsScreen('profile')">⚙️ Ayarlar</button>
     </div>
     <div id="main-area" style="display: none; flex-direction: row;">
         <div id="viewport">
@@ -178,57 +185,59 @@
     
     <div id="settings-screen" class="full-screen-container">
         <button class="tool-btn" style="position: absolute; top: 20px; right: 20px; background-color: #c92c2c;" onclick="window.closeSettingsScreen()">❌ Kapat</button>
-        <div class="settings-menu" style="background: #333; padding: 20px; border-radius: 8px;">
-            <h3>AYARLAR</h3>
-            <div class="menu-item active" data-view="profile" onclick="window.showSettingsView('profile')">👤 Kullanıcı Profili</div>
-            <div class="menu-item" data-view="customize" onclick="window.showSettingsView('customize')">🎨 Karakter Özelleştirme</div>
-            <div class="menu-item" data-view="security" onclick="window.showSettingsView('security')">🔒 Güvenlik</div>
-        </div>
-        <div id="settings-content" style="flex-grow: 1; padding: 0 40px; max-width: 900px; max-height: 80vh; overflow-y: auto;">
-            <div id="settings-view-profile" class="settings-panel" style="width: 100%; display: block; text-align: left;">
-                <h2>Kullanıcı Profili</h2>
-                <input type="text" id="setting-username" oninput="window.updateUserProfile('username', this.value)" placeholder="Kullanıcı Adı">
-                <input type="email" id="setting-email" disabled placeholder="E-posta">
-                <select id="setting-gender" onchange="window.updateUserProfile('gender', this.value)">
-                    <option value="male">Erkek (Mavi)</option>
-                    <option value="female">Kız (Pembe)</option>
-                </select>
+        <div style="display: flex; gap: 40px; align-items: flex-start;">
+            <div class="settings-menu" style="width: 200px;">
+                <h3>AYARLAR</h3>
+                <div class="menu-item active" data-view="profile" onclick="window.showSettingsView('profile')">👤 Kullanıcı Profili</div>
+                <div class="menu-item" data-view="customize" onclick="window.showSettingsView('customize')">🎨 Karakter Özelleştirme</div>
+                <div class="menu-item" data-view="security" onclick="window.showSettingsView('security')">🔒 Güvenlik</div>
             </div>
-            <div id="settings-view-customize" style="display: none; gap: 20px; width: 100%; height: 600px;">
-                <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
-                    <h2>Renk Ayarları</h2>
-                    <div class="color-row"><label>Gövde Rengi:</label><input type="color" id="setting-torso-color" onchange="window.updateCustomizationView('torsoColor', this.value)"></div>
-                    <div class="color-row"><label>Ayak/Bacak Rengi:</label><input type="color" id="setting-leg-color" onchange="window.updateCustomizationView('legColor', this.value)"></div>
-                    <div class="color-row"><label>Baş Rengi (Ten/Deri):</label><input type="color" id="setting-skin-color" onchange="window.updateCustomizationView('skinColor', this.value)"></div>
+            <div id="settings-content" style="flex-grow: 1; max-width: 650px; max-height: 80vh; overflow-y: auto;">
+                <div id="settings-view-profile" class="settings-panel" style="width: 100%; display: block; text-align: left;">
+                    <h2>Kullanıcı Profili</h2>
+                    <input type="text" id="setting-username" oninput="window.updateUserProfile('username', this.value)" placeholder="Kullanıcı Adı">
+                    <input type="email" id="setting-email" disabled placeholder="E-posta">
+                    <select id="setting-gender" onchange="window.updateUserProfile('gender', this.value)">
+                        <option value="male">Erkek (Mavi)</option>
+                        <option value="female">Kız (Pembe)</option>
+                    </select>
                 </div>
-                <div id="customize-viewport" style="width: 350px; height: 100%;"></div>
-                <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
-                     <h2>Doku Yükleme</h2>
-                     <div class="file-upload-container">
-                        <label>Kafa Resmi:</label> 
-                        <div style="display: flex; align-items: center;">
-                            <div id="head-preview" class="custom-preview">Boş</div>
-                            <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'headTexture')" style="display: none;">
-                            <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('head-image-file').click()">🖼️ Yükle</button>
-                        </div>
+                <div id="settings-view-customize" style="display: none; gap: 20px; width: 100%; height: 600px; justify-content: space-between;">
+                    <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
+                        <h2>Renk Ayarları</h2>
+                        <div class="color-row"><label>Gövde Rengi:</label><input type="color" id="setting-torso-color" onchange="window.updateCustomizationView('torsoColor', this.value)"></div>
+                        <div class="color-row"><label>Ayak/Bacak Rengi:</label><input type="color" id="setting-leg-color" onchange="window.updateCustomizationView('legColor', this.value)"></div>
+                        <div class="color-row"><label>Baş Rengi (Ten/Deri):</label><input type="color" id="setting-skin-color" onchange="window.updateCustomizationView('skinColor', this.value)"></div>
                     </div>
-                    <textarea id="head-texture-input" placeholder="Kafa Base64 veya URL..." onchange="window.updateCustomizationView('headTexture', this.value)"></textarea>
-                    <div class="file-upload-container" style="margin-top: 20px;">
-                        <label>Gövde Resmi:</label> 
-                         <div style="display: flex; align-items: center;">
-                            <div id="torso-preview" class="custom-preview">Boş</div>
-                            <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torsoTexture')" style="display: none;">
-                            <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('torso-image-file').click()">👕 Yükle</button>
+                    <div id="customize-viewport" style="width: 350px; height: 100%;"></div>
+                    <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
+                        <h2>Doku Yükleme</h2>
+                        <div class="file-upload-container">
+                            <label>Kafa Resmi:</label> 
+                            <div style="display: flex; align-items: center;">
+                                <div id="head-preview" class="custom-preview">Boş</div>
+                                <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'headTexture')" style="display: none;">
+                                <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('head-image-file').click()">🖼️ Yükle</button>
+                            </div>
                         </div>
+                        <textarea id="head-texture-input" placeholder="Kafa Base64 veya URL..." onchange="window.updateCustomizationView('headTexture', this.value)"></textarea>
+                        <div class="file-upload-container" style="margin-top: 20px;">
+                            <label>Gövde Resmi:</label> 
+                            <div style="display: flex; align-items: center;">
+                                <div id="torso-preview" class="custom-preview">Boş</div>
+                                <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torsoTexture')" style="display: none;">
+                                <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('torso-image-file').click()">👕 Yükle</button>
+                            </div>
+                        </div>
+                        <textarea id="torso-texture-input" placeholder="Gövde Base64 veya URL..." onchange="window.updateCustomizationView('torsoTexture', this.value)"></textarea>
                     </div>
-                    <textarea id="torso-texture-input" placeholder="Gövde Base64 veya URL..." onchange="window.updateCustomizationView('torsoTexture', this.value)"></textarea>
                 </div>
-            </div>
-            <div id="settings-view-security" class="settings-panel" style="width: 100%; display: none; text-align: left;">
-                <h2>Güvenlik Ayarları</h2>
-                 <input type="password" id="setting-new-password" placeholder="Yeni şifre (en az 6 karakter)">
-                <button class="tool-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
-                <p id="security-status" style="color: #4caf50; margin-top: 10px;"></p>
+                <div id="settings-view-security" class="settings-panel" style="width: 100%; display: none; text-align: left;">
+                    <h2>Güvenlik Ayarları</h2>
+                    <input type="password" id="setting-new-password" placeholder="Yeni şifre (en az 6 karakter)">
+                    <button class="tool-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
+                    <p id="security-status" style="color: #4caf50; margin-top: 10px;"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -252,7 +261,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
-          // ✅ VERDİĞİNİZ API ANAHTARI VE DİĞER TEMEL BİLGİLER
+          // ✅ VERİLEN API ANAHTARI ENTEGRE EDİLDİ
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
@@ -348,10 +357,8 @@
                         }
                     };
                     
-                    // Oturum kontrolünü yapıyoruz
                     const unsubscribe = auth.onAuthStateChanged(user => {
                         window.log(user ? "Oturum Açık: " + user.email : "Oturum Kapalı.");
-                        // Kontrol yapıldıktan sonra dinleyiciyi kaldır
                         if (unsubscribe) unsubscribe(); 
                         if (user) {
                             window.fetchAndUpdateUser(user).then(resolveOnce).catch(resolveOnce);
@@ -416,7 +423,6 @@
             
             window.log(`${step.name} başlatılıyor...`);
 
-            // Yükleme animasyonunu başlat
             loadingInterval = setInterval(() => {
                 const elapsed = Date.now() - startTime;
                 let p = (elapsed / duration) * (targetProgress - initialProgress) + initialProgress;
@@ -433,7 +439,7 @@
                 clearInterval(loadingInterval); 
                 progressValue = targetProgress; 
                 currentStep++;
-                loadApplicationStep(); // Sonraki adıma geç
+                loadApplicationStep(); 
             } catch (error) {
                 window.failLoading(error);
             }
@@ -589,7 +595,7 @@
         }
 
         window.showSettingsView = (viewId) => {
-            document.querySelectorAll('.menu-item').forEach(item => {
+            document.querySelectorAll('.settings-menu .menu-item').forEach(item => {
                 item.classList.remove('active');
                 if (item.dataset.view === viewId) item.classList.add('active');
             });
@@ -732,6 +738,7 @@
 
             customRenderer = new THREE.WebGLRenderer({ antialias: true });
             customRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            customRenderer.shadowMap.enabled = true; // Gölgelendirme aktif
             viewport.appendChild(customRenderer.domElement);
 
             customControls = new THREE.OrbitControls(customCamera, customRenderer.domElement);
@@ -745,10 +752,12 @@
             customScene.add(ambientLight);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(2, 5, 4);
+            dirLight.castShadow = true;
             customScene.add(dirLight);
 
             const ground = new THREE.Mesh( new THREE.PlaneGeometry(5, 5), new THREE.MeshStandardMaterial({ color: 0x222222 }) );
             ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
             customScene.add(ground);
 
             window.updateCustomCharacter();
@@ -807,11 +816,13 @@
             const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), finalHeadMat);
             head.position.y = 1.7; 
             head.name = "Head";
+            head.castShadow = true;
             group.add(head);
 
             const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), finalTorsoMat);
             torso.position.y = 1.0; 
             torso.name = "Torso";
+            torso.castShadow = true;
             group.add(torso);
             
             const createArm = (side) => {
@@ -819,6 +830,7 @@
                 arm.position.set(side * 0.6, 1.5, 0); 
                 arm.geometry.translate(0, -limbHeight / 2, 0); 
                 arm.name = side === 0.6 ? "RightArm" : "LeftArm";
+                arm.castShadow = true;
                 return arm;
             };
             group.add(createArm(0.6));
@@ -829,6 +841,7 @@
                 leg.position.set(side * 0.2, 0.5, 0); 
                 leg.geometry.translate(0, -limbHeight / 2, 0); 
                 leg.name = side === 0.2 ? "RightLeg" : "LeftLeg";
+                leg.castShadow = true;
                 return leg;
             };
             group.add(createLeg(0.2));
@@ -865,18 +878,36 @@
             }
         }
         
+        // ✅ SİYAH EKRAN DÜZELTMESİ YAPILDI
         window.initFullScene = () => {
             const viewport = document.getElementById('viewport');
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
-            scene.add(new THREE.AmbientLight(0x404040));
-            scene.add(new THREE.DirectionalLight(0xffffff, 0.8).position.set(10, 10, 10));
+            
+            // --- 💡 IŞIKLANDIRMA DÜZELTMELERİ (Gölgeli ve Parlak) ---
+            scene.add(new THREE.AmbientLight(0x404040, 1.0));
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+            dirLight.position.set(10, 15, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048; 
+            dirLight.shadow.mapSize.height = 2048; 
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 50;
+            dirLight.shadow.camera.left = -20;
+            dirLight.shadow.camera.right = 20;
+            dirLight.shadow.camera.top = 20;
+            dirLight.shadow.camera.bottom = -20;
+            scene.add(dirLight);
+            
+            scene.add(new THREE.HemisphereLight(0xb1e1ff, 0xb97a20, 0.5));
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.enabled = true; 
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
             viewport.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -890,7 +921,7 @@
             document.addEventListener('keydown', window.onKeyDown, false);
             document.addEventListener('keyup', window.onKeyUp, false);
             document.addEventListener('mousedown', window.onMouseDown, false);
-            document.addEventListener('contextmenu', (e) => e.preventDefault()); // Sağ tık menüsünü engelle
+            document.addEventListener('contextmenu', (e) => e.preventDefault()); 
             window.log("3D Sahne Hazır.");
         }
         
@@ -1219,272 +1250,3 @@
             if (property && selectedObject) {
                 const [category, prop] = property.split('.');
                 if (category === 'position') selectedObject.position[prop] = parseFloat(value);
-                else if (category === 'rotation') selectedObject.rotation[prop] = parseFloat(value);
-                else if (category === 'scale') selectedObject.scale[prop] = parseFloat(value);
-            }
-
-            infoPanel.innerHTML = `
-                <strong>${selectedObject.name}</strong> <br><br>
-                <div class="prop-row"><span>Pozisyon X:</span> <input type="number" step="0.1" value="${selectedObject.position.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.x', this.value)"></div>
-                <div class="prop-row"><span>Pozisyon Y:</span> <input type="number" step="0.1" value="${selectedObject.position.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.y', this.value)"></div>
-                <div class="prop-row"><span>Pozisyon Z:</span> <input type="number" step="0.1" value="${selectedObject.position.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.z', this.value)"></div>
-                
-                <div class="prop-row"><span>Dönüş X:</span> <input type="number" step="0.1" value="${selectedObject.rotation.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.x', this.value)"></div>
-                <div class="prop-row"><span>Dönüş Y:</span> <input type="number" step="0.1" value="${selectedObject.rotation.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.y', this.value)"></div>
-                <div class="prop-row"><span>Dönüş Z:</span> <input type="number" step="0.1" value="${selectedObject.rotation.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.z', this.value)"></div>
-                
-                <div class="prop-row"><span>Ölçek X:</span> <input type="number" step="0.1" value="${selectedObject.scale.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.x', this.value)"></div>
-                <div class="prop-row"><span>Ölçek Y:</span> <input type="number" step="0.1" value="${selectedObject.scale.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.y', this.value)"></div>
-                <div class="prop-row"><span>Ölçek Z:</span> <input type="number" step="0.1" value="${selectedObject.scale.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.z', this.value)"></div>
-            `;
-            renderer.render(scene, camera);
-        }
-
-        window.saveScript = () => {
-            if (selectedObject) {
-                selectedObject.userData.script = document.getElementById('code-editor').value;
-                window.log(`${selectedObject.name} scripti kaydedildi.`);
-            }
-        }
-        
-        window.applyScript = (object, codeText) => {
-            try {
-                const func = new Function('object', codeText);
-                func(object);
-            } catch (e) {}
-        }
-        
-        window.initPlayerControls = () => {
-            playerVelocity = new THREE.Vector3(0, 0, 0);
-            playerDirection = new THREE.Vector3(0, 0, 0);
-            
-            const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
-            let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); // Spawn point y'yi karakterin alt seviyesi için ayarla
-
-            player = window.createBlockCharacter(currentCustomization.gender);
-            player.position.copy(startPos);
-            scene.add(player);
-            
-            // Kamera oyuncuyu takip edecek şekilde ayarlanır
-            camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
-            controls.target.copy(player.position);
-            controls.update();
-
-            window.initMobileControls();
-        }
-        
-        window.toggleSimulationMode = async (enable) => {
-            isSimulationMode = enable;
-            transformControls.detach();
-            controls.enabled = !enable; 
-            
-            const isMobile = window.innerWidth <= 768;
-
-            if (enable) {
-                await window.fetchAndUpdateUser(auth.currentUser); 
-                window.startSimulation();
-                document.getElementById('editor-tools').style.display = 'none';
-                document.getElementById('editor-creation-tools').style.display = 'none';
-                document.getElementById('sidebar-right').style.display = 'none';
-                document.getElementById('play-button').classList.add('active');
-                document.getElementById('stop-button').classList.remove('active');
-                document.getElementById('status').innerText = "Simülasyon Modu: Açık";
-                if (isMobile) document.getElementById('mobile-controls').style.display = 'block';
-            } else {
-                window.stopSimulation();
-                document.getElementById('editor-tools').style.display = 'flex';
-                document.getElementById('editor-creation-tools').style.display = 'flex';
-                document.getElementById('sidebar-right').style.display = 'block';
-                document.getElementById('stop-button').classList.add('active');
-                document.getElementById('play-button').classList.remove('active');
-                document.getElementById('status').innerText = "Editör Modu: Hazır";
-                if (isMobile) document.getElementById('mobile-controls').style.display = 'none';
-            }
-        }
-
-        window.startSimulation = async () => {
-            window.initPlayerControls();
-            document.getElementById('viewport').style.cursor = 'none';
-        }
-
-        window.stopSimulation = () => {
-            if (player) {
-                scene.remove(player);
-                player = null;
-            }
-            controls.target.set(0, 0, 0); 
-            controls.update();
-            document.getElementById('viewport').style.cursor = 'default';
-        }
-
-        window.updatePlayerMovement = (delta) => {
-            if (!player || !isSimulationMode) return;
-            
-            const speed = 5.0; 
-            const gravity = -9.8; 
-            const playerHeight = 2.0;
-            
-            playerVelocity.y += gravity * delta;
-            
-            playerDirection.z = 0;
-            playerDirection.x = 0;
-
-            if (moveForward || joystickY > 0.1) playerDirection.z -= 1;
-            if (moveBackward || joystickY < -0.1) playerDirection.z += 1;
-            if (moveLeft || joystickX < -0.1) playerDirection.x -= 1;
-            if (moveRight || joystickX > 0.1) playerDirection.x += 1;
-            
-            if (playerDirection.z !== 0 || playerDirection.x !== 0) {
-                playerDirection.normalize();
-            }
-            
-            // Yönü kamera açısına göre dönüştürme (Oyun hissiyatı için)
-            const cameraDirection = controls.getAzimuthalAngle(); 
-            const rotationMatrix = new THREE.Matrix4().makeRotationY(cameraDirection);
-            playerDirection.applyMatrix4(rotationMatrix);
-
-
-            const moveX = playerDirection.x * speed * delta;
-            const moveZ = playerDirection.z * speed * delta;
-
-            player.position.x += moveX;
-            player.position.z += moveZ;
-            
-            // Yer kontrolü (Basit zemin çarpışması)
-            const groundLevel = 0.5; // Karakterin yarısı yerin üstünde (y=1.0)
-            if (player.position.y <= groundLevel) {
-                playerVelocity.y = 0;
-                player.position.y = groundLevel; 
-            }
-            
-            player.position.y += playerVelocity.y * delta;
-            
-            // Kamera ve Kontrol Güncellemesi (3. şahıs bakış açısı)
-            const targetPosition = player.position.clone();
-            controls.target.copy(targetPosition);
-            
-            // Sabit kamera açısı korunarak oyuncu takip edilir.
-            const offset = new THREE.Vector3(-3, 2, -3);
-            const cameraFollowRotation = new THREE.Matrix4().makeRotationY(controls.getAzimuthalAngle());
-            offset.applyMatrix4(cameraFollowRotation);
-            camera.position.copy(targetPosition).add(offset);
-            
-            controls.update();
-        }
-
-        window.initMobileControls = () => {
-            const joystickArea = document.getElementById('joystick-area');
-            const handle = document.getElementById('joystick-handle');
-            const jumpButton = document.getElementById('jump-button');
-
-            const maxRadius = 50; 
-            
-            const startDrag = (e) => {
-                joystickActive = true;
-                e.preventDefault();
-            };
-
-            const doDrag = (e) => {
-                if (!joystickActive) return;
-                const bounds = joystickArea.getBoundingClientRect();
-                const centerX = bounds.left + bounds.width / 2;
-                const centerY = bounds.top + bounds.height / 2;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                window.updateJoystickPosition(clientX, clientY, centerX, centerY, maxRadius, handle);
-            };
-
-            const endDrag = () => {
-                joystickActive = false;
-                window.resetJoystick(handle);
-            };
-
-            // Event Listener'lar
-            joystickArea.addEventListener('mousedown', startDrag);
-            document.addEventListener('mousemove', doDrag);
-            document.addEventListener('mouseup', endDrag);
-
-            joystickArea.addEventListener('touchstart', startDrag);
-            document.addEventListener('touchmove', doDrag);
-            document.addEventListener('touchend', endDrag);
-
-            jumpButton.addEventListener('click', () => {
-                if (player && playerVelocity.y === 0) playerVelocity.y = 10;
-            });
-        }
-
-        window.updateJoystickPosition = (clientX, clientY, centerX, centerY, maxRadius, handle) => {
-            let deltaX = clientX - centerX;
-            let deltaY = clientY - centerY;
-            
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            if (distance > maxRadius) {
-                const angle = Math.atan2(deltaY, deltaX);
-                deltaX = Math.cos(angle) * maxRadius;
-                deltaY = Math.sin(angle) * maxRadius;
-            }
-
-            // Handle pozisyonunu güncelle
-            handle.style.left = `${deltaX + 30}px`; 
-            handle.style.top = `${deltaY + 30}px`; 
-
-            // Hareket yönü değerlerini güncelle
-            joystickX = deltaX / maxRadius;
-            joystickY = -(deltaY / maxRadius); // Y ekseni tersine çevrilir
-        }
-
-        window.resetJoystick = (handle) => {
-            handle.style.left = '30px';
-            handle.style.top = '30px';
-            joystickX = 0;
-            joystickY = 0;
-        }
-
-        window.animate = () => {
-            requestAnimationFrame(window.animate);
-            const delta = clock.getDelta();
-
-            if (renderer) {
-                
-                if (isSimulationMode) {
-                    window.updatePlayerMovement(delta);
-                    objects.forEach(obj => {
-                        if (obj.userData.script) {
-                            window.applyScript(obj, obj.userData.script);
-                        }
-                    });
-                } else {
-                     controls.update();
-                     transformControls.update();
-                }
-                renderer.render(scene, camera);
-            }
-        }
-
-        // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Cihaz Modu Butonlarını JavaScript ile Bağla
-            const setupDeviceModeListeners = () => {
-                const buttons = document.querySelectorAll('#device-mode-switcher .mode-btn');
-                buttons.forEach(button => {
-                    button.removeEventListener('click', setAuthContainerMode); 
-                    button.addEventListener('click', function() {
-                        const mode = this.getAttribute('data-mode');
-                        setAuthContainerMode(mode, this); 
-                    });
-                });
-            };
-            setupDeviceModeListeners(); 
-            window.addEventListener('resize', window.onWindowResize, false);
-            window.onWindowResize();
-
-            // Yüklemeyi Başlat
-            document.getElementById('restart-button').addEventListener('click', window.restartLoad);
-            loadApplicationStep();
-        });
-    </script>
-</body>
-</html>
