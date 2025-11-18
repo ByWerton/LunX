@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.6 - Nihai Düzeltme ve Arayüz Güncellemesi</title>
+    <title>LunX Studio V2.7 - 3D Başlatma Düzeltmesi</title>
     <style>
         /* CSS Stilleri (Önceki kod ile aynı bırakılmıştır) */
         :root {
@@ -300,12 +300,10 @@
         
         window.log = (msg) => { console.log(`[LunX] ${msg}`); document.getElementById('status').innerText = msg; }
 
-        // ✅ HATA MESAJLARI DAHA KAPSAMLI HALE GETİRİLDİ
         window.showError = (msg, elementId = 'auth-error') => { 
             const errDiv = document.getElementById(elementId);
             if (!errDiv) { console.error("Hata elementi bulunamadı: " + elementId); return; }
 
-            // Kullanıcı dostu hata mesajları
             let displayMsg = msg;
             if (msg.includes("auth/email-already-in-use")) displayMsg = "Bu e-posta adresi zaten kayıtlı.";
             else if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) displayMsg = "E-posta veya şifre hatalı.";
@@ -392,7 +390,6 @@
             document.getElementById('progress-text').innerText = `${text} ${percentage.toFixed(0)}%`;
         }
 
-        // ✅ ANA YÖNLENDİRME BU FONKSİYON İÇİNDE YAPILIR
         window.finishLoading = (user) => {
             clearInterval(loadingInterval);
             window.updateProgress(100, "Hazır.");
@@ -472,7 +469,7 @@
             }
         }
 
-        // --- 4. GİRİŞ / KAYIT YÖNETİMİ (DÜZELTİLDİ) ---
+        // --- 4. GİRİŞ / KAYIT YÖNETİMİ ---
 
         window.showAuth = (mode) => {
             window.hideAllScreens();
@@ -505,7 +502,6 @@
         
         window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
 
-        // ✅ GİRİŞ/KAYIT FONKSİYONU DÜZELTİLDİ
         window.handleAuthSubmit = async () => {
             if (!auth) { window.showError("Firebase Bağlantısı Yok."); return; }
             const email = document.getElementById('auth-email-input').value.trim();
@@ -524,20 +520,19 @@
                     const user = userCredential.user;
                     const defaultColor = gender === 'male' ? "#007acc" : "#ff4aff";
                     
-                    // Kullanıcı verisini veritabanına kaydet
                     await db.ref('users/' + user.uid).set({
                         email: email, username: username, gender: gender, headTexture: "", torsoTexture: "",
                         torsoColor: defaultColor, legColor: defaultColor, skinColor: "#f0c0b0"
                     });
                     window.log("Kayıt başarılı. Oturum açılıyor...");
-                    window.finishLoading(user); // Başarıyla kayıt olduysa ana ekrana yönlendir
+                    window.finishLoading(user); 
                 } catch (error) { window.showError(error.message); }
             } else {
                 try {
                     const userCredential = await auth.signInWithEmailAndPassword(email, pass);
                     const user = userCredential.user;
                     window.log("Giriş başarılı. Yönlendiriliyor...");
-                    window.finishLoading(user); // Başarıyla giriş yaptıysa ana ekrana yönlendir
+                    window.finishLoading(user); 
                 } catch (error) { window.showError(error.message); }
             }
         };
@@ -864,7 +859,7 @@
             group.add(createLeg(0.2));
             group.add(createLeg(-0.2));
             
-            group.position.y = 0.5; // Karakterin zemin seviyesinde durması için ayarlandı.
+            group.position.y = 0.5; 
             
             return group;
         };
@@ -881,6 +876,7 @@
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
                 renderer.setSize(width, height);
+                window.log(`Viewport boyutu güncellendi: ${width}x${height}`);
             }
             if (customRenderer && customCamera) {
                 const viewport = document.getElementById('customize-viewport');
@@ -897,14 +893,20 @@
         
         // 3D SAHNE İLK BAŞLATMA
         window.initFullScene = () => {
+            window.log("3D Sahne (initFullScene) başlatılıyor...");
             const viewport = document.getElementById('viewport');
+            
+            // WebGL kontrolü (Kritik Kontrol)
+            if (!THREE.WEBGL.isWebGLAvailable()) {
+                window.showError("Cihazınız WebGL'i desteklemiyor. 3D sahne görüntülenemiyor.", 'status');
+                return;
+            }
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
             scene.background = new THREE.Color(0x222222); 
 
-            // Işıklandırma
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
             
             const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); 
@@ -920,11 +922,26 @@
             dirLight.shadow.camera.bottom = -20;
             scene.add(dirLight);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            renderer.shadowMap.enabled = true; 
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-            viewport.appendChild(renderer.domElement);
+            // Renderer oluşturma (Kritik Kontrol)
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+                renderer.shadowMap.enabled = true; 
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+                
+                // viewport'un içine canvas ekleme (Kritik Kontrol)
+                if (viewport.children.length === 0 || viewport.children[0].tagName !== 'CANVAS') {
+                     viewport.appendChild(renderer.domElement);
+                } else if (viewport.children[0].tagName === 'CANVAS') {
+                     viewport.replaceChild(renderer.domElement, viewport.children[0]);
+                }
+                
+                window.log("Renderer ve Canvas eklendi.");
+                
+            } catch(e) {
+                 window.showError(`Renderer Başlatma Hatası: ${e.message}`, 'status');
+                 return;
+            }
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -940,7 +957,9 @@
             document.addEventListener('keyup', window.onKeyUp, false);
             document.addEventListener('mousedown', window.onMouseDown, false);
             document.addEventListener('contextmenu', (e) => e.preventDefault()); 
-            window.log("3D Sahne Hazır.");
+            
+            window.onWindowResize(); // Başlangıçta boyutları ayarla
+            window.log("3D Sahne Hazır ve Kontroller kuruldu.");
         }
         
         window.setupEnvironment = (env) => {
@@ -950,11 +969,13 @@
                 plane.rotation.x = -Math.PI / 2;
                 plane.receiveShadow = true;
                 plane.name = "Zemin";
+                plane.userData.isEnvironment = true;
                 scene.add(plane);
                 objects.push(plane);
                 
                 const gridHelper = new THREE.GridHelper(50, 50, 0x888888, 0x444444);
                 gridHelper.name = "Grid";
+                gridHelper.userData.isEnvironment = true;
                 scene.add(gridHelper);
                 
                 if (env === 'simple_cube') {
@@ -963,8 +984,18 @@
             }
         }
         
+        // ✅ startStudio'nun mantığı güçlendirildi
         window.startStudio = (isNew = false) => {
-            if (!renderer) window.initFullScene();
+            if (!renderer) {
+                 window.initFullScene();
+            }
+            
+            // Eğer renderer başarılı bir şekilde oluşturulamadıysa (WebGL hatası vb.), devam etme
+            if (!renderer) {
+                 window.log("3D Renderer oluşturulamadığı için Studio başlatılamıyor.");
+                 return; 
+            }
+            
             window.hideAllScreens();
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('main-area').style.display = 'flex';
@@ -973,11 +1004,14 @@
                 const template = document.getElementById('template-select').value;
                 window.setupEnvironment(template);
             } else if (objects.length === 0) {
+                 // Eğer sahne yüklenecek ve objects boşsa varsayılanı kur
                  window.setupEnvironment('default_template');
             }
-            window.animate();
-            window.onWindowResize();
+            
+            window.animate(); // Render döngüsünü başlat
+            window.onWindowResize(); // Ekran boyutlarını tekrar ayarla
             window.updateHierarchyList();
+            window.log("LunX Studio başarıyla başlatıldı.");
         }
         
         window.setTool = (mode) => {
@@ -1045,14 +1079,16 @@
             transformControls.detach();
             if (player) { scene.remove(player); player = null; }
 
-            const toRemove = objects.filter(obj => obj.parent === scene);
+            const toRemove = objects.filter(obj => !obj.userData.isEnvironment); // Sadece ortam olmayanları kaldır
+
+            // Ortam nesnelerini manuel olarak koruyarak temizle
+            objects = objects.filter(obj => obj.userData.isEnvironment);
             toRemove.forEach(obj => scene.remove(obj));
             
-            objects = [];
             selectedObject = null;
             window.updateHierarchyList();
             window.selectObject(null);
-            window.setupEnvironment('empty');
+            // window.setupEnvironment('empty'); // setupEnvironment, clearScene içinde çağrılacağı için burada çağırmıyoruz.
             window.log("Sahne temizlendi.");
         }
         
@@ -1060,7 +1096,7 @@
             if (!auth.currentUser) { window.showError("Kaydetmek için oturum açmalısınız."); return; }
             
             const sceneData = objects.map(obj => {
-                if (obj.name === "Zemin" || obj.name === "Grid") return null;
+                if (obj.userData.isEnvironment) return null; // Ortam objelerini kaydetme
                 
                 let type;
                 if (obj.userData.isSpawnPoint) {
@@ -1101,6 +1137,9 @@
                 window.startStudio(false);
 
                 if (sceneData) {
+                    // Sahneyi temizledikten sonra varsayılan ortamı kur
+                    window.setupEnvironment('default_template');
+                    
                     sceneData.forEach(data => {
                         window.addShape(data.type, data);
                     });
@@ -1117,7 +1156,7 @@
         
         window.selectObject = (obj) => {
             if (selectedObject) {
-                if (!selectedObject.userData.isSpawnPoint && selectedObject.material.color) {
+                if (!selectedObject.userData.isSpawnPoint && !selectedObject.userData.isEnvironment && selectedObject.material.color) {
                     if (selectedObject.userData.originalColor) {
                         selectedObject.material.color.set(selectedObject.userData.originalColor);
                     }
@@ -1126,7 +1165,7 @@
             
             selectedObject = obj;
             
-            if (obj) {
+            if (obj && !obj.userData.isEnvironment) {
                 if (!obj.userData.isSpawnPoint && obj.material.color) {
                     if (!obj.userData.originalColor) {
                          obj.userData.originalColor = obj.material.color.getHex();
@@ -1178,7 +1217,7 @@
         }
         
         window.deleteSelectedObject = () => {
-            if (selectedObject) {
+            if (selectedObject && !selectedObject.userData.isEnvironment) {
                 scene.remove(selectedObject);
                 transformControls.detach();
                 
@@ -1194,7 +1233,7 @@
         }
         
         window.duplicateSelectedObject = () => {
-            if (selectedObject && !selectedObject.userData.isSpawnPoint && selectedObject.name !== "Zemin") {
+            if (selectedObject && !selectedObject.userData.isSpawnPoint && !selectedObject.userData.isEnvironment) {
                 const newObj = selectedObject.clone();
                 newObj.name = selectedObject.name + "_Kopya";
                 newObj.position.x += 1;
@@ -1244,7 +1283,7 @@
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects.filter(o => o.name !== "Grid"), true);
+            const intersects = raycaster.intersectObjects(objects, true);
 
             if (intersects.length > 0) {
                 let hitObject = intersects[0].object;
@@ -1266,6 +1305,8 @@
         window.updateSelectedObjectProperty = (property, value) => {
             const infoPanel = document.getElementById('object-info');
             if (!selectedObject) { infoPanel.innerHTML = 'Seçili değil.'; return; }
+            if (selectedObject.userData.isEnvironment) { infoPanel.innerHTML = `<strong>${selectedObject.name}</strong> - Ortam Nesnesi`; return; }
+
 
             if (property && selectedObject) {
                 const [category, prop] = property.split('.');
@@ -1312,11 +1353,11 @@
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
             let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
             
-            player.position.copy(startPos); 
-            player.position.y = playerHeight; 
-
+            if (player) { scene.remove(player); } // Eski player'ı kaldır
             player = window.createBlockCharacter(currentCustomization.gender);
             player.position.copy(startPos);
+            player.position.y = startPos.y + playerHeight * 0.5; // Karakterin yarım boyu kadar yukarıda başlat.
+            
             scene.add(player);
             
             camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
@@ -1331,6 +1372,11 @@
             if (!auth.currentUser) {
                 window.showError("Simülasyonu başlatmak için giriş yapmanız gerekiyor.");
                 return;
+            }
+
+            if (!renderer) {
+                 window.showError("3D Sahne başlatılmadı. Lütfen Studio'yu yeniden başlatmayı deneyin.", 'status');
+                 return;
             }
 
             isSimulationMode = enable;
@@ -1358,6 +1404,7 @@
                 document.getElementById('play-button').classList.remove('active');
                 document.getElementById('status').innerText = "Editör Modu: Hazır";
                 if (isMobile) document.getElementById('mobile-controls').style.display = 'none';
+                window.onWindowResize();
             }
         }
 
@@ -1376,7 +1423,6 @@
             document.getElementById('viewport').style.cursor = 'default';
         }
 
-        // PLAYER HAREKET VE ÇARPIŞMA MANTIĞI İYİLEŞTİRİLDİ
         window.updatePlayerMovement = (delta) => {
             if (!player || !isSimulationMode) return;
             
@@ -1384,10 +1430,8 @@
             const gravity = -20.0; 
             const friction = 0.9;
             
-            // 1. Yerçekimi Uygula
             playerVelocity.y += gravity * delta;
             
-            // 2. Hareket Yönünü Hesapla
             playerDirection.z = 0;
             playerDirection.x = 0;
 
@@ -1401,32 +1445,31 @@
                 inputVector.normalize();
             }
 
-            // Kamera açısına göre hareketi döndür
             const cameraDirectionY = controls.getAzimuthalAngle(); 
             const rotationMatrix = new THREE.Matrix4().makeRotationY(cameraDirectionY);
             
             const desiredMovement = inputVector.clone().applyMatrix4(rotationMatrix).multiplyScalar(speed * delta);
 
-            // Hareket Vektörünü Hız Vektörüne Ekle
             playerVelocity.x = desiredMovement.x / delta;
             playerVelocity.z = desiredMovement.z / delta;
             
-            // Yere Sürtünme Uygula (Havada değilse)
             if (isOnGround) {
                  playerVelocity.x *= friction;
                  playerVelocity.z *= friction;
             }
 
-            // 3. Pozisyonu Güncelle
             player.position.add(playerVelocity.clone().multiplyScalar(delta));
             
-            // 4. Çarpışma ve Yer Kontrolü
+            // Çarpışma ve Yer Kontrolü
             const groundPlane = objects.find(obj => obj.name === "Zemin");
             const groundY = groundPlane ? groundPlane.position.y : 0; 
+            
+            // Karakterin alt sınırının hesaplanması
+            const playerBottomY = player.position.y - playerHeight * 0.5;
 
-            if (player.position.y <= groundY + playerHeight) {
+            if (playerBottomY <= groundY) {
                 playerVelocity.y = 0;
-                player.position.y = groundY + playerHeight; // Tam zemin seviyesinde tut
+                player.position.y = groundY + playerHeight * 0.5; // Tam zemin seviyesinde tut
                 if (!isOnGround) {
                     isOnGround = true;
                 }
@@ -1434,13 +1477,11 @@
                 isOnGround = false;
             }
 
-            // 5. Karakteri Dönme (Sadece hareket ederken)
             if (playerVelocity.x !== 0 || playerVelocity.z !== 0) {
                  const angle = Math.atan2(-playerVelocity.x, -playerVelocity.z);
                  player.rotation.y = angle + Math.PI; 
             }
 
-            // 6. Kamera Takibi
             const targetPosition = player.position.clone();
             controls.target.copy(targetPosition);
             
@@ -1482,7 +1523,6 @@
                 window.resetJoystick(handle);
             };
 
-            // Fare ve Dokunmatik olaylar
             joystickArea.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', doDrag);
             document.addEventListener('mouseup', endDrag);
@@ -1526,32 +1566,58 @@
             joystickY = 0;
         }
 
+        // ✅ animate döngüsü güçlendirildi
         window.animate = () => {
+            // renderer yoksa veya uygulama çalışmıyorsa döngüyü kesebiliriz.
+            if (!renderer) {
+                window.log("Renderer mevcut değil. Animasyon durdu.");
+                return;
+            }
+            
             requestAnimationFrame(window.animate);
             const delta = clock.getDelta();
 
-            if (renderer) {
-                
-                if (isSimulationMode) {
-                    window.updatePlayerMovement(delta);
-                    objects.forEach(obj => {
-                        if (obj.userData.script) {
-                            window.applyScript(obj, obj.userData.script);
-                        }
-                    });
-                } else {
-                     controls.update();
-                     transformControls.update();
-                }
-                renderer.render(scene, camera);
+            if (isSimulationMode) {
+                window.updatePlayerMovement(delta);
+                objects.forEach(obj => {
+                    if (obj.userData.script) {
+                        window.applyScript(obj, obj.userData.script);
+                    }
+                });
+            } else {
+                 controls.update();
+                 // transformControls.update() sadece change listener'da çağrıldığı için burada gerek yok.
+            }
+            
+            try {
+               renderer.render(scene, camera);
+            } catch(e) {
+                 window.log(`Render Hatası: ${e.message}`);
+                 // Bu noktada büyük bir hata varsa (örn: WebGL context kaybolması) yeniden başlatmak gerekebilir.
             }
         }
+        
+        // --- Ekstra WebGL Kontrolü ---
+        // Three.js, WebGL kontrolü için kullanışlı bir araç sunar.
+        THREE.WEBGL = (function () {
+            return {
+                isWebGLAvailable: function () {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                    } catch (e) {
+                        return false;
+                    }
+                }
+            };
+        })();
+
 
         // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
 
         document.addEventListener('DOMContentLoaded', () => {
             window.addEventListener('resize', window.onWindowResize, false);
-            window.onWindowResize();
+            // window.onWindowResize(); // DOMContentLoaded sırasında viewport boyutları henüz tam oturmamış olabilir. initFullScene içinde çağrılacak.
 
             document.getElementById('restart-button').addEventListener('click', window.restartLoad);
             loadApplicationStep();
