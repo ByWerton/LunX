@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - KURTARILMIŞ</title>
+    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - KURTARILMIŞ & DÜZELTİLMİŞ</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -598,7 +598,7 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.2 - TAM VE ÇALIŞAN KOD (Three.js Çekirdeği Kurtarıldı)
+         * LUNX STUDIO CORE V7.2 - ÇEKİRDEK DÜZELTMELERİ ENTEGRE EDİLDİ
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -610,7 +610,7 @@
             
             // Oyun Kontrol Değişkenleri
             player: null,
-            playerSpeed: 5, 
+            playerSpeed: 100, // Hız artırıldı (güncel fizik sistemi için)
             joystick: { active: false, x: 0, y: 0, maxDist: 40 },
             
             // Toolbox Data
@@ -633,7 +633,7 @@
                 // Panel Sürükleme için global listener'lar
                 document.addEventListener('mousemove', LunX.ui.drag);
                 document.addEventListener('mouseup', LunX.ui.stopDrag);
-                document.addEventListener('touchmove', LunX.ui.drag, { passive: false }); // touchmove aktif
+                document.addEventListener('touchmove', LunX.ui.drag, { passive: false }); 
                 document.addEventListener('touchend', LunX.ui.stopDrag);
             },
             
@@ -1246,7 +1246,7 @@
                 }
             },
             
-            // 8. GAME (Güncellendi: Karakter Kontrolü)
+            // 8. GAME (Güncellendi: Karakter Kontrolü ve Kamera Takibi)
             game: {
                 play: () => {
                     if(LunX.isPlaying) return;
@@ -1254,15 +1254,17 @@
                     LunX.controls.enabled = false;
                     LunX.transform.detach();
                     
-                    // Kamerayı oyuncuya bağla (yeni pozisyon belirlemeden önce)
-                    LunX.camera.position.copy(LunX.player.position);
-                    LunX.camera.position.y += 0.5; 
-                    LunX.camera.position.z += 0.01; 
-                    LunX.camera.lookAt(LunX.player.position.x, LunX.player.position.y + 0.5, LunX.player.position.z - 1);
-                    LunX.controls.target.copy(LunX.player.position);
+                    // Oyuncunun konumuna git
+                    const spawn = LunX.objects.find(o => o.userData.isSpawn);
+                    if (spawn) {
+                        LunX.player.position.set(spawn.position.x, spawn.position.y + LunX.player.geometry.parameters.height / 2 + 0.5, spawn.position.z);
+                    }
                     
-                    // Controls'ü kamera yerine oyuncuya odakla
+                    // Kamerayı oyuncuya odakla
+                    const offset = new THREE.Vector3(5, 5, 5); 
+                    LunX.camera.position.copy(LunX.player.position).add(offset);
                     LunX.controls.target.copy(LunX.player.position);
+                    LunX.controls.update(); 
 
                     document.getElementById('tool-select').classList.remove('active');
                     document.getElementById('game-controls').style.display = 'block';
@@ -1277,10 +1279,11 @@
                     document.getElementById('tool-select').classList.add('active');
                     document.getElementById('game-controls').style.display = 'none';
 
-                    // Kamerayı eski haline getir
+                    // Kamerayı stüdyo moduna geri getir
                     LunX.camera.position.set(10, 10, 10);
                     LunX.controls.target.set(0,0,0);
                     LunX.camera.lookAt(0,0,0);
+                    LunX.controls.update();
                 },
                 
                 jump: () => {
@@ -1290,7 +1293,7 @@
                 },
                 
                 startJoystick: (e) => {
-                    e.preventDefault();
+                    e.preventDefault(); // 👈 DÜZELTME: Ekranın kaymasını engeller
                     LunX.joystick.active = true;
                     const joystickArea = document.getElementById('joystick-area');
                     const rect = joystickArea.getBoundingClientRect();
@@ -1298,11 +1301,12 @@
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                     
-                    LunX.game.updateJoystick({ clientX, clientY, rect });
+                    LunX.game.updateJoystick({ clientX, clientY, rect, touches: e.touches });
                 },
                 
                 updateJoystick: (e) => {
                     if (!LunX.joystick.active) return;
+                    if (e.preventDefault) e.preventDefault(); // 👈 DÜZELTME: Hareket sırasında ekranın kaymasını engeller
                     
                     const rect = e.rect || document.getElementById('joystick-area').getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
@@ -1337,43 +1341,41 @@
                 },
                 
                 updatePhysics: () => {
-                    const gravity = 0.05;
+                    const gravity = 9.8 * 0.01;
                     const deltaT = 1/60; 
                     
-                    // Joystick hareketi
+                    // Yatay Hareket
                     if (LunX.joystick.x !== 0 || LunX.joystick.y !== 0) {
                         
-                        const camWorldPos = new THREE.Vector3();
-                        LunX.camera.getWorldPosition(camWorldPos);
-                        const camWorldTarget = new THREE.Vector3();
-                        LunX.controls.target.copy(LunX.player.position);
-                        
-                        // Kameranın yatay yönünü hesapla
+                        // Kameranın yatay yönünü hesapla (Oyuncunun hedeflediği yöne göre hareket)
                         const camDir = new THREE.Vector3();
                         LunX.camera.getWorldDirection(camDir);
                         camDir.y = 0; 
                         camDir.normalize();
                         
-                        const rightVector = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0));
+                        const rightVector = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
                         
+                        // İleri/Geri hareket (LunX.joystick.y) ve Sağ/Sol hareket (LunX.joystick.x)
+                        // NOT: Üst/Aşağı joystick hareketi, kameranın baktığı yöne doğru (camDir) haritalanır.
                         const forwardMovement = camDir.multiplyScalar(LunX.joystick.y * LunX.playerSpeed * deltaT);
                         const sideMovement = rightVector.multiplyScalar(-LunX.joystick.x * LunX.playerSpeed * deltaT);
                         
                         const totalMovement = new THREE.Vector3().add(forwardMovement).add(sideMovement);
-
+                        
+                        // Oyuncuyu hareket ettir
                         LunX.player.position.add(totalMovement);
                         
-                        // Kamerayı oyuncuyla birlikte hareket ettir
+                        // Kamerayı oyuncuyla birlikte hareket ettir (kamera takibi)
                         LunX.controls.target.copy(LunX.player.position); 
                         LunX.camera.position.add(totalMovement);
                         
-                        LunX.controls.update();
+                        LunX.controls.update(); 
                     }
                     
                     // Yerçekimi ve Zıplama
                     if (!LunX.player.userData.anchored) {
                         LunX.player.userData.velocity.y -= gravity;
-                        LunX.player.position.y += LunX.player.userData.velocity.y * deltaT;
+                        LunX.player.position.y += LunX.player.userData.velocity.y;
                     }
                     
                     // Zemin Çarpışması
@@ -1385,15 +1387,15 @@
                         LunX.player.position.y = baseplateY + playerHalfHeight; 
                         LunX.player.userData.velocity.y = 0;
                         LunX.player.userData.onGround = true;
-                    } else {
+                    } else if (LunX.player.userData.velocity.y < 0) {
                         LunX.player.userData.onGround = false;
                     }
-
-                    // Three.js nesneleri için yerçekimi (Eski mantık)
+                    
+                    // Diğer nesneler için yerçekimi (basit)
                     LunX.objects.forEach(obj => {
                         if (obj.isObject3D && !obj.userData.anchored && obj.userData.velocity) {
                             obj.userData.velocity.y -= gravity;
-                            obj.position.add(obj.userData.velocity.clone().multiplyScalar(deltaT));
+                            obj.position.y += obj.userData.velocity.y;
                             
                             // Zemin Çarpışması (Basit Baseplate)
                             const objectHalfHeight = (obj.geometry && obj.geometry.parameters.height) ? (obj.geometry.parameters.height / 2) : 0.5;
@@ -1409,6 +1411,7 @@
             // 7. UI (Explorer & Properties) - Güncellendi: Panel Sürükleme ve Ayarlar
             ui: {
                 
+                // ... (refreshExplorer, createMaterial, setMaterial aynı) ...
                 refreshExplorer: () => {
                     const div = document.getElementById('explorer');
                     div.innerHTML = `<div class="tree-node" style="font-weight:bold; cursor:pointer; padding:5px; background: ${LunX.selected === null ? 'var(--selection-bg)' : 'white'};" onclick="LunX.editor.select(null)">Workspace</div>`;
@@ -1489,6 +1492,8 @@
                 dragPanel: { element: null, x: 0, y: 0 },
 
                 startDrag: (e, panelId) => {
+                    e.preventDefault(); // 👈 DÜZELTME: Panel başlığına dokunulduğunda sayfanın kaymasını engeller
+                    
                     const panel = document.getElementById(panelId);
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1501,7 +1506,7 @@
 
                 drag: (e) => {
                     if (!LunX.ui.dragPanel.element) return;
-                    e.preventDefault(); 
+                    e.preventDefault(); // 👈 DÜZELTME: Sürükleme sırasında kaymayı engeller
                     
                     const panel = LunX.ui.dragPanel.element;
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1529,6 +1534,7 @@
                     }
                 },
                 
+                // ... (toggleSettingsMenu, changeQuality, changeUISize, togglePanelSide aynı) ...
                 toggleSettingsMenu: () => {
                     const menu = document.getElementById('settings-menu');
                     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
@@ -1579,7 +1585,8 @@
                     alert("Paneller artık serbestçe taşınabilir.");
                     LunX.editor.onResize();
                 },
-
+                
+                // ... (updateProperties ve diğer yardımcı fonksiyonlar aynı) ...
                 updateProperties: () => {
                     const div = document.getElementById('properties');
                     div.innerHTML = '';
@@ -1779,6 +1786,7 @@
 
         // Panel sürükleme ve joystick için global listener'lar
         document.addEventListener('touchmove', (e) => {
+            // Pasif:false, e.preventDefault() kullanımına izin verir
             if (LunX.ui.dragPanel.element) {
                 LunX.ui.drag(e);
             } else if (LunX.joystick.active) {
