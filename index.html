@@ -2,2432 +2,615 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya (Gelişmiş Mobil Kontrol) - DÜZELTİLMİŞ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LunX Studio V3.1 - R6 & Skybox</title>
     <style>
-        /* ==================================================================== */
-        /* CSS Stilleri - TAMAMI BURADA BİRLEŞTİRİLDİ */
-        /* ==================================================================== */
+        /* ======================================================= */
+        /* TEMA VE GENEL STİLLER (AÇIK TEMA & KIRMIZI VURGU) */
+        /* ======================================================= */
         :root {
-            --primary-color: #007acc;
-            --secondary-color: #2da042;
-            --background-dark: #1e1e1e;
-            --panel-bg: #252526;
-            --text-color: #ddd;
-            --border-color: #3e3e42;
-            /* YENİ: UI Boyut değişkenleri */
-            --default-font-size: 14px;
-            --compact-font-size: 11px;
-            --default-padding: 10px;
-            --compact-padding: 5px;
-            --default-sidebar-width: 250px;
-            --compact-sidebar-width: 150px;
-            --default-toolbar-height: 40px;
-            --compact-toolbar-height: 30px;
+            --primary-color: #e74c3c; /* Kırmızı Vurgu */
+            --secondary-color: #2ecc71; /* Yeşil */
+            --background-light: #f5f5f5; /* Beyaz/Açık Arka Plan */
+            --panel-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #ccc;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background-dark); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; }
-        
-        /* Genel Konteyner Stilleri */
-        .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 30, 30, 0.95); z-index: 5000; justify-content: center; align-items: center; }
-        
-        /* Loading Screen Styles */
-        #loading-screen { flex-direction: column; background: var(--background-dark); z-index: 9999; }
-        #progress-bar { height: 100%; width: 0%; background: var(--primary-color); transition: width 0.3s; border-radius: 5px; }
-        #restart-button { background-color: #c92c2c; }
-
-        /* Auth/Modal Container Styles */
-        .auth-container, .settings-panel, .project-container { 
-            background: var(--panel-bg); padding: 40px; width: 400px; max-width: 90%; 
-            max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid var(--primary-color); 
-            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; 
-            flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box; 
-            transition: width 0.3s; 
-        }
-        .logo { font-size: 20px; font-weight: bold; color: var(--primary-color); margin-right: 20px; letter-spacing: 1px; }
-
-        /* Input & Button Styles */
-        input[type="text"], input[type="email"], input[type="password"], #template-select, textarea, select, .start-btn { 
-            width: 100%; padding: 12px; background: #333; border: 1px solid #555; 
-            color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; 
-        }
-        .start-btn { background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s; }
-        .start-btn:hover { background-color: #006bbd; }
-        #auth-error, #security-status { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
-        .switch-auth { color: var(--primary-color); cursor: pointer; font-size: 14px; display: inline-block; }
-        
-        /* Editor/Studio Styles */
-        #toolbar { 
-            background-color: var(--panel-bg); display: none; align-items: center; 
-            padding: 5px var(--default-padding); border-bottom: 1px solid var(--border-color); 
-            height: var(--default-toolbar-height); font-size: var(--default-font-size);
-            transition: all 0.2s ease-in-out;
-            position: relative; /* UI kontrol butonu için göreceli konum */
-        }
-        .tool-group { display: flex; gap: 5px; margin-right: 20px; }
-        .tool-btn { 
-            background-color: #3e3e42; color: white; border: none; 
-            padding: 5px 10px; cursor: pointer; border-radius: 4px; 
-            transition: 0.2s; font-size: var(--default-font-size); 
-            display: flex; align-items: center; justify-content: center; line-height: 1; 
-        }
-        .tool-btn:hover { background-color: #505050; }
-        .tool-btn.active { background-color: var(--primary-color); }
-        
-        #main-area { flex-grow: 1; display: none; overflow: hidden; position: relative; }
-        #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        #sidebar-right { 
-            width: var(--default-sidebar-width); background-color: var(--panel-bg); 
-            padding: var(--default-padding); border-left: 1px solid var(--border-color); 
-            overflow-y: auto; font-size: var(--default-font-size);
-            transition: all 0.2s ease-in-out;
-        }
-        .hierarchy-item { padding: 5px; cursor: pointer; border-radius: 3px; font-size: var(--default-font-size); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .hierarchy-item.selected { background-color: var(--primary-color); }
-        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .prop-row input { width: 60%; }
-        
-        /* Customization Styles */
-        .settings-menu { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
-        .settings-menu .menu-item { padding: 10px; cursor: pointer; background: var(--panel-bg); border-radius: 4px; transition: 0.2s; border: 1px solid transparent;}
-        .settings-menu .menu-item:hover { background: #3e3e42; }
-        .settings-menu .menu-item.active { background: var(--primary-color); border-color: var(--primary-color); }
-
-        .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
-        .color-row input[type="color"] { width: 50px; height: 30px; border: none; padding: 0; }
-        .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; line-height: 50px; text-align: center; font-size: 10px;}
-        .file-upload-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;}
-        
-        /* Mobile Controls */
-        #mobile-controls { 
-            position: absolute; bottom: 10px; left: 10px; display: none; z-index: 10; gap: 20px;
-            pointer-events: none; width: calc(100% - 20px); justify-content: space-between;
-        }
-        #mobile-controls.active { pointer-events: auto; }
-        #joystick-wrapper { 
-            width: 100px; height: 100px; 
-            /* Mobil cihazlarda sol alt köşeye sabitlenmesi için */
-            position: fixed; 
-            bottom: 20px; 
-            left: 20px;
-        }
-        #joystick-area { 
-            width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.4); 
-            border-radius: 50%; 
-            position: relative; 
-            touch-action: none;
-        }
-        #joystick-handle { 
-            width: 40px; height: 40px; 
-            background: var(--primary-color); 
-            border-radius: 50%; 
-            position: absolute; 
-            top: 30px; left: 30px; 
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--background-light); 
+            color: var(--text-color); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
             touch-action: none; 
         }
-        #jump-button { 
-            width: 60px; height: 60px; 
-            background: var(--secondary-color); 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 30px; color: white; z-index: 10; 
-            /* Mobil cihazlarda sağ alt köşeye sabitlenmesi için */
-            position: fixed; 
-            bottom: 30px; 
-            right: 30px;
-            pointer-events: auto; /* Tıklanabilir olmasını sağla */
-        }
-        
-        /* Skybox Panel Stilleri */
-        #skybox-gallery { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; 
-            margin-top: 10px; padding: 5px; max-height: 300px; overflow-y: auto;
-            border: 1px solid var(--border-color);
-        }
-        .skybox-thumbnail {
-            width: 100%; padding-top: 100%; position: relative; cursor: pointer;
-            border: 2px solid transparent; transition: border-color 0.2s; overflow: hidden;
-            background-color: #333;
-        }
-        .skybox-thumbnail.selected { border-color: var(--primary-color); }
-        .skybox-thumbnail img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
 
-        /* YENİ: UI Boyutu Küçültme Stilleri */
-        .compact-ui #toolbar { 
-            height: var(--compact-toolbar-height); 
-            padding: 2px var(--compact-padding);
-            font-size: var(--compact-font-size);
+        /* Tam Ekran Overlayler */
+        .full-screen-container { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(245, 245, 245, 0.95); 
+            z-index: 5000; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column;
         }
-        .compact-ui .tool-btn { 
-            padding: 3px 6px; 
-            font-size: var(--compact-font-size);
-        }
-        .compact-ui .logo { font-size: 14px; margin-right: 10px; }
-        .compact-ui #sidebar-right {
-            width: var(--compact-sidebar-width);
-            padding: var(--compact-padding);
-            font-size: var(--compact-font-size);
-        }
-        .compact-ui .hierarchy-item, .compact-ui .prop-row span, .compact-ui .prop-row input, .compact-ui textarea {
-            font-size: var(--compact-font-size);
-        }
-        .compact-ui h4 { font-size: 14px; }
         
-        /* YENİ: UI Kontrol Düğmesi Stili */
-        #ui-control-btn {
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            z-index: 100;
-            background-color: var(--primary-color);
-            border-radius: 4px;
-            padding: 5px 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            line-height: 1;
+        .form-container { 
+            width: 380px; 
+            padding: 40px; 
+            background: var(--panel-bg); 
+            border-radius: 12px; 
+            box-shadow: var(--shadow); 
+            border: 1px solid var(--border-color);
+            text-align: center;
         }
-        #ui-control-btn:hover { background-color: #006bbd; }
+
+        /* Butonlar ve Girdiler */
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 15px; 
+            background: #eee; 
+            border: 1px solid #ddd; 
+            color: #333; 
+            border-radius: 6px; 
+            font-size: 14px; 
+        }
+        .btn { 
+            background-color: var(--primary-color); 
+            border: none; 
+            color: white; 
+            padding: 12px 20px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            transition: transform 0.1s;
+            width: 100%;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary { background-color: #555; }
+
+        /* Toolbar ve Editör UI */
+        #toolbar { 
+            background-color: var(--panel-bg); 
+            display: none; 
+            align-items: center; 
+            padding: 0 20px; 
+            border-bottom: 1px solid var(--border-color); 
+            height: 50px; 
+            z-index: 100; 
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
         
-        /* YENİ: Mobil Kontrol Ayar Paneli Stili */
-        #mobile-control-menu {
-             background: var(--panel-bg); 
-             padding: 15px; 
-             border-radius: 6px; 
-             box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-             position: absolute;
-             top: 45px;
-             left: 5px;
-             z-index: 101;
-             display: none;
-             flex-direction: column;
-             gap: 10px;
+        .tool-group { display: flex; gap: 10px; align-items: center; }
+        
+        .tool-btn { 
+            background: transparent; 
+            border: 1px solid transparent; 
+            padding: 6px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 20px; 
+            color: #555;
+            transition: 0.2s;
         }
-        #mobile-control-menu .menu-item {
-             padding: 8px;
-             background-color: #3e3e42;
-             border-radius: 4px;
-             cursor: pointer;
-             transition: background-color 0.2s;
-             font-size: 14px;
+        .tool-btn:hover { background-color: #f0f0f0; }
+        .tool-btn.active { background-color: #ffebee; color: var(--primary-color); border-color: var(--primary-color); }
+
+        #main-area { flex-grow: 1; display: none; position: relative; overflow: hidden; }
+        #viewport { flex-grow: 1; position: relative; background-color: #87ceeb; } /* Varsayılan Sky Rengi */
+
+        #sidebar-right { 
+            width: 260px; 
+            background-color: var(--panel-bg); 
+            border-left: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column;
+            z-index: 10;
         }
-        #mobile-control-menu .menu-item:hover { background-color: #505050; }
-        #mobile-control-menu .menu-item.active { background-color: var(--secondary-color); }
-        .compact-ui #mobile-control-menu .menu-item { font-size: 11px; padding: 5px 8px; }
+        
+        .panel-section { padding: 15px; border-bottom: 1px solid #eee; }
+        .panel-title { font-size: 12px; font-weight: bold; color: #888; margin-bottom: 10px; letter-spacing: 1px; }
+        
+        .hierarchy-item { 
+            padding: 8px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            font-size: 13px; 
+            margin-bottom: 2px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        }
+        .hierarchy-item:hover { background-color: #f5f5f5; }
+        .hierarchy-item.selected { background-color: #ffebee; color: var(--primary-color); font-weight: 600; }
+
+        /* Özelleştirilmiş İkonlar (Emoji Yerine CSS Şekiller) */
+        .icon-move { display: inline-block; width: 18px; height: 18px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e74c3c"><path d="M12 2L12 22M2 12L22 12" stroke="%23e74c3c" stroke-width="3"/></svg>') no-repeat center; }
+        /* Basit emoji kullanımı devam ediyor ancak stilize edildi */
+
+        /* Mobil Kontroller */
+        #mobile-controls { 
+            position: absolute; bottom: 20px; left: 20px; right: 20px; 
+            display: none; justify-content: space-between; pointer-events: none; z-index: 100;
+        }
+        #joystick-zone { width: 120px; height: 120px; background: rgba(0,0,0,0.1); border-radius: 50%; pointer-events: auto; position: relative; border: 2px solid rgba(255,255,255,0.3); }
+        #joystick-knob { width: 50px; height: 50px; background: var(--primary-color); border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #jump-btn { width: 70px; height: 70px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; font-size: 24px; display: flex; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; border: 2px solid white; }
+        #jump-btn:active { background: var(--primary-color); }
     </style>
 </head>
-<body id="lunx-body">
+<body>
 
     <div id="loading-screen" class="full-screen-container" style="display: flex;">
-        <h1 style="color: var(--primary-color); font-size: 40px; margin-bottom: 20px;">LUNX STUDIO</h1>
-        <div style="width: 300px; height: 10px; background: #333; border-radius: 5px;">
-            <div id="progress-bar"></div>
+        <h1 style="color: var(--primary-color); margin-bottom: 10px;">LUNX STUDIO</h1>
+        <div style="width: 200px; height: 4px; background: #ddd; border-radius: 2px; overflow: hidden;">
+            <div id="progress-bar" style="width: 0%; height: 100%; background: var(--primary-color); transition: width 0.2s;"></div>
         </div>
-        <p id="progress-text" style="color: var(--text-color); margin-top: 15px; font-size: 18px;">Yükleniyor...</p>
-        <button id="restart-button" class="start-btn" style="display: none; background-color: #c92c2c; margin-top: 20px;" onclick="window.restartLoad()">Baştan Yükle</button>
+        <p id="loading-text" style="margin-top: 10px; font-size: 12px; color: #888;">Başlatılıyor...</p>
     </div>
-    
+
     <div id="auth-screen" class="full-screen-container">
-        <div id="auth-container" class="auth-container">
-            <h1 class="logo" style="font-size: 36px; margin-bottom: 10px;">LUNX STUDIO</h1>
-            <h2 id="auth-title" style="color:var(--primary-color); margin-bottom: 10px;">GİRİŞ YAP</h2>
-            <div id="auth-error" style="display: none;"></div>
-            
-            <input type="text" id="auth-username-input" placeholder="Kullanıcı Adı" style="display: none;">
-            <input type="email" id="auth-email-input" placeholder="E-posta Adresi">
-            <input type="password" id="auth-password-input" placeholder="Şifre">
-            
-            <div id="initial-settings" style="display: none; width: 100%; text-align: left; padding-left: 5px;">
-                <label style="color: var(--primary-color); font-weight: bold;">Başlangıç Cinsiyeti:</label><br>
-                <input type="radio" id="gender-male" name="gender-auth" value="male" checked> Erkek
-                <input type="radio" id="gender-female" name="gender-auth" value="female" style="margin-left: 15px;"> Kız
-            </div>
-            
-            <button id="auth-submit-btn" class="start-btn" onclick="window.handleAuthSubmit()">Giriş Yap</button>
-            <a id="auth-switch-link" class="switch-auth" onclick="window.switchAuthMode()">Hesabın yok mu? (Kayıt Ol)</a>
+        <div class="form-container">
+            <h2 style="color: var(--primary-color);">Giriş Yap</h2>
+            <input type="email" id="email" placeholder="E-posta">
+            <input type="password" id="password" placeholder="Şifre">
+            <button class="btn" onclick="app.auth.login()">Giriş Yap</button>
+            <p style="margin-top: 15px; font-size: 12px; cursor: pointer;" onclick="app.auth.toggle()">Hesabın yok mu? Kaydol</p>
         </div>
     </div>
-    
-    <div id="project-screen" class="full-screen-container">
-        <div class="project-container" style="width: 90%; max-width: 800px; padding: 30px; display: flex; flex-direction: column;">
-            <div class="project-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-                <div class="logo" style="font-size: 28px;">LUNX PROJELER</div>
-                <div class="user-panel" style="display: flex; align-items: center; gap: 10px;">
-                    <span id="project-user-email" style="font-size: 14px;"></span>
-                    <button id="settings-btn" class="tool-btn" onclick="window.showSettingsScreen('profile')">⚙️ Ayarlar</button>
-                    <button class="tool-btn" onclick="window.logoutUser()">Çıkış Yap</button>
-                </div>
-            </div>
-            
-            <h3 style="color:var(--primary-color); text-align: left; margin-bottom: 15px;">YENİ PROJE OLUŞTUR</h3>
-            <div class="template-area" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
-                <select id="template-select" style="flex-grow: 1;">
-                    <option value="empty">Boş Sahne (Sadece Gökyüzü)</option>
-                    <option value="default_template">Zemin ve Grid</option>
-                    <option value="simple_cube">Basit Küp Örneği</option>
-                </select>
-                <button class="start-btn" onclick="window.startStudio(true)" style="width: 200px; background-color: var(--secondary-color);">Yeni Başlat</button>
-            </div>
-            
-            <h3 style="color:var(--secondary-color); text-align: left; margin-bottom: 15px; border-top: 1px solid var(--border-color); padding-top: 20px;">KAYITLI PROJELER</h3>
-            <button class="start-btn" onclick="window.loadScene()" style="background-color: #3e3e42;">Buluttan Proje Yükle</button>
-        </div>
-    </div>
-    
+
     <div id="toolbar">
-        <div id="ui-control-btn" onclick="window.showUIControlMenu()">🎛️</div>
-        
-        <div class="logo">LunX</div>
         <div class="tool-group">
-            <button id="play-button" class="tool-btn active" onclick="window.toggleSimulationMode(true)" title="Oyunu Başlat">▶️ Oynat</button>
-            <button id="stop-button" class="tool-btn" onclick="window.toggleSimulationMode(false)" title="Oyunu Durdur">🛑 Durdur</button>
-        </div>
-        <div class="tool-group" id="editor-tools">
-            <button id="tool-select" class="tool-btn active" onclick="window.setTool('select')" title="Seç (S)">🖱️</button>
-            <button id="tool-translate" class="tool-btn" onclick="window.setTool('translate')" title="Taşı (W)">↔️</button>
-            <button id="tool-rotate" class="tool-btn" onclick="window.setTool('rotate')" title="Çevir (Q)">🔄</button>
-            <button id="tool-scale" class="tool-btn" onclick="window.setTool('scale')" title="Boyutlandır (E)">↕️</button>
-        </div>
-        <div class="tool-group" id="editor-creation-tools">
-            <button class="tool-btn" onclick="window.addShape('cube')" title="Küp Ekle">🟦</button>
-            <button class="tool-btn" onclick="window.addShape('sphere')" title="Küre Ekle">🔵</button>
-            <button class="tool-btn" onclick="window.addShape('spawn')" title="Karakter Doğma Alanı Ekle">➕ Başlangıç</button>
+            <span style="font-weight: bold; color: var(--primary-color); font-size: 18px;">LUNX</span>
         </div>
         <div class="tool-group">
-            <button class="tool-btn" onclick="window.saveScene()" title="Kaydet">💾 Kaydet</button>
-            <button class="tool-btn" onclick="window.showProjectScreen(auth.currentUser)" title="Yükle / Yeni Proje">📂 Projeler</button>
+            <button class="tool-btn active" id="tool-select" onclick="app.editor.setTool('select')" title="Seç">🖱️</button>
+            <button class="tool-btn" id="tool-move" onclick="app.editor.setTool('translate')" title="Taşı">↔️</button>
+            <button class="tool-btn" id="tool-rotate" onclick="app.editor.setTool('rotate')" title="Çevir">🔄</button>
+            <button class="tool-btn" id="tool-scale" onclick="app.editor.setTool('scale')" title="Boyut">⤢</button>
         </div>
-        <div id="user-info" style="margin-left: auto;">
-            <span id="status">Hazır.</span>
-            <span id="user-email" style="color:#4caf50; margin-left: 15px;"></span>
+        <div class="tool-group">
+            <button class="tool-btn" onclick="app.editor.addShape('box')">📦</button>
+            <button class="tool-btn" onclick="app.editor.addShape('sphere')">🔵</button>
+            <button class="tool-btn" onclick="app.editor.addShape('spawn')">🚩</button>
+        </div>
+        <div class="tool-group">
+            <button class="btn" onclick="app.game.start()" style="padding: 8px 15px; font-size: 12px;">▶ OYNA</button>
         </div>
     </div>
-    <div id="main-area" style="display: none; flex-direction: row;">
+
+    <div id="main-area">
         <div id="viewport">
-             <div id="mobile-controls" style="display: none; align-items: flex-end;">
-                <div id="joystick-wrapper">
-                    <div id="joystick-area">
-                        <div id="joystick-handle"></div>
-                    </div>
-                </div>
-                <div id="jump-button" style="margin-left: auto;">^</div>
+            <div id="mobile-controls">
+                <div id="joystick-zone"><div id="joystick-knob"></div></div>
+                <div id="jump-btn">⬆</div>
             </div>
+            <button id="exit-play-btn" style="position: absolute; top: 20px; right: 20px; display: none; z-index: 200;" class="btn btn-secondary" onclick="app.game.stop()">EDİTÖRE DÖN</button>
         </div>
+        
         <div id="sidebar-right">
             <div class="panel-section">
-                <h4>HİYERARŞİ (NESNELER) 📦</h4>
-                <div id="hierarchy-panel" style="overflow-y: auto; height: 150px; border: 1px solid var(--border-color); padding: 5px;"></div>
+                <div class="panel-title">SAHNE (SCENE)</div>
+                <div id="hierarchy-list"></div>
             </div>
-            <div class="panel-section" id="property-panel" style="margin-top: 20px;">
-                <h4>ÖZELLİKLER</h4>
-                <div id="object-info">Seçili değil.</div>
-            </div>
-            <div class="panel-section" id="skybox-panel" style="display:none; margin-top: 20px;">
-                <h4>GÖKYÜZÜ (SKY) AYARLARI 🌄</h4>
-                <input type="file" id="skybox-upload-file" accept="image/*" style="display: none;" onchange="window.handleSkyboxUpload(this)">
-                <button class="start-btn" onclick="document.getElementById('skybox-upload-file').click()" style="width: 100%;">Galeriden Küp Doku Yükle</button>
-                <button class="start-btn" onclick="window.setSkybox('default_sky')" style="width: 100%; margin-top: 5px; background-color: #3e3e42;">Varsayılan Renge Dön</button>
-                
-                <div id="skybox-gallery">
-                    <div class="skybox-thumbnail" data-sky="default_sky" onclick="window.setSkybox('default_sky')"><span style="color:white; font-weight:bold; position:absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">RENK</span></div>
-                    <div class="skybox-thumbnail" data-sky="ocean_sky" onclick="window.setSkybox('ocean_sky')"><img src="https://via.placeholder.com/100/1e88e5/ffffff?text=Ocean" alt="Okyanus"></div>
-                    <div class="skybox-thumbnail" data-sky="star_sky" onclick="window.setSkybox('star_sky')"><img src="https://via.placeholder.com/100/212121/ffffff?text=Star" alt="Yıldız"></div>
+            <div class="panel-section">
+                <div class="panel-title">ÖZELLİKLER</div>
+                <div id="properties-content">
+                    <p style="color: #999; font-size: 12px; text-align: center;">Bir nesne seçin.</p>
                 </div>
             </div>
-            <div class="panel-section" id="script-panel" style="display:none; margin-top: 20px;">
-                <h4>LUNX SCRIPT (JS)</h4>
-                <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
-                <button class="run-btn start-btn" onclick="window.saveScript()" style="background-color: var(--secondary-color); margin-top: 5px;" title="Kaydet (Ctrl+S)">⚡ Kodu Kaydet</button>
-                <button class="run-btn start-btn" onclick="window.runSelectedScript()" style="background-color: #f7931e; margin-top: 5px;">▶️ Kodu Test Et</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="settings-screen" class="full-screen-container">
-        <button class="tool-btn" style="position: absolute; top: 20px; right: 20px; background-color: #c92c2c;" onclick="window.closeSettingsScreen()">❌ Kapat</button>
-        <div style="display: flex; gap: 40px; align-items: flex-start;">
-            <div class="settings-menu" style="width: 200px;">
-                <h3>AYARLAR</h3>
-                <div class="menu-item active" data-view="profile" onclick="window.showSettingsView('profile')">👤 Kullanıcı Profili</div>
-                <div class="menu-item" data-view="customize" onclick="window.showSettingsView('customize')">🎨 Karakter Özelleştirme</div>
-                <div class="menu-item" data-view="security" onclick="window.showSettingsView('security')">🔒 Güvenlik</div>
-            </div>
-            <div id="settings-content" style="flex-grow: 1; max-width: 650px; max-height: 80vh; overflow-y: auto;">
-                <div id="settings-view-profile" class="settings-panel" style="width: 100%; display: block; text-align: left;">
-                    <h2>Kullanıcı Profili</h2>
-                    <input type="text" id="setting-username" oninput="window.updateUserProfile('username', this.value)" placeholder="Kullanıcı Adı">
-                    <input type="email" id="setting-email" disabled placeholder="E-posta">
-                    <select id="setting-gender" onchange="window.updateUserProfile('gender', this.value)">
-                        <option value="male">Erkek (Mavi)</option>
-                        <option value="female">Kız (Pembe)</option>
-                    </select>
-                </div>
-                <div id="settings-view-customize" style="display: none; gap: 20px; width: 100%; height: 600px; justify-content: space-between;">
-                    <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
-                        <h2>Renk Ayarları</h2>
-                        <div class="color-row"><label>Gövde Rengi:</label><input type="color" id="setting-torso-color" onchange="window.updateCustomizationView('torsoColor', this.value)"></div>
-                        <div class="color-row"><label>Ayak/Bacak Rengi:</label><input type="color" id="setting-leg-color" onchange="window.updateCustomizationView('legColor', this.value)"></div>
-                        <div class="color-row"><label>Baş Rengi (Ten/Deri):</label><input type="color" id="setting-skin-color" onchange="window.updateCustomizationView('skinColor', this.value)"></div>
-                    </div>
-                    <div id="customize-viewport" style="width: 350px; height: 100%;"></div>
-                    <div class="customize-panel settings-panel" style="width: 300px; text-align: left; padding: 20px;">
-                        <h2>Doku Yükleme</h2>
-                        <div class="file-upload-container">
-                            <label>Kafa Resmi:</label> 
-                            <div style="display: flex; align-items: center;">
-                                <div id="head-preview" class="custom-preview">Boş</div>
-                                <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'headTexture')" style="display: none;">
-                                <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('head-image-file').click()">🖼️ Yükle</button>
-                            </div>
-                        </div>
-                        <textarea id="head-texture-input" placeholder="Kafa Base64 veya URL..." onchange="window.updateCustomizationView('headTexture', this.value)"></textarea>
-                        <div class="file-upload-container" style="margin-top: 20px;">
-                            <label>Gövde Resmi:</label> 
-                            <div style="display: flex; align-items: center;">
-                                <div id="torso-preview" class="custom-preview">Boş</div>
-                                <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torsoTexture')" style="display: none;">
-                                <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('torso-image-file').click()">👕 Yükle</button>
-                            </div>
-                        </div>
-                        <textarea id="torso-texture-input" placeholder="Gövde Base64 veya URL..." onchange="window.updateCustomizationView('torsoTexture', this.value)"></textarea>
-                    </div>
-                </div>
-                <div id="settings-view-security" class="settings-panel" style="width: 100%; display: none; text-align: left;">
-                    <h2>Güvenlik Ayarları</h2>
-                    <input type="password" id="setting-new-password" placeholder="Yeni şifre (en az 6 karakter)">
-                    <button class="start-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
-                    <p id="security-status" style="color: #4caf50; margin-top: 10px;"></p>
+            <div class="panel-section">
+                <div class="panel-title">GÖKYÜZÜ (SKYBOX)</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                    <div onclick="app.editor.setSky('day')" style="height: 40px; background: #87ceeb; cursor: pointer; border-radius: 4px;"></div>
+                    <div onclick="app.editor.setSky('sunset')" style="height: 40px; background: #fd5e53; cursor: pointer; border-radius: 4px;"></div>
+                    <div onclick="app.editor.setSky('night')" style="height: 40px; background: #000022; cursor: pointer; border-radius: 4px;"></div>
                 </div>
             </div>
         </div>
-    </div>
-    <div id="context-menu" style="display: none; position: fixed; background: #3e3e42; border: 1px solid var(--primary-color); border-radius: 4px; z-index: 9000; padding: 5px;">
-        <div class="context-item tool-btn" onclick="window.runSelectedScript()" style="margin-bottom: 5px;">Kodu Çalıştır</div>
-        <div class="context-item tool-btn" onclick="window.deleteSelectedObject()" style="margin-bottom: 5px;">Sil</div>
-        <div class="context-item tool-btn" onclick="window.duplicateSelectedObject()">Çoğalt</div>
-    </div>
-    
-    <div id="mobile-control-menu">
-        <strong>UI Boyutu Ayarı</strong>
-        <div class="menu-item active" data-size="default" onclick="window.toggleUISize(false)">Büyük UI (Varsayılan)</div>
-        <div class="menu-item" data-size="compact" onclick="window.toggleUISize(true)">Küçük UI (Kompakt)</div>
-        <hr style="border-color: #3e3e42; margin: 5px 0;">
-        <strong>Mobil Kontrol Tipi (Oynat Modu)</strong>
-        <div class="menu-item active" data-control="joystick" onclick="window.setMobileControlMode('joystick')">🕹️ Joystick + Zıplama</div>
-        <div class="menu-item" data-control="none" onclick="window.setMobileControlMode('none')">❌ Kontrolsüz</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/tween.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        
-        // ====================================================================
-        // JAVASCRIPT KODU - TAMAMI BURADA BİRLEŞTİRİLDİ (DÜZELTİLMİŞ)
-        // ====================================================================
-        
-        // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
-        
-        // **ÖNEMLİ:** Buradaki API Anahtarını kendi Firebase projenizinkiyle değiştirin.
-        const firebaseConfig = {
-          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
-          authDomain: "lunxstudio.firebaseapp.com",
-          databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
-          projectId: "lunxstudio",
-          storageBucket: "lunxstudio.firebasestorage.app",
-          messagingSenderId: "810358489202",
-          appId: "1:810358489202:web:301dbd444bf4608f2782eb",
-          measurementId: "G-Y36QNCE71R"
-        };
-        
-        let app, auth, db;
-        let scene, camera, renderer, controls, transformControls;
-        let objects = []; 
-        let selectedObject = null;
-        let isSimulationMode = false; 
-        
-        // YENİ SKYBOX DEĞİŞKENİ
-        let skyboxMesh = null; 
-        let currentSkybox = {
-             type: 'color', 
-             value: 0x87ceeb // Varsayılan mavi renk
-        }; 
-        
-        // PLAYER VE ANİMASYON DEĞİŞKENLERİ (GÜNCELLENDİ)
-        let player, playerVelocity, playerDirection; 
-        const playerHeight = 1.0; 
-        let isOnGround = true; 
-        const PLAYER_SPEED = 5.0; // Karakter hareket hızı
-        const PLAYER_JUMP_FORCE = 8; // Zıplama gücü
-        
-        let playerMixer = null; // Animasyon Karıştırıcısı
-        let animationActions = {}; // Animasyonlar için aksiyonlar
-        let currentAction = 'idle'; // Varsayılan animasyon durumu
-        const WALK_SPEED_THRESHOLD = 0.05; // Yürüme animasyonuna geçiş eşiği
-
-        let moveForward = false;
-        let moveBackward = false;
-        let moveLeft = false;
-        let moveRight = false; 
-        
-        let joystickActive = false; 
-        let joystickX = 0, joystickY = 0; 
-        
-        let currentCustomization = {
-            username: "", gender: "male", headTexture: "", torsoTexture: "",
-            torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0"
-        };
-        
-        // Galeriden seçilebilecek Skybox dokuları (Placeholder/Örnek) - GÜNCEL CDN YOLLARI
-        const skyboxTextures = {
-            'ocean_sky': { 
-                type: 'cube', 
-                // YENİ YOLLAR - Bridge2 yerine Milkyway
-                value: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/cube/MilkyWay/' 
-            },
-            'star_sky': { 
-                type: 'cube', 
-                // YENİ YOLLAR - pisa yerine Bridge
-                value: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/cube/Bridge/' 
-            },
-            'default_sky': { 
-                type: 'color', 
-                value: 0x87ceeb 
+        // --- YAPILANDIRMA ---
+        const config = {
+            firebase: {
+                apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
+                authDomain: "lunxstudio.firebaseapp.com",
+                databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
+                projectId: "lunxstudio",
+                storageBucket: "lunxstudio.firebasestorage.app",
+                messagingSenderId: "810358489202",
+                appId: "1:810358489202:web:301dbd444bf4608f2782eb",
+                measurementId: "G-Y36QNCE71R"
             }
         };
 
-        let customScene, customCamera, customRenderer, customControls, customCharacter;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        let authMode = 'login'; 
-        const clock = new THREE.Clock(); 
-        
-        // YENİ: UI VE KONTROL DEĞİŞKENLERİ
-        let isCompactUI = false;
-        let mobileControlMode = 'joystick'; // 'joystick' veya 'none'
+        // --- ANA UYGULAMA NESNESİ ---
+        const app = {
+            state: { user: null, mode: 'editor', selected: null },
+            three: { scene: null, camera: null, renderer: null, controls: null, transform: null, objects: [], raycaster: new THREE.Raycaster(), mouse: new THREE.Vector2() },
+            game: { player: null, velocity: new THREE.Vector3(), speed: 0.15, jump: 0.3, gravity: 0.015, input: {x:0, y:0}, isGrounded: false },
 
-        // --- 2. YARDIMCI FONKSİYONLAR ---
-        
-        window.log = (msg) => { console.log(`[LunX] ${msg}`); document.getElementById('status').innerText = msg; }
-
-        window.showError = (msg, elementId = 'auth-error') => { 
-            const errDiv = document.getElementById(elementId);
-            if (!errDiv) { console.error("Hata elementi bulunamadı: " + elementId); return; }
-
-            let displayMsg = msg;
-            if (msg.includes("auth/email-already-in-use")) displayMsg = "Bu e-posta adresi zaten kayıtlı.";
-            else if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) displayMsg = "E-posta veya şifre hatalı.";
-            else if (msg.includes("auth/invalid-email")) displayMsg = "Geçersiz e-posta formatı.";
-            else if (msg.includes("auth/weak-password")) displayMsg = "Şifre en az 6 karakter olmalıdır.";
-            else if (msg.includes("Failed to fetch")) displayMsg = "Bağlantı Hatası: İnternet bağlantınızı veya Firebase ayarlarınızı kontrol edin.";
-            else if (msg.includes("auth/requires-recent-login")) displayMsg = "Bu işlem için tekrar giriş yapmanız gerekiyor.";
-            else if (msg.includes("auth/missing-email")) displayMsg = "Lütfen e-posta ve şifreyi girin.";
-            else if (msg.includes("KRİTİK HATA:")) displayMsg = msg.replace("KRİTİK HATA: ", "");
-            else if (msg.includes("Skybox yükleme hatası:")) displayMsg = "Skybox yüklenirken hata oluştu, varsayılana dönülüyor.";
-            // DÜZELTİLDİ: Three.js çekirdek kontrolü
-            else if (msg.includes("isWebGLAvailable is not a function") || msg.includes("Cannot read properties of undefined (reading 'isWebGLAvailable')")) displayMsg = "WebGL başlatılamadı veya Three.js tam yüklenmedi.";
-
-
-            errDiv.innerText = "Hata: " + displayMsg; 
-            errDiv.style.display = 'block';
-            errDiv.style.color = '#ff4444';
-            errDiv.style.backgroundColor = '#301010';
-            window.log("Hata: " + msg);
-        }
-
-        window.showSuccess = (msg, elementId = 'security-status') => {
-             const successDiv = document.getElementById(elementId);
-             successDiv.innerText = msg;
-             successDiv.style.color = '#4caf50';
-             successDiv.style.backgroundColor = '#103010';
-             successDiv.style.display = 'block';
-        }
-
-        window.hideAllScreens = () => {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('project-screen').style.display = 'none';
-            document.getElementById('toolbar').style.display = 'none';
-            document.getElementById('main-area').style.display = 'none';
-            document.getElementById('settings-screen').style.display = 'none';
-            document.getElementById('auth-error').style.display = 'none'; 
-            document.getElementById('security-status').style.display = 'none';
-            document.getElementById('mobile-control-menu').style.display = 'none';
-        }
-
-        // --- 3. YÜKLEME EKRANI YÖNETİMİ ---
-        
-        // DÜZELTİLDİ: THREE.WebGL.isWebGLAvailable yerine doğrudan THREE.WebGLRenderer kontrolü
-        const checkLibraries = () => {
-             if (typeof firebase === 'undefined') {
-                  throw new Error("KRİTİK HATA: Firebase kütüphaneleri yüklenemedi.");
-             }
-             if (typeof THREE === 'undefined') {
-                  throw new Error("KRİTİK HATA: Three.js kütüphanesi yüklenemedi.");
-             }
-             // Three.js çekirdeğine dahil edildi.
-             if (!window.WebGLRenderingContext) {
-                  throw new Error("KRİTİK HATA: Cihazınız WebGL'i desteklemiyor.");
-             }
-        };
-
-
-        const loadSteps = [
-            { name: "Kütüphane Kontrolü", duration: 1000, percentage: 30, action: () => {
-                return new Promise((resolve, reject) => {
-                     // Kütüphanelerin asenkron yüklenmesini beklemek için bir gecikme ekleyelim
-                     setTimeout(() => {
-                          try {
-                              checkLibraries();
-                              resolve();
-                          } catch (error) {
-                              reject(error);
-                          }
-                     }, 500); // 500ms bekleme
-                });
-            }},
-            { name: "Firebase Bağlantısı", duration: 1500, percentage: 60, action: () => {
-                app = firebase.initializeApp(firebaseConfig);
-                auth = app.auth(); 
-                db = app.database(); 
-                if (!auth) throw new Error("Firebase Auth başlatılamadı.");
-            }},
-            { name: "Kullanıcı Durumu Kontrolü", duration: 1000, percentage: 95, action: async () => {
-                return new Promise((resolve) => {
-                    const TIMEOUT_MS = 2000; 
-                    let resolved = false;
-
-                    const unsubscribe = auth.onAuthStateChanged(user => {
-                        if (!resolved) {
-                            resolved = true;
-                            if (user) {
-                                window.fetchAndUpdateUser(user).then(() => window.log("Kullanıcı verisi güncellendi."));
-                            }
-                            if (unsubscribe) unsubscribe(); 
-                            resolve(); 
-                        }
-                    });
-
-                    setTimeout(() => {
-                        if (!resolved) {
-                            resolved = true;
-                            if (unsubscribe) unsubscribe();
-                            window.log("Oturum kontrolü zaman aşımına uğradı, devam ediliyor.");
-                            resolve();
-                        }
-                    }, TIMEOUT_MS); 
-                });
-            }},
-        ];
-
-        let currentStep = 0;
-        let progressValue = 0;
-        let loadingInterval = null;
-
-        window.updateProgress = (percentage, text) => {
-            progressValue = percentage;
-            document.getElementById('progress-bar').style.width = `${percentage}%`;
-            document.getElementById('progress-text').innerText = `${text} ${percentage.toFixed(0)}%`;
-        }
-
-        window.finishLoading = (user) => {
-            clearInterval(loadingInterval);
-            window.updateProgress(100, "Hazır.");
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('restart-button').style.display = 'none';
-
-            if (auth.currentUser) {
-                window.showProjectScreen(auth.currentUser); 
-            } else {
-                window.showAuth('login');
-            }
-        }
-
-        window.failLoading = (error) => {
-            clearInterval(loadingInterval);
-            window.updateProgress(10, "Yükleme Hatası!");
-            
-            const progressTextEl = document.getElementById('progress-text');
-            progressTextEl.innerText = "Hata: " + (error.message || "Bilinmeyen Hata."); 
-            progressTextEl.style.color = '#ff4444';
-            progressTextEl.style.backgroundColor = '#301010'; 
-            
-            document.getElementById('progress-bar').style.width = '10%';
-            document.getElementById('restart-button').style.display = 'block'; 
-            window.log("Yükleme başarısız oldu. Yeniden başlatma bekleniyor.");
-            
-            // Hata mesajını konsola da yaz
-            console.error("KRİTİK BAŞLATMA HATASI:", error);
-        }
-
-        window.restartLoad = () => {
-            window.log("Yükleme yeniden başlatılıyor...");
-            currentStep = 0;
-            progressValue = 0;
-            clearInterval(loadingInterval);
-            
-            document.getElementById('restart-button').style.display = 'none';
-            const progressTextEl = document.getElementById('progress-text');
-            progressTextEl.style.color = 'var(--text-color)';
-            progressTextEl.style.backgroundColor = 'transparent';
-            
-            document.getElementById('loading-screen').style.display = 'flex'; 
-            
-            loadApplicationStep();
-        }
-
-        const loadApplicationStep = async () => {
-            if (currentStep >= loadSteps.length) {
-                window.finishLoading(auth.currentUser);
-                return;
-            }
-
-            const step = loadSteps[currentStep];
-            const initialProgress = progressValue;
-            const targetProgress = step.percentage;
-            const duration = step.duration;
-            const startTime = Date.now();
-            
-            window.log(`${step.name} başlatılıyor...`);
-
-            loadingInterval = setInterval(() => {
-                const elapsed = Date.now() - startTime;
-                let p = (elapsed / duration) * (targetProgress - initialProgress) + initialProgress;
-                
-                if (p >= targetProgress) {
-                    p = targetProgress;
-                }
-                window.updateProgress(p, step.name);
-            }, 50);
-
-            try {
-                await step.action();
-                
-                clearInterval(loadingInterval); 
-                progressValue = targetProgress; 
-                currentStep++;
-                loadApplicationStep(); 
-            } catch (error) {
-                clearInterval(loadingInterval);
-                window.failLoading(error);
-            }
-        }
-
-        // --- 4. GİRİŞ / KAYIT YÖNETİMİ ---
-        
-        window.showAuth = (mode) => {
-            window.hideAllScreens();
-            document.getElementById('auth-screen').style.display = 'flex';
-            
-            const authTitle = document.getElementById('auth-title');
-            const authSubmitBtn = document.getElementById('auth-submit-btn');
-            const authSwitchLink = document.getElementById('auth-switch-link');
-            const usernameInput = document.getElementById('auth-username-input'); 
-            const initialSettings = document.getElementById('initial-settings'); 
-
-            if (mode === 'register') {
-                authMode = 'register';
-                authTitle.innerText = "HESAP OLUŞTUR";
-                authSubmitBtn.innerText = "Kayıt Ol";
-                authSwitchLink.innerText = "Bir hesabın var mı? (Giriş Yap)";
-                
-                usernameInput.style.display = 'block'; 
-                initialSettings.style.display = 'block'; 
-            } else { 
-                authMode = 'login';
-                authTitle.innerText = "GİRİŞ YAP";
-                authSubmitBtn.innerText = "Giriş Yap";
-                authSwitchLink.innerText = "Hesabın yok mu? (Kayıt Ol)";
-
-                usernameInput.style.display = 'none'; 
-                initialSettings.style.display = 'none'; 
-            }
-        }
-        
-        window.switchAuthMode = () => { window.showAuth(authMode === 'register' ? 'login' : 'register'); }
-
-        window.handleAuthSubmit = async () => {
-            if (!auth) { window.showError("Firebase Bağlantısı Yok."); return; }
-            const email = document.getElementById('auth-email-input').value.trim();
-            const pass = document.getElementById('auth-password-input').value.trim();
-            document.getElementById('auth-error').style.display = 'none';
-            
-            if (!email || !pass) { window.showError("Lütfen e-posta ve şifreyi girin."); return; }
-            
-            if (authMode === 'register') {
-                const username = document.getElementById('auth-username-input').value.trim();
-                const gender = document.querySelector('input[name="gender-auth"]:checked').value;
-                if (!username) { window.showError("Lütfen bir kullanıcı adı girin."); return; }
-                
+            init: () => {
+                // 1. Firebase Başlat
                 try {
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-                    const user = userCredential.user;
-                    const defaultColor = gender === 'male' ? "#007acc" : "#ff4aff";
-                    
-                    await db.ref('users/' + user.uid).set({
-                        email: email, username: username, gender: gender, headTexture: "", torsoTexture: "",
-                        torsoColor: defaultColor, legColor: defaultColor, skinColor: "#f0c0b0"
+                    firebase.initializeApp(config.firebase);
+                    firebase.auth().onAuthStateChanged(user => {
+                        app.state.user = user;
+                        document.getElementById('loading-screen').style.display = 'none';
+                        if(user) app.ui.showEditor();
+                        else app.ui.showAuth();
                     });
-                    window.log("Kayıt başarılı. Oturum açılıyor...");
-                    window.finishLoading(user); 
-                } catch (error) { window.showError(error.message); }
-            } else {
-                try {
-                    const userCredential = await auth.signInWithEmailAndPassword(email, pass);
-                    const user = userCredential.user;
-                    window.log("Giriş başarılı. Yönlendiriliyor...");
-                    window.finishLoading(user); 
-                } catch (error) { window.showError(error.message); }
-            }
-        };
+                } catch(e) { alert("Firebase Hatası: " + e.message); }
 
-        window.logoutUser = async () => { 
-            if (!auth) return;
-            try {
-                await auth.signOut(); 
-                window.log("Çıkış yapıldı.");
-                window.showAuth('login'); 
-            } catch (error) {
-                window.log("Çıkış yapma hatası: " + error.message);
-            }
-        };
+                // 2. 3D Sahneyi Kur
+                app.editor.initScene();
+            },
 
-        // --- 5. EKRAN VE MOD YÖNETİMİ ---
+            // --- AUTH ---
+            auth: {
+                login: async () => {
+                    const e = document.getElementById('email').value;
+                    const p = document.getElementById('password').value;
+                    try { await firebase.auth().signInWithEmailAndPassword(e, p); } 
+                    catch(err) { alert(err.message); }
+                },
+                toggle: () => { /* Basitlik için sadece login ekranı */ alert("Kayıt özelliği şu an kapalı."); }
+            },
 
-        window.fetchAndUpdateUser = async (user) => {
-            if (!user) return;
-            try {
-                 const snapshot = await db.ref('users/' + user.uid).once('value');
-                 const userData = snapshot.val() || { username: user.email.split('@')[0], gender: 'male', torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0" };
-            
-                currentCustomization = {
-                    username: userData.username || user.email.split('@')[0],
-                    gender: userData.gender || 'male',
-                    headTexture: userData.headTexture || "",
-                    torsoTexture: userData.torsoTexture || "",
-                    torsoColor: userData.torsoColor || "#007acc",
-                    legColor: userData.legColor || "#007acc",
-                    skinColor: userData.skinColor || "#f0c0b0"
-                };
-                
-                const userPanel = document.getElementById('project-user-email');
-                if (userPanel) {
-                     userPanel.innerHTML = `
-                         <span style="background-color: ${currentCustomization.gender === 'male' ? '#007acc' : '#ff4aff'}; 
-                                      padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 10px;">
-                            ${currentCustomization.username.charAt(0).toUpperCase()}
-                         </span> 
-                         ${currentCustomization.username} (${user.email})
-                    `;
+            // --- UI ---
+            ui: {
+                showAuth: () => { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('toolbar').style.display = 'none'; document.getElementById('main-area').style.display = 'none'; },
+                showEditor: () => { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('toolbar').style.display = 'flex'; document.getElementById('main-area').style.display = 'flex'; app.editor.onResize(); },
+                updateHierarchy: () => {
+                    const list = document.getElementById('hierarchy-list');
+                    list.innerHTML = '';
+                    app.three.objects.forEach(obj => {
+                        const item = document.createElement('div');
+                        item.className = `hierarchy-item ${app.state.selected === obj ? 'selected' : ''}`;
+                        item.innerText = obj.userData.name || obj.name;
+                        item.onclick = () => app.editor.select(obj);
+                        list.appendChild(item);
+                    });
                 }
-            } catch(e) {
-                 window.log("Kullanıcı verisi çekilemedi: " + e.message);
-            }
-        }
-        
-        window.showProjectScreen = (user) => {
-            if (!user) { window.showAuth('login'); return; }
-            window.fetchAndUpdateUser(user).then(() => {
-                window.hideAllScreens();
-                document.getElementById('project-screen').style.display = 'flex';
-                const userEmailEl = document.getElementById('user-email');
-                if (userEmailEl) userEmailEl.innerText = user.email;
-            });
-        }
-        
-        // --- 6. AYARLAR VE ÖZELLEŞTİRME FONKSİYONLARI ---
+            },
 
-        window.showSettingsScreen = (initialView) => {
-            window.hideAllScreens();
-            document.getElementById('settings-screen').style.display = 'flex';
-            window.showSettingsView(initialView);
-        }
-
-        window.closeSettingsScreen = () => {
-            const activeMenuItem = document.querySelector('.settings-menu .menu-item.active');
-            const currentView = activeMenuItem ? activeMenuItem.dataset.view : null;
-
-            if (currentView === 'customize' && customRenderer) {
-                customRenderer.dispose();
-                document.getElementById('customize-viewport').innerHTML = '';
-                customScene = null; customCamera = null; customControls = null;
-            }
-            window.showProjectScreen(auth.currentUser); 
-        }
-
-        window.showSettingsView = (viewId) => {
-            document.querySelectorAll('.settings-menu .menu-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.view === viewId) item.classList.add('active');
-            });
-            document.querySelectorAll('#settings-content > div').forEach(div => {
-                div.style.display = 'none';
-            });
-            const targetDiv = document.getElementById(`settings-view-${viewId}`);
-            if (targetDiv) targetDiv.style.display = viewId === 'customize' ? 'flex' : 'block';
-
-            if (viewId === 'customize') {
-                window.loadCustomizationData();
-                window.initCustomization3D();
-            } else {
-                 if (customRenderer) {
-                    customRenderer.dispose();
-                    document.getElementById('customize-viewport').innerHTML = '';
-                    customScene = null; customCamera = null; customControls = null;
-                }
-            }
-             if (viewId === 'profile') {
-                document.getElementById('setting-username').value = currentCustomization.username;
-                document.getElementById('setting-email').value = auth.currentUser.email;
-                document.getElementById('setting-gender').value = currentCustomization.gender;
-            }
-            if (viewId === 'security') {
-                document.getElementById('security-status').style.display = 'none';
-                document.getElementById('setting-new-password').value = '';
-            }
-        }
-        
-        window.loadCustomizationData = () => {
-            document.getElementById('head-texture-input').value = currentCustomization.headTexture;
-            document.getElementById('torso-texture-input').value = currentCustomization.torsoTexture;
-            document.getElementById('setting-torso-color').value = currentCustomization.torsoColor;
-            document.getElementById('setting-leg-color').value = currentCustomization.legColor;
-            document.getElementById('setting-skin-color').value = currentCustomization.skinColor;
-            window.updatePreview('headTexture', currentCustomization.headTexture);
-            window.updatePreview('torsoTexture', currentCustomization.torsoTexture);
-        }
-
-        window.updatePreview = (textureKey, data) => {
-            const part = textureKey.toLowerCase().replace('texture', '');
-            const preview = document.getElementById(`${part}-preview`);
-            if (data && (data.startsWith('data:image/') || data.startsWith('http'))) {
-                 preview.style.backgroundImage = `url('${data}')`;
-                 preview.innerText = "";
-            } else {
-                 preview.style.backgroundImage = 'none';
-                 preview.innerText = "Boş";
-            }
-        }
-        
-        window.updateCustomizationView = async (key, value) => {
-            const user = auth.currentUser;
-            if (!user) return;
-            currentCustomization[key] = value;
-            if (key.includes('Texture')) { window.updatePreview(key, value); }
-            window.updateCustomCharacter(); 
-            
-            // Simülasyon modunda karakteri anında güncelle
-            if (player && isSimulationMode) {
-                window.updatePlayerModel();
-            }
-            
-            try {
-                const update = {};
-                update[key] = value;
-                await db.ref('users/' + user.uid).update(update);
-            } catch (e) { window.log(`Hata: ${key} kaydedilemedi.`); }
-        }
-
-        window.updateUserProfile = async (key, value) => {
-            const user = auth.currentUser;
-            if (!user) return;
-            currentCustomization[key] = value;
-            
-            if (key === 'gender') {
-                 const defaultColor = value === 'male' ? "#007acc" : "#ff4aff";
-                 currentCustomization.torsoColor = defaultColor;
-                 currentCustomization.legColor = defaultColor;
-                 
-                 document.getElementById('setting-torso-color').value = defaultColor;
-                 document.getElementById('setting-leg-color').value = defaultColor;
-                 await window.updateCustomizationView('torsoColor', defaultColor);
-                 await window.updateCustomizationView('legColor', defaultColor);
-            }
-
-            try {
-                const update = {};
-                update[key] = value;
-                await db.ref('users/' + user.uid).update(update);
-                window.fetchAndUpdateUser(user); 
-                window.showSuccess("Profil bilgisi güncellendi.");
-            } catch (e) { window.showError("Profil güncellenemedi.", 'security-status'); }
-        }
-        
-        window.updatePassword = async () => {
-             const newPassword = document.getElementById('setting-new-password').value;
-             const statusEl = document.getElementById('security-status');
-             statusEl.style.display = 'none';
-             if (!newPassword || newPassword.length < 6) {
-                 window.showError("Şifre en az 6 karakter olmalıdır.", 'security-status'); return;
-             }
-             try {
-                 await auth.currentUser.updatePassword(newPassword);
-                 window.showSuccess("Şifre başarıyla güncellendi!", 'security-status');
-                 document.getElementById('setting-new-password').value = '';
-             } catch (e) {
-                 window.showError(e.message, 'security-status');
-             }
-        }
-        
-        window.handleImageUpload = (fileInput, textureKey) => {
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            if (file.size > 1024 * 1024) { 
-                 window.showError("Görsel boyutu 1MB'dan küçük olmalıdır.", 'security-status'); 
-                 fileInput.value = ''; 
-                 return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const base64String = event.target.result;
-                document.getElementById(`${textureKey.toLowerCase().replace('texture', 'texture')}-input`).value = base64String;
-                window.updateCustomizationView(textureKey, base64String);
-            };
-            
-            reader.onerror = (error) => {
-                 window.showError("Dosya okuma hatası: " + error, 'security-status');
-            };
-
-            reader.readAsDataURL(file); 
-        }
-
-        window.initCustomization3D = () => {
-            const viewport = document.getElementById('customize-viewport');
-            
-            if (customRenderer) { customRenderer.dispose(); viewport.innerHTML = ''; } 
-
-            customScene = new THREE.Scene();
-            customCamera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 100);
-            customCamera.position.set(0, 2, 3);
-            customScene.background = new THREE.Color(0x333333);
-
-            customRenderer = new THREE.WebGLRenderer({ antialias: true });
-            customRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            customRenderer.shadowMap.enabled = true; 
-            viewport.appendChild(customRenderer.domElement);
-
-            customControls = new THREE.OrbitControls(customCamera, customRenderer.domElement);
-            customControls.enableDamping = true;
-            customControls.dampingFactor = 0.05;
-            customControls.maxDistance = 6;
-            customControls.minDistance = 2;
-            customControls.target.set(0, 1, 0);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            customScene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(2, 5, 4);
-            dirLight.castShadow = true;
-            customScene.add(dirLight);
-
-            const ground = new THREE.Mesh( new THREE.PlaneGeometry(5, 5), new THREE.MeshStandardMaterial({ color: 0x222222 }) );
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            customScene.add(ground);
-
-            window.updateCustomCharacter();
-            window.animateCustomization();
-        }
-
-        window.updateCustomCharacter = () => {
-            if (!customScene) return;
-
-            if (customCharacter) { customScene.remove(customCharacter); customCharacter = null; }
-            
-            customCharacter = window.createBlockCharacter(currentCustomization.gender);
-            
-            customScene.add(customCharacter);
-        }
-
-        window.animateCustomization = () => {
-            if (!customRenderer) return; 
-            requestAnimationFrame(window.animateCustomization);
-            customControls.update(); 
-            customRenderer.render(customScene, customCamera);
-        }
-
-        window.getTextureMaterial = (textureData, defaultColor) => {
-            const color = defaultColor ? new THREE.Color(defaultColor) : new THREE.Color(0xaaaaaa);
-            
-            if (textureData && (textureData.startsWith('data:image/') || textureData.startsWith('http'))) {
-                 try {
-                    const loader = new THREE.TextureLoader();
-                    const texture = loader.load(textureData);
-                    texture.wrapS = THREE.RepeatWrapping;
-                    texture.wrapT = THREE.RepeatWrapping;
-                    texture.repeat.set(1, 1); 
-                    return new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide }); 
-                } catch (e) {
-                    console.error("Doku yüklenirken hata:", e);
-                    return new THREE.MeshStandardMaterial({ color: color }); 
-                }
-            }
-            return new THREE.MeshStandardMaterial({ color: color });
-        }
-        
-        // GÜNCELLENDİ: Animasyona uygun hale getirildi (Kollar/Bacaklar ayrı gruplar içinde)
-        window.createBlockCharacter = (gender = 'male') => {
-            const group = new THREE.Group();
-            
-            const finalHeadMat = window.getTextureMaterial(currentCustomization.headTexture, currentCustomization.skinColor);
-            const finalTorsoMat = window.getTextureMaterial(currentCustomization.torsoTexture, currentCustomization.torsoColor);
-            const finalArmMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(currentCustomization.skinColor) });
-            const finalLegMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(currentCustomization.legColor) });
-            
-            const limbWidth = 0.4;
-            const limbHeight = 1.0;
-            const headSize = 0.8;
-            const torsoHeight = 1.0;
-
-            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), finalHeadMat);
-            head.position.y = 1.7; 
-            head.name = "Head";
-            head.castShadow = true;
-            group.add(head);
-
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, torsoHeight, 0.4), finalTorsoMat);
-            torso.position.y = 1.0; 
-            torso.name = "Torso";
-            torso.castShadow = true;
-            group.add(torso);
-            
-            const createLimb = (isArm, side) => {
-                const height = limbHeight;
-                const width = limbWidth;
-                const mat = isArm ? finalArmMat : finalLegMat;
-                const name = (isArm ? (side > 0 ? "RightArm" : "LeftArm") : (side > 0 ? "RightLeg" : "LeftLeg"));
-                
-                // 1. Kapsayıcı Grubu (Dönüş Merkezi)
-                const limbGroup = new THREE.Group();
-                
-                // 2. Mesh (Grup içinde aşağı kaydırılmış)
-                const limbMesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, width), mat);
-                // ÖNEMLİ: Mesh'i merkezin altına kaydır, böylece rotasyon doğru pivot noktasında olur (omuz/kalça).
-                limbMesh.position.y = -height / 2; 
-                limbMesh.castShadow = true;
-
-                limbGroup.add(limbMesh);
-                limbGroup.name = name + "Group";
-                
-                if (isArm) {
-                    // Kol başlangıç pozisyonu
-                    limbGroup.position.set(side * 0.6, 1.5, 0); 
-                } else {
-                    // Bacak başlangıç pozisyonu
-                    limbGroup.position.set(side * 0.2, 0.5, 0);
-                }
-                
-                return limbGroup;
-            };
-            
-            const rightArm = createLimb(true, 1);
-            const leftArm = createLimb(true, -1);
-            const rightLeg = createLimb(false, 1);
-            const leftLeg = createLimb(false, -1);
-
-            group.add(rightArm, leftArm, rightLeg, leftLeg);
-            
-            group.position.y = 0.5; 
-            
-            return group;
-        };
-        
-        // Yeni: Simülasyon modundayken karakter modelini güncelle
-        window.updatePlayerModel = () => {
-            if (player) {
-                const pos = player.position.clone();
-                const rot = player.rotation.clone();
-                
-                scene.remove(player); 
-                
-                // Yeni karakteri oluştur
-                player = window.createBlockCharacter(currentCustomization.gender);
-                
-                player.position.copy(pos);
-                player.rotation.copy(rot);
-                
-                scene.add(player); 
-                window.log("Oyuncu karakteri güncellendi. Animasyonlar sıfırlandı.");
-                
-                // Animasyonları sıfırla ve yeniden başlat
-                window.initPlayerControls(true);
-            }
-        }
-
-        // --- YENİ: UI VE KONTROL YÖNETİMİ FONKSİYONLARI ---
-        
-        // UI Boyutunu Değiştirme
-        window.toggleUISize = (isCompact) => {
-            const body = document.getElementById('lunx-body');
-            isCompactUI = isCompact;
-            const defaultMenuItem = document.querySelector('#mobile-control-menu .menu-item[data-size="default"]');
-            const compactMenuItem = document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]');
-
-            if (isCompact) {
-                body.classList.add('compact-ui');
-                if (defaultMenuItem) defaultMenuItem.classList.remove('active');
-                if (compactMenuItem) compactMenuItem.classList.add('active');
-            } else {
-                body.classList.remove('compact-ui');
-                if (defaultMenuItem) defaultMenuItem.classList.add('active');
-                if (compactMenuItem) compactMenuItem.classList.remove('active');
-            }
-            window.onWindowResize(); // Yeniden boyutlandırma olayını tetikle
-            window.log(`UI Boyutu: ${isCompact ? 'Kompakt' : 'Varsayılan'} olarak ayarlandı.`);
-        }
-        
-        // Mobil Kontrol Modunu (Joystick) Ayarlama
-        window.setMobileControlMode = (mode) => {
-            mobileControlMode = mode;
-            document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
-                item.classList.remove('active');
-            });
-            const selectedControl = document.querySelector(`#mobile-control-menu .menu-item[data-control="${mode}"]`);
-            if (selectedControl) selectedControl.classList.add('active');
-            
-            if (isSimulationMode) {
-                window.initMobileControls(); // Simülasyon modundaysa anında güncelle
-            }
-            window.log(`Mobil Kontrol Modu: ${mode.toUpperCase()} olarak ayarlandı.`);
-        }
-        
-        // UI Kontrol Menüsünü Göster/Gizle
-        window.showUIControlMenu = () => {
-             const menu = document.getElementById('mobile-control-menu');
-             // menü açık mı, kontrol et.
-             const isMenuVisible = menu.style.display === 'flex'; 
-             
-             // Menüyü aç/kapat
-             menu.style.display = isMenuVisible ? 'none' : 'flex';
-             
-             // Açılışta aktif UI boyutunu menüde işaretle
-             const sizeKey = isCompactUI ? 'compact' : 'default';
-             document.querySelectorAll('#mobile-control-menu .menu-item[data-size]').forEach(item => {
-                 item.classList.remove('active');
-                 if (item.dataset.size === sizeKey) item.classList.add('active');
-             });
-             
-             // Açılışta aktif kontrol modunu menüde işaretle
-             document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
-                 item.classList.remove('active');
-                 if (item.dataset.control === mobileControlMode) item.classList.add('active');
-             });
-        }
-        
-        // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI ---
-        
-        window.onWindowResize = () => {
-            const isMobile = window.innerWidth <= 768;
-            const mobileControls = document.getElementById('mobile-controls');
-            const joystickWrapper = document.getElementById('joystick-wrapper');
-            const uiControlBtn = document.getElementById('ui-control-btn');
-            const toolbar = document.getElementById('toolbar');
-            const mobileControlMenu = document.getElementById('mobile-control-menu');
-
-            if (renderer && camera) {
-                const viewport = document.getElementById('viewport');
-                const width = viewport.clientWidth;
-                const height = viewport.clientHeight;
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-                renderer.setSize(width, height);
-            }
-            if (customRenderer && customCamera) {
-                const viewport = document.getElementById('customize-viewport');
-                customCamera.aspect = viewport.clientWidth / viewport.clientHeight;
-                customCamera.updateProjectionMatrix();
-                customRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            }
-            
-            // Mobile Controls güncellemeleri
-            if (mobileControls) {
-                if (isMobile && isSimulationMode) {
-                    mobileControls.style.display = 'flex';
-                    mobileControls.classList.add('active');
+            // --- EDİTÖR ---
+            editor: {
+                initScene: () => {
+                    const vp = document.getElementById('viewport');
                     
-                    // Joystick moduna göre görünürlüğü ayarla
-                    if (joystickWrapper) {
-                         joystickWrapper.style.display = mobileControlMode === 'joystick' ? 'block' : 'none';
-                    }
-                } else {
-                    mobileControls.style.display = 'none';
-                    mobileControls.classList.remove('active');
-                }
-            }
-            
-            // UI Kontrol Düğmesini ayarla
-            if (uiControlBtn && toolbar) {
-                 if (toolbar.style.display === 'flex') {
-                      uiControlBtn.style.display = 'block';
-                      // Toolbar'ın padding'i kadar sol kaydır (düğme yer kaplamamalı)
-                      uiControlBtn.style.left = isCompactUI ? '2px' : '5px';
-                      uiControlBtn.style.top = isCompactUI ? '2px' : '5px';
-                 } else {
-                      uiControlBtn.style.display = 'none';
-                      // Toolbar görünmüyorsa menüyü de kapat
-                      if (mobileControlMenu) mobileControlMenu.style.display = 'none';
-                 }
-            }
-            
-            // Simülasyon modunda kontrolleri doğru ayarla
-            if (isSimulationMode) {
-                 if (controls) controls.enabled = false;
-                 if (transformControls) transformControls.enabled = false;
-            } else {
-                 // Editör modunda, mobilse OrbitControls kapatılır.
-                 // DÜZELTİLDİ: Editör modunda her zaman OrbitControls aktif olmalı (mobil-masaüstü fark etmeksizin)
-                 if (controls) controls.enabled = true; // Editörde OrbitControls aktif kalmalı
-                 if (transformControls) transformControls.enabled = true;
-            }
+                    // Sahne
+                    app.three.scene = new THREE.Scene();
+                    app.three.scene.background = new THREE.Color(0x87ceeb); // Skybox Default
+                    app.three.scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
 
-        }
-        
-        // 3D SAHNE İLK BAŞLATMA
-        window.initFullScene = () => {
-            window.log("3D Sahne (initFullScene) başlatılıyor...");
-            const viewport = document.getElementById('viewport');
-            
-            try {
-                checkLibraries(); // Tekrar kontrol
+                    // Kamera
+                    app.three.camera = new THREE.PerspectiveCamera(75, vp.clientWidth/vp.clientHeight, 0.1, 1000);
+                    app.three.camera.position.set(5, 5, 10);
 
-                scene = new THREE.Scene();
-                
-                camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-                camera.position.set(5, 5, 5);
-                
-                scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-                
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); 
-                dirLight.position.set(10, 15, 10);
-                dirLight.castShadow = true;
-                dirLight.shadow.mapSize.width = 2048; 
-                dirLight.shadow.mapSize.height = 2048; 
-                dirLight.shadow.camera.near = 0.5;
-                dirLight.shadow.camera.far = 50;
-                dirLight.shadow.camera.left = -20;
-                dirLight.shadow.camera.right = 20;
-                dirLight.shadow.camera.top = 20;
-                dirLight.shadow.camera.bottom = -20;
-                scene.add(dirLight);
+                    // Renderer
+                    app.three.renderer = new THREE.WebGLRenderer({ antialias: true });
+                    app.three.renderer.setSize(vp.clientWidth, vp.clientHeight);
+                    app.three.renderer.shadowMap.enabled = true;
+                    vp.appendChild(app.three.renderer.domElement);
 
-                renderer = new THREE.WebGLRenderer({ antialias: true });
-                renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-                renderer.shadowMap.enabled = true; 
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-                
-                if (viewport.children.length > 0) {
-                     const existingCanvas = viewport.querySelector('canvas');
-                     if (existingCanvas) viewport.removeChild(existingCanvas);
-                }
-                viewport.appendChild(renderer.domElement);
-                
-                window.log("Renderer ve Canvas eklendi.");
-                
-            } catch(e) {
-                 window.showError(`Renderer Başlatma Hatası: ${e.message}`, 'status');
-                 return;
-            }
+                    // Işıklar
+                    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+                    app.three.scene.add(hemiLight);
+                    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                    dirLight.position.set(10, 20, 10);
+                    dirLight.castShadow = true;
+                    app.three.scene.add(dirLight);
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.target.set(0, 0, 0);
-            
-            transformControls = new THREE.TransformControls(camera, renderer.domElement);
-            transformControls.addEventListener('change', () => renderer.render(scene, camera));
-            scene.add(transformControls);
-            transformControls.addEventListener('mouseUp', () => { window.updateSelectedObjectProperty(); });
-            
-            // DÜZELTİLDİ: Simülasyon modunda OrbitControls'u devre dışı bırak.
-            transformControls.addEventListener('dragging-changed', function (event) {
-                if (controls) controls.enabled = !event.value && !isSimulationMode;
-            });
-
-
-            // Kontrol olaylarını sadece bir kere ekle
-            document.removeEventListener('keydown', window.onKeyDown, false);
-            document.removeEventListener('keyup', window.onKeyUp, false);
-            document.removeEventListener('mousedown', window.onMouseDown, false);
-            window.removeEventListener('resize', window.onWindowResize, false);
-            
-            document.addEventListener('keydown', window.onKeyDown, false);
-            document.addEventListener('keyup', window.onKeyUp, false);
-            document.addEventListener('mousedown', window.onMouseDown, false);
-            document.addEventListener('contextmenu', (e) => e.preventDefault()); 
-            window.addEventListener('resize', window.onWindowResize, false);
-            
-            window.onWindowResize(); 
-            window.log("3D Sahne Hazır ve Kontroller kuruldu.");
-        }
-
-        // YENİ: Skybox Düzeltmesi ve Ayarlaması
-        window.setSkybox = (skyKey, customBase64 = null) => {
-            let skyConfig;
-
-            if (customBase64) {
-                 window.showError("Base64 yükleme, 6 ayrı yüz resmi gerektirir. Örnek dokular veya URL kullanın.", 'status');
-                 skyKey = 'default_sky';
-                 skyConfig = skyboxTextures[skyKey];
-                 document.getElementById('skybox-upload-file').value = '';
-            } else {
-                 skyConfig = skyboxTextures[skyKey] || skyboxTextures['default_sky'];
-            }
-
-            currentSkybox.type = skyConfig.type;
-            currentSkybox.value = skyConfig.value;
-            
-            if (skyConfig.type === 'color') {
-                scene.background = new THREE.Color(skyConfig.value);
-            } else if (skyConfig.type === 'cube') {
-                 const loader = new THREE.CubeTextureLoader();
-                 loader.setPath(skyConfig.value); 
-
-                 const textureUrls = [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ];
-                 
-                 const cubeTexture = loader.load(textureUrls, () => {
-                     // Yükleme başarılı
-                     scene.background = cubeTexture;
-                     window.log(`Gökyüzü teması ${skyKey} olarak ayarlandı.`);
-                 }, undefined, (err) => {
-                    // Yükleme hatası
-                    console.error("Skybox yükleme hatası:", err);
-                    window.showError("Skybox yüklenirken hata oluştu, varsayılana dönülüyor.", 'status');
-                    window.setSkybox('default_sky');
-                 });
-            }
-            
-            const skyObject = objects.find(obj => obj.name === "Gökyüzü");
-            if (skyObject) {
-                 skyObject.userData.skyboxKey = skyKey;
-            }
-            
-            if (skyConfig.type === 'color') {
-                window.log(`Gökyüzü teması ${skyKey} olarak ayarlandı (Renk).`);
-            }
-            window.updateSkyboxPanel(skyKey);
-            window.updateSelectedObjectProperty();
-        }
-        
-        window.updateSkyboxPanel = (selectedKey) => {
-             document.querySelectorAll('.skybox-thumbnail').forEach(thumb => {
-                 thumb.classList.remove('selected');
-                 if (thumb.dataset.sky === selectedKey) {
-                      thumb.classList.add('selected');
-                 }
-             });
-        }
-        
-        window.handleSkyboxUpload = (fileInput) => {
-             // Tek bir resim yüklemesi için kısıt (CubeTextureLoader 6 resim ister)
-             window.showError("Tek bir resim yüklenmesi şu an için sadece renk olarak uygulanabilir. Skybox için 6 yüzey gereklidir. Lütfen galeriden seçin.", 'status');
-             fileInput.value = '';
-        }
-        
-        window.setupEnvironment = (env) => {
-            window.clearScene(false);
-            
-            let skyObject = objects.find(obj => obj.name === "Gökyüzü");
-            
-            if (!skyObject) {
-                skyObject = new THREE.Object3D(); 
-                skyObject.name = "Gökyüzü";
-                skyObject.userData.isEnvironment = true;
-                skyObject.userData.isSkybox = true;
-                skyObject.userData.skyboxKey = 'default_sky';
-                objects.push(skyObject);
-            }
-            
-            window.setSkybox(skyObject.userData.skyboxKey); 
-
-            if (env === 'default_template' || env === 'simple_cube' || env === 'empty') {
-                // Zemin ve Grid'i sadece empty template değilse ekle
-                if (env !== 'empty') {
-                    const plane = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x444444, side: THREE.DoubleSide }));
-                    plane.rotation.x = -Math.PI / 2;
+                    // Zemin
+                    const plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x999999 }));
+                    plane.rotation.x = -Math.PI/2;
                     plane.receiveShadow = true;
-                    plane.name = "Zemin";
-                    plane.userData.isEnvironment = true;
-                    scene.add(plane);
-                    objects.push(plane);
+                    app.three.scene.add(plane);
+
+                    // Kontroller
+                    app.three.controls = new THREE.OrbitControls(app.three.camera, app.three.renderer.domElement);
+                    app.three.controls.enableDamping = true;
                     
-                    const gridHelper = new THREE.GridHelper(50, 50, 0x888888, 0x444444);
-                    gridHelper.name = "Grid";
-                    gridHelper.userData.isEnvironment = true;
-                    scene.add(gridHelper);
-                }
-                
-                // Başlangıç noktasını her zaman ekle (Karakterin nerede doğacağını bilmek için)
-                const spawnPointExists = objects.some(obj => obj.userData.isSpawnPoint);
-                if (!spawnPointExists) {
-                    const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
-                    scene.add(spawnMesh);
-                    objects.push(spawnMesh);
-                }
-                
-                if (env === 'simple_cube') {
-                    window.addShape('cube', { position: { x: 0, y: 0.5, z: 0 }, name: "Küp_1" });
-                }
-            }
-        }
-        
-        window.createSpawnPointMesh = (position) => {
-            const spawnGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-            const spawnMat = new THREE.MeshBasicMaterial({ color: 0x2da042, transparent: true, opacity: 0.5 });
-            const spawnMesh = new THREE.Mesh(spawnGeo, spawnMat);
-            spawnMesh.name = "OyuncuBaşlangıçNoktası";
-            spawnMesh.position.copy(position);
-            spawnMesh.userData.isSpawnPoint = true;
-            spawnMesh.userData.isEnvironment = false; 
-            return spawnMesh;
-        }
+                    app.three.transform = new THREE.TransformControls(app.three.camera, app.three.renderer.domElement);
+                    app.three.transform.addEventListener('dragging-changed', (e) => app.three.controls.enabled = !e.value);
+                    app.three.scene.add(app.three.transform);
 
-        window.startStudio = (isNew = false) => {
-            if (!renderer) {
-                 window.initFullScene();
-            }
-            
-            if (!renderer) {
-                 window.log("3D Renderer oluşturulamadığı için Studio başlatılamıyor.");
-                 return; 
-            }
-            
-            window.hideAllScreens();
-            document.getElementById('toolbar').style.display = 'flex';
-            document.getElementById('main-area').style.display = 'flex';
-            
-            // UI Kontrol Düğmesini göster
-            document.getElementById('ui-control-btn').style.display = 'block';
-            
-            // UI Boyutunu başlangıçta kontrol et
-            window.toggleUISize(isCompactUI);
-            
-            // Mobil Kontrol Modu menüsünün durumunu güncelle
-            document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
-                item.classList.remove('active');
-            });
-            const controlMenuItem = document.querySelector(`#mobile-control-menu .menu-item[data-control="${mobileControlMode}"]`);
-            if (controlMenuItem) controlMenuItem.classList.add('active');
+                    // Event Listeners
+                    window.addEventListener('resize', app.editor.onResize);
+                    vp.addEventListener('mousedown', app.editor.onMouseDown);
+                    vp.addEventListener('touchstart', app.editor.onTouchStart, {passive: false});
 
+                    // Render Loop
+                    app.editor.animate();
+                },
 
-            if (isNew) {
-                const template = document.getElementById('template-select').value;
-                window.setupEnvironment(template);
-            } else if (objects.length === 0) {
-                 // DÜZELTİLDİ: Kayıtlı sahne yoksa da varsayılan ortam kurulmalı
-                 window.setupEnvironment('default_template');
-            }
-            
-            window.animate(); 
-            window.onWindowResize(); 
-            window.updateHierarchyList();
-            window.log("LunX Studio başarıyla başlatıldı.");
-        }
-        
-        window.setTool = (mode) => {
-            if (isSimulationMode) return;
-            transformControls.mode = mode;
-            document.querySelectorAll('#editor-tools .tool-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tool-${mode}`).classList.add('active');
-            window.log(`Araç: ${mode.toUpperCase()} seçildi.`);
-        }
-        
-        window.addShape = (type, existingData = null) => {
-            let geometry, material;
-            let name = existingData ? existingData.name : `${type}_${objects.length + 1}`;
-            
-            switch (type) {
-                case 'cube':
-                    geometry = new THREE.BoxGeometry(1, 1, 1);
-                    material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-                    break;
-                case 'sphere':
-                    geometry = new THREE.SphereGeometry(0.5, 32, 32);
-                    material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-                    break;
-                case 'spawn':
-                    const existingSpawn = objects.find(obj => obj.userData.isSpawnPoint);
-                    if (existingSpawn) {
-                         window.log("Zaten bir Oyuncu Başlangıç Noktası mevcut. Yeni eklenmedi.");
-                         return;
+                addShape: (type) => {
+                    let geo, mat, mesh;
+                    if (type === 'box') geo = new THREE.BoxGeometry(1, 1, 1);
+                    else if (type === 'sphere') geo = new THREE.SphereGeometry(0.5, 32, 32);
+                    else if (type === 'spawn') { geo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32); mat = new THREE.MeshBasicMaterial({color:0xff0000, opacity:0.5, transparent:true}); }
+
+                    if(!mat) mat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+                    mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.y = 0.5;
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.name = type + "_" + app.three.objects.length;
+                    mesh.userData = { name: mesh.name, type: type };
+
+                    app.three.scene.add(mesh);
+                    app.three.objects.push(mesh);
+                    app.ui.updateHierarchy();
+                    app.editor.select(mesh);
+                },
+
+                select: (obj) => {
+                    app.state.selected = obj;
+                    if (obj) {
+                        app.three.transform.attach(obj);
+                    } else {
+                        app.three.transform.detach();
                     }
-                    const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
-                    spawnMesh.position.set(existingData ? existingData.position.x : 0, existingData ? existingData.position.y : 0.05, existingData ? existingData.position.z : 0);
-                    spawnMesh.name = name; // İsim bilgisini koru
-                    scene.add(spawnMesh);
-                    objects.push(spawnMesh);
-                    window.updateHierarchyList();
-                    window.log("Başlangıç noktası eklendi.");
-                    return;
-                default:
-                    return;
-            }
-            
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            mesh.name = name;
-            mesh.userData.script = existingData ? existingData.script : '';
-            
-            if (existingData) {
-                mesh.position.set(existingData.position.x, existingData.position.y, existingData.position.z);
-                mesh.rotation.set(existingData.rotation.x, existingData.rotation.y, existingData.rotation.z);
-                mesh.scale.set(existingData.scale.x, existingData.scale.y, existingData.scale.z);
-                if (existingData.color) mesh.material.color.set(existingData.color);
-            } else {
-                mesh.position.y = 0.5;
-            }
-            
-            scene.add(mesh);
-            objects.push(mesh);
-            window.updateHierarchyList();
-            window.log(`${name} eklendi.`);
-            window.selectObject(mesh);
-        }
-        
-        window.clearScene = (showConfirm = true) => {
-            if (showConfirm && !confirm("Mevcut sahne temizlensin mi? Kayıtlı olmayan veriler silinecektir.")) return;
-            
-            if (isSimulationMode) window.stopSimulation();
+                    app.ui.updateHierarchy();
+                },
 
-            transformControls.detach();
-            // Skybox'ı da temizle
-            window.setSkybox('default_sky'); 
+                setTool: (mode) => {
+                    if(mode === 'select') app.three.transform.detach();
+                    else app.three.transform.setMode(mode);
+                },
 
-            objects.forEach(obj => scene.remove(obj));
-            objects = [];
-            
-            selectedObject = null;
-            window.updateHierarchyList();
-            window.selectObject(null);
-            window.log("Sahne temizlendi.");
-        }
-        
-        window.saveScene = async () => {
-            if (!auth.currentUser) { window.showError("Kaydetmek için oturum açmalısınız."); return; }
-            
-            const sceneData = objects.map(obj => {
-                let type;
-                if (obj.userData.isSkybox) {
-                    type = 'sky';
-                } else if (obj.userData.isSpawnPoint) {
-                    type = 'spawn';
-                } else if (obj.geometry) {
-                    // DÜZELTİLDİ: Geometry tipini doğru al.
-                    if (obj.geometry instanceof THREE.BoxGeometry) type = 'cube';
-                    else if (obj.geometry instanceof THREE.SphereGeometry) type = 'sphere';
-                    else if (obj.geometry instanceof THREE.CylinderGeometry && obj.userData.isSpawnPoint) type = 'spawn';
-                    else return null;
-                } else {
-                    return null; 
-                }
-
-                if (type === 'sky') {
-                    return {
-                        name: obj.name,
-                        type: type,
-                        skyboxKey: obj.userData.skyboxKey || 'default_sky'
-                    };
-                }
-                
-                // Oyuncu başlangıç noktası için material/color kaydetmeye gerek yok
-                if (type === 'spawn') {
-                    return {
-                        name: obj.name,
-                        type: type,
-                        position: obj.position.toJSON(),
+                setSky: (type) => {
+                    if (type === 'day') {
+                        app.three.scene.background = new THREE.Color(0x87ceeb);
+                        app.three.scene.fog.color.set(0x87ceeb);
+                    } else if (type === 'sunset') {
+                        app.three.scene.background = new THREE.Color(0xfd5e53);
+                        app.three.scene.fog.color.set(0xfd5e53);
+                    } else {
+                        app.three.scene.background = new THREE.Color(0x000022);
+                        app.three.scene.fog.color.set(0x000022);
                     }
+                },
+
+                onResize: () => {
+                    const vp = document.getElementById('viewport');
+                    app.three.camera.aspect = vp.clientWidth / vp.clientHeight;
+                    app.three.camera.updateProjectionMatrix();
+                    app.three.renderer.setSize(vp.clientWidth, vp.clientHeight);
+                },
+                
+                onMouseDown: (e) => {
+                    if(app.state.mode === 'play') return;
+                    const rect = app.three.renderer.domElement.getBoundingClientRect();
+                    app.three.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                    app.three.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                    
+                    app.three.raycaster.setFromCamera(app.three.mouse, app.three.camera);
+                    const intersects = app.three.raycaster.intersectObjects(app.three.objects);
+                    
+                    if (intersects.length > 0) app.editor.select(intersects[0].object);
+                    else app.editor.select(null);
+                },
+
+                animate: () => {
+                    requestAnimationFrame(app.editor.animate);
+                    
+                    if (app.state.mode === 'play') app.game.update();
+                    else app.three.controls.update();
+                    
+                    app.three.renderer.render(app.three.scene, app.three.camera);
                 }
+            },
 
-                return {
-                    name: obj.name,
-                    type: type,
-                    position: obj.position.toJSON(),
-                    rotation: obj.rotation.toJSON(),
-                    scale: obj.scale.toJSON(),
-                    color: obj.material && obj.material.color ? `#${obj.material.color.getHexString()}` : '#ffffff',
-                    script: obj.userData.script || ''
-                };
-            }).filter(data => data !== null && data.name !== "Zemin" && data.name !== "Grid"); // Zemin ve Grid'i kaydetmeyi atla
-            
-            try {
-                await db.ref('users/' + auth.currentUser.uid + '/scene').set(sceneData);
-                window.log("Sahne verisi Firebase'e başarıyla kaydedildi! 💾");
-            } catch (e) {
-                window.log("Kaydetme hatası: " + e.message);
-            }
-        }
-        
-        window.loadScene = async () => {
-            if (!auth.currentUser) { window.showError("Yüklemek için oturum açmalısınız."); return; }
-            
-            try {
-                const snapshot = await db.ref('users/' + auth.currentUser.uid + '/scene').once('value');
-                const sceneData = snapshot.val();
-                
-                window.clearScene(false);
-                window.startStudio(false); 
-                
-                const objectsToRecreate = [];
-                let skyboxKeyToSet = 'default_sky';
-
-                if (sceneData) {
-                    sceneData.forEach(data => {
-                        if (data.type === 'sky') {
-                            skyboxKeyToSet = data.skyboxKey || 'default_sky';
-                        } else {
-                            objectsToRecreate.push(data);
-                        }
-                    });
+            // --- OYUN MOTORU (R6 KARAKTER) ---
+            game: {
+                start: () => {
+                    app.state.mode = 'play';
+                    app.editor.select(null);
+                    document.getElementById('exit-play-btn').style.display = 'block';
+                    document.getElementById('mobile-controls').style.display = 'flex';
                     
-                    // Önce varsayılan ortamı kur (Zemin/Grid/Spawn)
-                    window.setupEnvironment('default_template');
+                    // R6 Karakter Oluştur
+                    app.game.createR6Character();
                     
-                    // Ardından skybox'ı ayarla
-                    const skyObject = window.objects.find(obj => obj.name === "Gökyüzü");
-                    if (skyObject) {
-                        skyObject.userData.skyboxKey = skyboxKeyToSet;
+                    // Spawn noktasına taşı
+                    const spawn = app.three.objects.find(o => o.userData.type === 'spawn');
+                    if(spawn) {
+                        app.game.player.position.copy(spawn.position);
+                        app.game.player.position.y += 2;
                     }
-                    window.setSkybox(skyboxKeyToSet);
+                },
+
+                stop: () => {
+                    app.state.mode = 'editor';
+                    document.getElementById('exit-play-btn').style.display = 'none';
+                    document.getElementById('mobile-controls').style.display = 'none';
                     
-                    // Sonra diğer nesneleri yükle
-                    objectsToRecreate.forEach(data => {
-                        if (data.type === 'spawn' || data.type === 'cube' || data.type === 'sphere') {
-                             // Zemin ve Grid'i yeniden oluşturmayı engellemek için, sadece spawn, cube, sphere yükle
-                             if (data.name !== "Zemin" && data.name !== "Grid") {
-                                 window.addShape(data.type, data);
-                             }
-                        }
-                    });
-                    
-                    // Hierarchy'yi yeniden güncelle
-                    window.updateHierarchyList();
-                    
-                    window.log("Kayıtlı sahne başarıyla yüklendi! 📂");
-                } else {
-                    window.log("Kayıtlı sahne verisi bulunamadı. Varsayılan şablon yüklendi.");
-                    window.setupEnvironment('default_template');
-                }
-            } catch (e) {
-                window.log("Yükleme hatası: " + e.message);
-                window.setupEnvironment('default_template');
-            }
-        }
-        
-        window.selectObject = (obj) => {
-            if (selectedObject) {
-                if (!selectedObject.userData.isSpawnPoint && !selectedObject.userData.isEnvironment && selectedObject.material && selectedObject.material.color) {
-                    if (selectedObject.userData.originalColor) {
-                        selectedObject.material.color.set(selectedObject.userData.originalColor);
+                    if(app.game.player) {
+                        app.three.scene.remove(app.game.player);
+                        app.game.player = null;
                     }
-                }
-            }
-            
-            selectedObject = obj;
-            
-            const skyPanel = document.getElementById('skybox-panel');
-            const scriptPanel = document.getElementById('script-panel');
-            
-            skyPanel.style.display = 'none';
-            scriptPanel.style.display = 'none';
-
-            if (obj) {
-                 if (obj.userData.isSkybox) {
-                    transformControls.detach();
-                    skyPanel.style.display = 'block';
-                    window.updateSkyboxPanel(obj.userData.skyboxKey);
-                } else if (obj.userData.isEnvironment && obj.name !== "OyuncuBaşlangıçNoktası") {
-                     transformControls.detach();
-                } else {
-                    transformControls.attach(obj);
-                    // DÜZELTİLDİ: transformControls'u her zaman aktif tut editör modunda.
-                    if (controls) controls.enabled = false;
                     
-                    if (!obj.userData.isSpawnPoint && !obj.userData.isEnvironment) {
-                        scriptPanel.style.display = 'block';
-                        document.getElementById('code-editor').value = obj.userData.script || '';
-                    } else if (obj.userData.isSpawnPoint) {
-                        transformControls.mode = 'translate';
-                    }
-                }
-                
-                if (!obj.userData.isSkybox && !obj.userData.isEnvironment && !obj.userData.isSpawnPoint && obj.material && obj.material.color) {
-                    if (!obj.userData.originalColor) {
-                         obj.userData.originalColor = obj.material.color.getHex();
-                    }
-                    obj.material.color.set(0x00ff00); // Seçili nesneyi yeşil yap
-                }
-            } else {
-                transformControls.detach();
-                if (controls) controls.enabled = true;
-            }
-            
-            window.updateSelectedObjectProperty();
-            window.updateHierarchyList();
-        }
+                    // Kamerayı resetle
+                    app.three.camera.position.set(5, 5, 10);
+                    app.three.camera.lookAt(0,0,0);
+                },
 
-        window.updateHierarchyList = () => {
-            const panel = document.getElementById('hierarchy-panel');
-            if (!panel) return;
-            panel.innerHTML = '';
-            
-            objects.forEach(obj => {
-                const div = document.createElement('div');
-                div.className = 'hierarchy-item' + (obj === selectedObject ? ' selected' : '');
-                
-                let icon = '📦';
-                if (obj.userData.isSkybox) icon = '🌌';
-                else if (obj.userData.isSpawnPoint) icon = '👶';
-                else if (obj.userData.isEnvironment) icon = '🌐';
-                
-                div.innerText = `${icon} ${obj.name}`;
-                div.onclick = () => window.selectObject(obj);
-                panel.appendChild(div);
-            });
-        }
-        
-        window.showContextMenu = (x, y) => {
-            const menu = document.getElementById('context-menu');
-            
-            if (selectedObject && (selectedObject.userData.isEnvironment || selectedObject.userData.isSkybox)) {
-                 menu.style.display = 'none';
-                 return;
-            }
-
-            menu.style.left = `${x}px`;
-            menu.style.top = `${y}px`;
-            menu.style.display = 'block';
-        }
-        
-        window.runSelectedScript = () => {
-             if (selectedObject && selectedObject.userData.script) {
-                try {
-                    // DÜZELTİLDİ: Script'in sadece object'i döndüren fonksiyon olarak çalıştırılması
-                    const func = new Function('object', document.getElementById('code-editor').value);
-                    func(selectedObject);
-                    window.log(`${selectedObject.name} kodu çalıştırıldı.`);
-                    window.updateSelectedObjectProperty();
-                } catch (e) {
-                    window.log(`Kod çalıştırma hatası: ${e.message}`);
-                }
-            }
-        }
-        
-        window.deleteSelectedObject = () => {
-            if (selectedObject && !selectedObject.userData.isEnvironment && !selectedObject.userData.isSkybox) {
-                scene.remove(selectedObject);
-                transformControls.detach();
-                
-                const index = objects.indexOf(selectedObject);
-                if (index > -1) {
-                    objects.splice(index, 1);
-                }
-                
-                window.selectObject(null);
-                window.log(`${selectedObject.name} silindi.`);
-                window.updateHierarchyList();
-            }
-        }
-        
-        window.duplicateSelectedObject = () => {
-            if (selectedObject && !selectedObject.userData.isSpawnPoint && !selectedObject.userData.isEnvironment && !selectedObject.userData.isSkybox) {
-                const newObj = selectedObject.clone();
-                newObj.name = selectedObject.name + "_Kopya";
-                newObj.position.x += 1;
-                scene.add(newObj);
-                objects.push(newObj);
-                window.selectObject(newObj);
-                window.log(`${newObj.name} çoğaltıldı.`);
-            }
-        }
-        
-        window.onKeyDown = (event) => {
-            // Tarayıcının Kaydetme iletişim kutusunu engelle (Ctrl+S / Cmd+S)
-            if ((event.ctrlKey || event.metaKey) && event.code === 'KeyS') {
-                event.preventDefault(); 
-                if (selectedObject && !isSimulationMode) {
-                    window.saveScript(); 
-                    window.log("Script Kaydedildi (Ctrl+S)");
-                } else if (!isSimulationMode) {
-                     window.saveScene(); // Script değil, genel sahne kaydet
-                     window.log("Sahne Kaydedildi (Ctrl+S)");
-                } else {
-                     window.log("Simülasyon modunda Kaydetme devre dışı.");
-                }
-            }
-
-            if (isSimulationMode) {
-                switch (event.code) {
-                    case 'KeyW': moveForward = true; break;
-                    case 'KeyS': moveBackward = true; break;
-                    case 'KeyA': moveLeft = true; break;
-                    case 'KeyD': moveRight = true; break;
-                    case 'Space': 
-                        if (isOnGround) { 
-                            playerVelocity.y = PLAYER_JUMP_FORCE; 
-                            isOnGround = false; 
-                        } 
-                        break; 
-                }
-            } else {
-                 switch (event.code) {
-                    case 'KeyW': window.setTool('translate'); break;
-                    case 'KeyS': window.setTool('select'); break; 
-                    case 'KeyQ': window.setTool('rotate'); break;
-                    case 'KeyE': window.setTool('scale'); break;
-                    case 'Delete': window.deleteSelectedObject(); break;
-                 }
-            }
-        }
-
-        window.onKeyUp = (event) => {
-            if (isSimulationMode) {
-                switch (event.code) {
-                    case 'KeyW': moveForward = false; break;
-                    case 'KeyS': moveBackward = false; break;
-                    case 'KeyA': moveLeft = false; break;
-                    case 'KeyD': moveRight = false; break;
-                }
-            }
-        }
-        
-        window.onMouseDown = (event) => {
-            document.getElementById('context-menu').style.display = 'none';
-            if (event.button === 2) { 
-                if (selectedObject && !isSimulationMode) window.showContextMenu(event.clientX, event.clientY);
-                event.preventDefault(); 
-                return;
-            }
-
-            if (transformControls.dragging) return;
-            if (event.target !== renderer.domElement || isSimulationMode) return;
-            
-            // DÜZELTİLDİ: Sol tıklamayla TransformControls'un otomatik kapanmasını engelle
-            if (controls && controls.enabled) {
-                 // Eğer OrbitControls aktifse, kamera hareketini tetikleyebilir.
-                 // Raycasting'i sadece kontrol sürüklenmiyorsa yap.
-                 if (event.button === 0) {
-                     const rect = renderer.domElement.getBoundingClientRect();
-                     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-                     raycaster.setFromCamera(mouse, camera);
-                     const intersects = raycaster.intersectObjects(objects, true);
-
-                     if (intersects.length > 0) {
-                         let hitObject = intersects[0].object;
-                         
-                         while (hitObject.parent !== scene && hitObject.parent) {
-                             hitObject = hitObject.parent; 
-                         }
-                         
-                         if (hitObject && objects.includes(hitObject)) {
-                             window.selectObject(hitObject);
-                         } else {
-                             window.selectObject(null);
-                         }
-                     } else {
-                         window.selectObject(null);
-                     }
-                 }
-            }
-        }
-
-        window.updateSelectedObjectProperty = (property, value) => {
-            const infoPanel = document.getElementById('object-info');
-            if (!infoPanel) return;
-            if (!selectedObject) { infoPanel.innerHTML = 'Seçili değil.'; return; }
-            if (selectedObject.userData.isSkybox) { 
-                infoPanel.innerHTML = `<strong>${selectedObject.name}</strong> <br> Skybox Durumu: <strong>${selectedObject.userData.skyboxKey}</strong>`; 
-                return; 
-            }
-            if (selectedObject.userData.isEnvironment) { infoPanel.innerHTML = `<strong>${selectedObject.name}</strong> - Ortam Nesnesi`; return; }
-
-
-            if (property && selectedObject) {
-                const [category, prop] = property.split('.');
-                if (category === 'position') selectedObject.position[prop] = parseFloat(value);
-                else if (category === 'rotation') selectedObject.rotation[prop] = parseFloat(value);
-                else if (category === 'scale') selectedObject.scale[prop] = parseFloat(value);
-            }
-
-            infoPanel.innerHTML = `
-                <strong>${selectedObject.name}</strong> <br><br>
-                <div class="prop-row"><span>Pozisyon X:</span> <input type="number" step="0.1" value="${selectedObject.position.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.x', this.value)"></div>
-                <div class="prop-row"><span>Pozisyon Y:</span> <input type="number" step="0.1" value="${selectedObject.position.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.y', this.value)"></div>
-                <div class="prop-row"><span>Pozisyon Z:</span> <input type="number" step="0.1" value="${selectedObject.position.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('position.z', this.value)"></div>
-                
-                <div class="prop-row"><span>Dönüş X:</span> <input type="number" step="0.1" value="${selectedObject.rotation.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.x', this.value)"></div>
-                <div class="prop-row"><span>Dönüş Y:</span> <input type="number" step="0.1" value="${selectedObject.rotation.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.y', this.value)"></div>
-                <div class="prop-row"><span>Dönüş Z:</span> <input type="number" step="0.1" value="${selectedObject.rotation.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('rotation.z', this.value)"></div>
-                
-                <div class="prop-row"><span>Ölçek X:</span> <input type="number" step="0.1" value="${selectedObject.scale.x.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.x', this.value)"></div>
-                <div class="prop-row"><span>Ölçek Y:</span> <input type="number" step="0.1" value="${selectedObject.scale.y.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.y', this.value)"></div>
-                <div class="prop-row"><span>Ölçek Z:</span> <input type="number" step="0.1" value="${selectedObject.scale.z.toFixed(2)}" onchange="window.updateSelectedObjectProperty('scale.z', this.value)"></div>
-            `;
-            if (renderer) renderer.render(scene, camera);
-        }
-
-        window.saveScript = () => {
-            if (selectedObject) {
-                selectedObject.userData.script = document.getElementById('code-editor').value;
-                window.log(`${selectedObject.name} scripti kaydedildi.`);
-            }
-        }
-        
-        window.applyScript = (object, codeText) => {
-            try {
-                const func = new Function('object', codeText);
-                func(object);
-            } catch (e) {}
-        }
-        
-        // GÜNCELLENDİ: Animasyon başlatma mantığı eklendi
-        window.setAnimation = (name) => {
-            if (currentAction === name || !animationActions[name]) return;
-
-            const newAction = animationActions[name];
-            const oldAction = animationActions[currentAction];
-            
-            newAction.enabled = true;
-            newAction.setEffectiveTimeScale(1);
-            newAction.setEffectiveWeight(1);
-            
-            oldAction.fadeOut(0.2); // Yumuşak geçiş süresi
-            newAction.fadeIn(0.2); 
-            
-            newAction.play();
-            currentAction = name;
-        }
-
-        // GÜNCELLENDİ: Animasyon kurulumu ve player'ın sahneye eklenmesi
-        window.initPlayerControls = (isUpdate = false) => {
-            playerVelocity = new THREE.Vector3(0, 0, 0);
-            playerDirection = new THREE.Vector3(0, 0, 0);
-            
-            const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
-            let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
-            
-            if (!isUpdate) {
-                if (player) { scene.remove(player); } 
-                player = window.createBlockCharacter(currentCustomization.gender);
-                player.position.copy(startPos);
-                player.position.y = startPos.y + playerHeight * 0.5; 
-                scene.add(player);
-            }
-
-            // --- YENİ: Animasyon Başlatma ---
-            playerMixer = new THREE.AnimationMixer(player);
-            animationActions = {};
-            currentAction = 'idle';
-            
-            const rightArm = player.getObjectByName("RightArmGroup");
-            const leftArm = player.getObjectByName("LeftArmGroup");
-            const rightLeg = player.getObjectByName("RightLegGroup");
-            const leftLeg = player.getObjectByName("LeftLegGroup");
-            
-            if (rightArm && leftArm && rightLeg && leftLeg) {
-                // Yürüme Animasyonu (Walk)
-                const walkClip = new THREE.AnimationClip('walk', -1, [
-                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 0.5, 1], [0, Math.PI * 0.3, 0]),
-                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 0.5, 1], [0, -Math.PI * 0.3, 0]),
-                    new THREE.KeyframeTrack(`${rightLeg.name}.rotation[x]`, [0, 0.5, 1], [0, -Math.PI * 0.3, 0]),
-                    new THREE.KeyframeTrack(`${leftLeg.name}.rotation[x]`, [0, 0.5, 1], [0, Math.PI * 0.3, 0]),
-                ]);
-                animationActions['walk'] = playerMixer.clipAction(walkClip);
-                animationActions['walk'].loop = THREE.LoopRepeat;
-                animationActions['walk'].timeScale = 1.5; // Daha hızlı yürüme
-                
-                // Durma Animasyonu (Idle) - Kolları hafifçe sallama
-                const idleClip = new THREE.AnimationClip('idle', -1, [
-                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 1], [0, 0.05]),
-                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 1], [0, -0.05]),
-                ]);
-                animationActions['idle'] = playerMixer.clipAction(idleClip);
-                animationActions['idle'].loop = THREE.LoopPingPong;
-                animationActions['idle'].timeScale = 0.5;
-                
-                // Zıplama Animasyonu (Jump) - Basit bir poz (kollar yukarı)
-                 const jumpClip = new THREE.AnimationClip('jump', 0.5, [
-                    new THREE.KeyframeTrack(`${rightArm.name}.rotation[x]`, [0, 0.25], [0, -Math.PI * 0.2]),
-                    new THREE.KeyframeTrack(`${leftArm.name}.rotation[x]`, [0, 0.25], [0, Math.PI * 0.2]),
-                ]);
-                animationActions['jump'] = playerMixer.clipAction(jumpClip);
-                animationActions['jump'].loop = THREE.LoopOnce;
-                animationActions['jump'].clampWhenFinished = true;
-            } else {
-                window.log("UYARI: Animasyon için gerekli kollar/bacaklar bulunamadı.");
-            }
-            
-            window.setAnimation('idle'); // Başlangıç animasyonunu ayarla
-            // --- Animasyon Başlatma Sonu ---
-
-            // Kamera pozisyonunu oyuncudan biraz geriye ve yukarıya ayarla (Third Person)
-            camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
-            controls.target.copy(player.position);
-            controls.update();
-
-            isOnGround = true; 
-            window.initMobileControls();
-        }
-
-        window.initMobileControls = () => {
-            const isMobile = window.innerWidth <= 768;
-            const mobileControls = document.getElementById('mobile-controls');
-            const joystickWrapper = document.getElementById('joystick-wrapper');
-            
-            // Önceki ayarları temizle
-            const joystickArea = document.getElementById('joystick-area');
-            const jumpButton = document.getElementById('jump-button');
-
-            // Olay dinleyicilerini temizle (Birden fazla çağrılmaması için)
-            if (window.joystickStartHandler) {
-                joystickArea.removeEventListener('mousedown', window.joystickStartHandler);
-                joystickArea.removeEventListener('touchstart', window.joystickStartHandler);
-            }
-            if (window.jumpClickHandler) {
-                 jumpButton.removeEventListener('click', window.jumpClickHandler);
-                 jumpButton.removeEventListener('touchstart', window.jumpClickHandler);
-            }
-            
-            if (!isMobile) {
-                mobileControls.style.display = 'none';
-                return;
-            }
-
-            mobileControls.style.display = isSimulationMode ? 'flex' : 'none';
-            if (isSimulationMode) mobileControls.classList.add('active'); else mobileControls.classList.remove('active');
-            
-            // Joystick moduna göre görünürlüğü ayarla
-            if (joystickWrapper) {
-                 joystickWrapper.style.display = mobileControlMode === 'joystick' ? 'block' : 'none';
-            }
-            
-            const jumpButtonEl = document.getElementById('jump-button');
-            if (jumpButtonEl) {
-                 jumpButtonEl.style.display = mobileControlMode === 'joystick' ? 'flex' : 'none';
-            }
-            
-            const joystickHandle = document.getElementById('joystick-handle');
-            
-            // Zıplama Butonu için yeni handler
-            window.jumpClickHandler = (e) => {
-                 e.preventDefault();
-                 if (isSimulationMode && isOnGround) { 
-                     playerVelocity.y = PLAYER_JUMP_FORCE; 
-                     isOnGround = false; 
-                 }
-            };
-            if (mobileControlMode === 'joystick') {
-                 jumpButton.addEventListener('click', window.jumpClickHandler);
-                 jumpButton.addEventListener('touchstart', window.jumpClickHandler, { passive: false });
-            }
-
-            // Joystick için yeni handler (Sadece joystick modu seçiliyse ekle)
-            if (mobileControlMode === 'joystick') {
-                window.joystickStartHandler = (e) => {
-                    e.preventDefault();
-                    joystickActive = true;
+                createR6Character: () => {
+                    const group = new THREE.Group();
                     
-                    const touch = e.touches ? e.touches[0] : e;
-                    const rect = joystickArea.getBoundingClientRect();
+                    // Materyaller (Varsayılan renkler)
+                    const skinMat = new THREE.MeshStandardMaterial({color: 0xffccaa});
+                    const torsoMat = new THREE.MeshStandardMaterial({color: 0x007acc});
+                    const legMat = new THREE.MeshStandardMaterial({color: 0x333333});
                     
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    const maxDistance = rect.width / 2;
-                    const handleSizeHalf = 20;
+                    // R6 Parçaları
+                    const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), skinMat);
+                    head.position.y = 1.4;
+                    
+                    const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.5), torsoMat);
+                    torso.position.y = 0.5;
+                    
+                    const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 0.4), skinMat);
+                    lArm.position.set(-0.7, 0.5, 0);
+                    
+                    const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 0.4), skinMat);
+                    rArm.position.set(0.7, 0.5, 0);
+                    
+                    const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1, 0.45), legMat);
+                    lLeg.position.set(-0.25, -0.5, 0);
+                    
+                    const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1, 0.45), legMat);
+                    rLeg.position.set(0.25, -0.5, 0);
+                    
+                    group.add(head, torso, lArm, rArm, lLeg, rLeg);
+                    group.userData.parts = { lLeg, rLeg, lArm, rArm }; // Animasyon için referans
+                    
+                    app.three.scene.add(group);
+                    app.game.player = group;
+                },
 
-                    const updateJoystick = (cClientX, cClientY) => {
-                        let dx = cClientX - centerX;
-                        let dy = cClientY - centerY;
+                update: () => {
+                    if (!app.game.player) return;
+                    
+                    const p = app.game.player;
+                    const speed = app.game.speed;
+                    
+                    // Hareket Vektörü Hesapla
+                    let dx = app.game.input.x;
+                    let dz = app.game.input.y;
+                    
+                    // Kamera yönüne göre hareket
+                    const camDir = new THREE.Vector3();
+                    app.three.camera.getWorldDirection(camDir);
+                    camDir.y = 0; camDir.normalize();
+                    const camRight = new THREE.Vector3(-camDir.z, 0, camDir.x);
+                    
+                    const moveVec = new THREE.Vector3()
+                        .addScaledVector(camRight, dx)
+                        .addScaledVector(camDir, -dz); // Joystick Y ileri negatiftir
                         
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > maxDistance) {
-                            dx = (dx / distance) * maxDistance;
-                            dy = (dy / distance) * maxDistance;
-                        }
-
-                        joystickHandle.style.left = `${dx + maxDistance - handleSizeHalf}px`; 
-                        joystickHandle.style.top = `${dy + maxDistance - handleSizeHalf}px`;
-
-                        joystickX = dx / maxDistance; 
-                        joystickY = dy / maxDistance; 
+                    if (moveVec.length() > 0) {
+                        moveVec.normalize();
+                        p.position.addScaledVector(moveVec, speed);
                         
-                        return (moveEvent) => {
-                            moveEvent.preventDefault();
-                            const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
-                            
-                            // Mobil cihazlarda dokunma pozisyonunu kullan
-                            const moveClientX = moveTouch.clientX;
-                            const moveClientY = moveTouch.clientY;
-                            
-                            const newDx = moveClientX - centerX;
-                            const newDy = moveClientY - centerY;
-                            const newDistance = Math.sqrt(newDx * newDx + newDy * newDy);
-                            
-                            let finalDx = newDx;
-                            let finalDy = newDy;
-                            
-                            if (newDistance > maxDistance) {
-                                finalDx = (newDx / newDistance) * maxDistance;
-                                finalDy = (newDy / newDistance) * maxDistance;
-                            }
-                            
-                            joystickHandle.style.left = `${finalDx + maxDistance - handleSizeHalf}px`;
-                            joystickHandle.style.top = `${finalDy + maxDistance - handleSizeHalf}px`;
-                            
-                            joystickX = finalDx / maxDistance;
-                            joystickY = finalDy / maxDistance;
-                        };
-                    };
-
-                    let moveListener = updateJoystick(touch.clientX, touch.clientY);
-                    const handleMove = (e) => moveListener(e);
+                        // Dönüş (Yürüdüğü yöne bak)
+                        p.lookAt(p.position.clone().add(moveVec));
+                        
+                        // Basit Yürüme Animasyonu (Sinüs dalgası)
+                        const time = Date.now() * 0.01;
+                        p.userData.parts.lLeg.rotation.x = Math.sin(time) * 0.5;
+                        p.userData.parts.rLeg.rotation.x = -Math.sin(time) * 0.5;
+                        p.userData.parts.lArm.rotation.x = -Math.sin(time) * 0.5;
+                        p.userData.parts.rArm.rotation.x = Math.sin(time) * 0.5;
+                    } else {
+                        // Durma pozisyonu
+                        p.userData.parts.lLeg.rotation.x = 0;
+                        p.userData.parts.rLeg.rotation.x = 0;
+                        p.userData.parts.lArm.rotation.x = 0;
+                        p.userData.parts.rArm.rotation.x = 0;
+                    }
                     
-                    const handleEnd = (e) => {
-                        joystickActive = false;
-                        joystickX = 0;
-                        joystickY = 0;
-                        joystickHandle.style.left = '30px'; 
-                        joystickHandle.style.top = '30px'; 
-                        
-                        document.removeEventListener('mousemove', handleMove);
-                        document.removeEventListener('mouseup', handleEnd);
-                        document.removeEventListener('touchmove', handleMove);
-                        document.removeEventListener('touchend', handleEnd);
-                    };
-
-                    document.addEventListener('mousemove', handleMove);
-                    document.addEventListener('mouseup', handleEnd);
-                    joystickArea.addEventListener('touchmove', handleMove, { passive: false });
-                    joystickArea.addEventListener('touchend', handleEnd);
-                };
-
-                joystickArea.addEventListener('mousedown', window.joystickStartHandler);
-                joystickArea.addEventListener('touchstart', window.joystickStartHandler, { passive: false });
-            }
-        }
-
-
-        
-        window.startSimulation = () => {
-            window.initPlayerControls(false); 
-            document.getElementById('editor-tools').style.display = 'none';
-            document.getElementById('editor-creation-tools').style.display = 'none';
-            document.getElementById('sidebar-right').style.display = 'none';
-            document.getElementById('play-button').classList.remove('active');
-            document.getElementById('stop-button').classList.add('active');
-            
-            // DÜZELTİLDİ: Simülasyon modunda OrbitControls'u ve TransformControls'u devre dışı bırak
-            if (controls) controls.enabled = false;
-            if (transformControls) transformControls.enabled = false;
-            
-            window.onWindowResize(); 
-            window.log("Simülasyon Modu: AKTİF");
-        }
-
-        window.stopSimulation = () => {
-            if (player) {
-                scene.remove(player);
-                player = null;
-                playerMixer = null; 
-            }
-            document.getElementById('editor-tools').style.display = 'flex';
-            document.getElementById('editor-creation-tools').style.display = 'flex';
-            document.getElementById('sidebar-right').style.display = 'block';
-            document.getElementById('play-button').classList.add('active');
-            document.getElementById('stop-button').classList.remove('active');
-            
-            // DÜZELTİLDİ: Editör moduna dönerken OrbitControls'u ve TransformControls'u etkinleştir
-            if (controls) controls.enabled = true; 
-            if (transformControls) transformControls.enabled = true;
-            
-            window.onWindowResize(); 
-            window.log("Simülasyon Modu: PASİF");
-        }
-
-        window.toggleSimulationMode = async (enable) => {
-            if (!auth.currentUser) {
-                window.showError("Simülasyonu başlatmak için giriş yapmanız gerekiyor.");
-                return;
-            }
-
-            if (!renderer) {
-                 window.showError("3D Sahne başlatılmadı. Lütfen Studio'yu yeniden başlatmayı deneyin.", 'status');
-                 return;
-            }
-
-            isSimulationMode = enable;
-            transformControls.detach();
-            
-            if (enable) {
-                await window.fetchAndUpdateUser(auth.currentUser); 
-                window.startSimulation();
-            } else {
-                window.stopSimulation(); 
-                window.setTool('select');
-            }
-             window.onWindowResize(); // Kontrollerin durumunu güncelle
-        }
-
-
-        // GÜNCELLENDİ: Animasyon ve Third Person Kamera Takibi eklendi
-        window.updatePlayer = (delta) => {
-            if (!player) return;
-            
-            const GRAVITY = 9.8 * 2; 
-            
-            // Animasyon karıştırıcısını güncelle
-            if (playerMixer) playerMixer.update(delta);
-            
-            playerDirection.z = 0;
-            playerDirection.x = 0;
-
-            let inputX = 0;
-            let inputZ = 0;
-
-            if (mobileControlMode === 'joystick' && joystickActive) {
-                inputX = joystickX;
-                inputZ = -joystickY; // Mobil joystick'te Y ters olabilir.
-            } else {
-                // Klavye kontrolleri her zaman aktif
-                if (moveForward) inputZ += 1;
-                if (moveBackward) inputZ -= 1;
-                if (moveLeft) inputX -= 1;
-                if (moveRight) inputX += 1;
-            }
-            
-            if (inputX !== 0 || inputZ !== 0) {
-                playerDirection.x = inputX;
-                playerDirection.z = inputZ;
-                playerDirection.normalize(); 
-            }
-            
-            const cameraDirection = new THREE.Vector3();
-            // DÜZELTİLDİ: Karakterin hareket yönünü hesaplarken OrbitControls'un kamerasının yönünü kullan
-            controls.object.getWorldDirection(cameraDirection);
-            cameraDirection.y = 0; 
-            cameraDirection.normalize();
-
-            const right = new THREE.Vector3().crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
-            
-            const moveVector = new THREE.Vector3();
-            moveVector.addScaledVector(cameraDirection, playerDirection.z); 
-            moveVector.addScaledVector(right, playerDirection.x); 
-            moveVector.normalize();
-
-            // Yatay hız
-            playerVelocity.x = moveVector.x * PLAYER_SPEED;
-            playerVelocity.z = moveVector.z * PLAYER_SPEED;
-            
-            // --- Animasyon Kontrolü ---
-            const isMoving = playerDirection.lengthSq() > WALK_SPEED_THRESHOLD;
-            
-            if (isOnGround) {
-                if (isMoving) {
-                    window.setAnimation('walk');
-                } else {
-                    window.setAnimation('idle');
-                }
-            } else {
-                if (playerVelocity.y < 0) {
-                    // Yere inerken zıplama animasyonunu sabit tut
-                     if (currentAction !== 'jump') window.setAnimation('jump');
+                    // Yerçekimi ve Zıplama
+                    app.game.velocity.y -= app.game.gravity;
+                    if (p.position.y <= 1) { // Zemin seviyesi (basit kontrol)
+                        p.position.y = 1;
+                        app.game.velocity.y = 0;
+                        app.game.isGrounded = true;
+                    } else {
+                        app.game.isGrounded = false;
+                    }
+                    p.position.y += app.game.velocity.y;
+                    
+                    // Kamera Takibi
+                    const targetPos = p.position.clone().add(new THREE.Vector3(0, 3, 5)); // Ofset
+                    app.three.camera.position.lerp(targetPos, 0.1);
+                    app.three.camera.lookAt(p.position);
                 }
             }
-            // --- Animasyon Kontrolü Sonu ---
-
-            // Karakteri döndürme (sadece hareket varsa)
-            if (moveVector.lengthSq() > 0.01) {
-                const targetRotation = Math.atan2(moveVector.x, moveVector.z);
-                
-                // Yumuşak dönüş
-                let rotationDifference = targetRotation - player.rotation.y;
-                const TWO_PI = Math.PI * 2;
-                if (rotationDifference > Math.PI) rotationDifference -= TWO_PI;
-                if (rotationDifference < -Math.PI) rotationDifference += TWO_PI;
-                player.rotation.y += rotationDifference * 0.15; 
-            } else {
-                // Hareket yoksa yatay hız sıfırlanır
-                playerVelocity.x = 0;
-                playerVelocity.z = 0;
-            }
-
-            // Yerçekimi ve Düşme
-            if (!isOnGround) {
-                playerVelocity.y -= GRAVITY * delta;
-            } else {
-                playerVelocity.y = 0;
-            }
-            
-            const newY = player.position.y + playerVelocity.y * delta;
-            
-            // Basit çarpışma (Y ekseni zemin)
-            if (newY < playerHeight * 0.5) { 
-                playerVelocity.y = 0;
-                player.position.y = playerHeight * 0.5;
-                if (!isOnGround) {
-                     isOnGround = true;
-                     window.setAnimation(isMoving ? 'walk' : 'idle'); // Yere indiğinde animasyonu düzelt
-                }
-            } else {
-                 player.position.y = newY;
-            }
-            
-            // Yatay hareket
-            player.position.x += playerVelocity.x * delta;
-            player.position.z += playerVelocity.z * delta;
-
-            // Kamera Takibi (Third Person)
-            const relativeCameraOffset = new THREE.Vector3(0, 2.5, -4);
-            const cameraOffset = relativeCameraOffset.applyMatrix4( player.matrixWorld );
-            
-            // Kamera pozisyonunu yumuşak bir şekilde takip et
-            camera.position.lerp(cameraOffset, 0.1); 
-            
-            // Kamera hedefi oyuncunun biraz yukarısı
-            const targetPosition = player.position.clone();
-            targetPosition.y += 1.2; // Omuz hizası
-            
-            // Kamera hedefini yumuşak bir şekilde takip et
-            controls.target.lerp(targetPosition, 0.1);
-            controls.update();
-        }
-
-        window.animate = () => {
-            requestAnimationFrame(window.animate);
-            const delta = clock.getDelta();
-            
-            if (isSimulationMode) {
-                 window.updatePlayer(delta);
-            } else {
-                 controls.update(); 
-                 // Düzenleyici modunda nesneye script varsa çalıştır
-                 objects.forEach(obj => {
-                     if (obj.userData.script) {
-                         window.applyScript(obj, obj.userData.script);
-                     }
-                 });
-            }
-
-            if (TWEEN) TWEEN.update(); 
-
-            if (renderer) renderer.render(scene, camera);
-        }
-
-        // --- UYGULAMA BAŞLANGICI ---
-        window.onload = () => {
-             // Three.js ve Firebase kütüphanelerinin yüklenmesini bekleyerek uygulamayı başlat
-             loadApplicationStep();
         };
+
+        // --- JOYSTICK & INPUT ---
+        const joystick = document.getElementById('joystick-knob');
+        const zone = document.getElementById('joystick-zone');
+        const jumpBtn = document.getElementById('jump-btn');
+        let dragging = false;
+
+        zone.addEventListener('mousedown', (e) => { dragging = true; updateJoystick(e.clientX, e.clientY); });
+        zone.addEventListener('touchstart', (e) => { dragging = true; updateJoystick(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        
+        window.addEventListener('mousemove', (e) => { if(dragging) updateJoystick(e.clientX, e.clientY); });
+        window.addEventListener('touchmove', (e) => { if(dragging) updateJoystick(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        
+        window.addEventListener('mouseup', releaseJoystick);
+        window.addEventListener('touchend', releaseJoystick);
+
+        function updateJoystick(cx, cy) {
+            const rect = zone.getBoundingClientRect();
+            const centerX = rect.left + rect.width/2;
+            const centerY = rect.top + rect.height/2;
+            
+            let dx = cx - centerX;
+            let dy = cy - centerY;
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 35); // Max radius
+            const angle = Math.atan2(dy, dx);
+            
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            
+            joystick.style.transform = `translate(${x}px, ${y}px)`;
+            
+            // Input'u güncelle (-1 ile 1 arası)
+            app.game.input.x = x / 35;
+            app.game.input.y = y / 35;
+        }
+
+        function releaseJoystick() {
+            dragging = false;
+            joystick.style.transform = `translate(0px, 0px)`;
+            app.game.input.x = 0;
+            app.game.input.y = 0;
+        }
+        
+        jumpBtn.addEventListener('mousedown', () => { if(app.game.isGrounded) app.game.velocity.y = app.game.jump; });
+        jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(app.game.isGrounded) app.game.velocity.y = app.game.jump; });
+
+        // Klavye Kontrolleri
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'w') app.game.input.y = -1;
+            if(e.key === 's') app.game.input.y = 1;
+            if(e.key === 'a') app.game.input.x = -1;
+            if(e.key === 'd') app.game.input.x = 1;
+            if(e.key === ' ' && app.game.isGrounded) app.game.velocity.y = app.game.jump;
+        });
+        window.addEventListener('keyup', (e) => {
+            if(e.key === 'w' || e.key === 's') app.game.input.y = 0;
+            if(e.key === 'a' || e.key === 'd') app.game.input.x = 0;
+        });
+
+        // Başlat
+        window.onload = app.init;
 
     </script>
 </body>
