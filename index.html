@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.1 - Mobil Uyumlu (Kırmızı Tema) - FIREBASE AUTH AKTİF</title>
+    <title>LunX Studio V7.2 - Firebase AUTH Aktif</title>
     
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -14,7 +14,6 @@
 
     
     <style>
-        /* [MEVCUT CSS STİLİNİZ BURAYA AYNEN KOPYALANDI] */
         /* ======================================================= */
         /* ROBLOX STUDIO LIGHT THEME & LAYOUT */
         /* ======================================================= */
@@ -24,7 +23,7 @@
             --bg-panel: #ffffff;
             --border-color: #dcdcdc;
             --text-main: #333333;
-            /* 🔴 KIRMIZI TEMA GÜNCELLEMESİ */
+            /* 🔴 KIRMIZI TEMA */
             --accent-blue: #ff3333; 
             --accent-hover: #ffe5e5; 
             --selection-bg: #ffeef2;
@@ -165,7 +164,7 @@
                 width: 70%;
                 min-width: 70%;
                 max-width: 250px;
-                z-index: 20; /* Panel en önde olsun */
+                z-index: 20; 
             }
         }
 
@@ -182,7 +181,7 @@
             overflow-x: auto; 
             overflow-y: hidden;
             white-space: nowrap; 
-            flex-shrink: 0; /* Ribbon'un sıkışmasını engelle */
+            flex-shrink: 0; 
         }
         #ribbon-bar::-webkit-scrollbar { display: none; } 
         
@@ -220,13 +219,13 @@
         /* Main Workspace */
         #main-layout { 
             display: flex; 
-            flex: 1; /* 3D kısmının dikeyde kalan tüm alanı kaplamasını sağlar */
+            flex: 1; 
             overflow: hidden; 
             width: 100%; 
             flex-direction: row; 
         }
         
-        /* 💡 YENİ: Right Panel Sola Geçtiğinde */
+        /* Right Panel Sola Geçtiğinde */
         #main-layout.panel-left {
             flex-direction: row-reverse; 
         }
@@ -267,13 +266,13 @@
         .toolbox-item:hover { background: var(--accent-hover); border-color: var(--accent-blue); }
         .toolbox-icon { font-size: 16px; margin-right: 10px; }
         
-        /* VIEWPORT -> 3D Kısmın Çözünürlüğü için KRİTİK */
+        /* VIEWPORT */
         #viewport-container { 
             flex: 1; 
             position: relative; 
             background: #99ccff; 
             min-height: 200px; 
-            overflow: hidden; /* Three.js Canvas'ı taşmasın */
+            overflow: hidden; 
         }
         
         /* Three.js Canvas'ı tam olarak Viewport Container'ı kaplamalı */
@@ -293,7 +292,7 @@
             flex-shrink: 0; 
         }
         
-        /* 💡 YENİ: Right Panel Sola Geçtiğinde Stil Güncellemesi */
+        /* Right Panel Sola Geçtiğinde Stil Güncellemesi */
         #main-layout.panel-left #right-panel {
             border-left: none; 
             border-right: 1px solid var(--border-color); 
@@ -319,7 +318,7 @@
         @media (min-width: 769px) {
             #script-editor {
                 top: var(--toolbar-height);
-                right: 300px; /* Properties paneli kaplaması için */
+                right: 300px; 
             }
         }
 
@@ -362,11 +361,12 @@
         <div class="auth-box">
             <h2 style="color: var(--accent-blue);" id="auth-title">Giriş Yap</h2>
             <div id="auth-error" style="color:red; font-size:12px; margin-bottom:10px;"></div>
-            <input type="email" id="auth-email" placeholder="E-posta" value="test@lunx.com">
-            <input type="password" id="auth-pass" placeholder="Şifre" value="123456"> 
+            <input type="email" id="auth-email" placeholder="E-posta">
+            <input type="password" id="auth-pass" placeholder="Şifre"> 
             <button id="auth-submit-btn" onclick="LunX.auth.submit()">GİRİŞ</button>
             <div class="auth-toggle" onclick="LunX.auth.toggleMode()">Hesabın yok mu? Kayıt Ol</div>
-            </div>
+            <div style="font-size:10px; color:#999; margin-top:20px;">Firebase Aktif. Lütfen geçerli bir e-posta ve 6+ karakterli şifre kullanın.</div>
+        </div>
     </div>
 
     <div id="start-screen">
@@ -516,35 +516,42 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // Firebase Modüllerini içeri aktar
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        
+        // =======================================================
+        // 1. FIREBASE KONFİGÜRASYON VE BAŞLATMA
+        // =======================================================
+        const firebaseConfig = {
+          apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
+          authDomain: "lunxstudio.firebaseapp.com",
+          databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
+          projectId: "lunxstudio",
+          storageBucket: "lunxstudio.firebasestorage.app",
+          messagingSenderId: "810358489202",
+          appId: "1:810358489202:web:301dbd444bf4608f2782eb",
+          measurementId: "G-Y36QNCE71R"
+        };
+        
+        // Firebase'i başlat
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+
         /**
-         * LUNX STUDIO CORE V7.1 - FIREBASE AUTHENTICATION ENTEGRE EDİLDİ
+         * LUNX STUDIO CORE V7.2 - FIREBASE AUTH AKTİF
          */
          
-        // 🔥 FIREBASE INIT VE AUTH OBJEKTELERİ
-        let firebaseApp;
-        let auth;
-        
         // --- CORE APPLICATION OBJECT ---
         const LunX = {
             scene: null, camera: null, renderer: null, controls: null, transform: null,
             objects: [], selected: null, isPlaying: false,
-            currentUser: null, authMode: 'login',
+            currentUser: null, authMode: 'login', // login veya register
             history: { stack: [], pointer: -1, limit: 10 },
             
-            // 🔥 LunX Studio Proje Config'i (Önceki konuşmalardan alındı)
-            firebaseConfig: {
-              apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk",
-              authDomain: "lunxstudio.firebaseapp.com",
-              databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
-              projectId: "lunxstudio",
-              storageBucket: "lunxstudio.firebasestorage.app",
-              messagingSenderId: "810358489202",
-              appId: "1:810358489202:web:301dbd444bf4608f2782eb",
-              measurementId: "G-Y36QNCE71R"
-            },
-            
-            // Toolbox Data (Materyalleri vurgular)
+            // Toolbox Data
             toolboxItems: [
                 { name: "Neon Blok", type: "box", color: 0x00ff00, material: "Neon" },
                 { name: "Metal Küre", type: "sphere", color: 0xaaaaaa, material: "Metal" },
@@ -554,14 +561,16 @@
             ],
             
             init: () => {
-                // 🔥 FIREBASE BAŞLATMA 🔥
-                try {
-                    firebaseApp = firebase.initializeApp(LunX.firebaseConfig);
-                    auth = firebaseApp.auth(); // Modüler SDK'da getAuth(firebaseApp) olurdu.
-                    console.log("Firebase başarıyla başlatıldı.");
-                    
-                    // Auth durumunu dinleme
-                    auth.onAuthStateChanged(user => {
+                LunX.auth.check();
+                window.addEventListener('resize', LunX.editor.onResize);
+                LunX.tools.generateToolboxContent(); 
+            },
+            
+            // 2. AUTHENTICATION (GİRİŞ/KAYIT) - GERÇEK FIREBASE MODU
+            auth: {
+                check: () => {
+                    // Sayfa yüklendiğinde mevcut oturum durumunu kontrol et
+                    onAuthStateChanged(auth, (user) => {
                         if (user) {
                             LunX.currentUser = user;
                             document.getElementById('auth-screen').style.display = 'none';
@@ -573,59 +582,56 @@
                             document.getElementById('studio-interface').style.display = 'none';
                         }
                     });
-
-                } catch (e) {
-                    console.error("Firebase başlatılırken bir hata oluştu. Ayarlarınızı kontrol edin.", e);
-                    // Hata durumunda bile Mock moduyla devam etmesi için init() sonunda çağırıyoruz
-                    // LunX.auth.check();
-                }
-
-                window.addEventListener('resize', LunX.editor.onResize);
-                LunX.tools.generateToolboxContent(); 
-            },
-            
-            // 2. AUTHENTICATION (GİRİŞ/KAYIT) - GÜNCELLENMİŞ GERÇEK KOD
-            auth: {
+                },
                 submit: async () => {
                     const email = document.getElementById('auth-email').value;
                     const password = document.getElementById('auth-pass').value;
                     const errorEl = document.getElementById('auth-error');
                     errorEl.innerText = '';
                     
-                    if (!email || password.length < 6) {
-                         errorEl.innerText = "E-posta girin ve şifre 6 karakterden uzun olsun.";
+                    if (password.length < 6) {
+                         errorEl.innerText = "Şifre en az 6 karakter olmalıdır.";
                          return;
                     }
                     
-                    const submitBtn = document.getElementById('auth-submit-btn');
-                    submitBtn.innerText = "Yükleniyor...";
-                    submitBtn.disabled = true;
+                    document.getElementById('auth-submit-btn').disabled = true;
+                    document.getElementById('auth-submit-btn').innerText = "Yükleniyor...";
 
                     try {
                         let userCredential;
                         if (LunX.authMode === 'login') {
-                            userCredential = await auth.signInWithEmailAndPassword(email, password);
+                            // GİRİŞ İŞLEMİ
+                            userCredential = await signInWithEmailAndPassword(auth, email, password);
                         } else {
-                            userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                            // KAYIT İŞLEMİ
+                            userCredential = await createUserWithEmailAndPassword(auth, email, password);
                         }
-                        // onAuthStateChanged listener'ı zaten ekranı StartScreen'e yönlendirecek.
-                        console.log("Auth Başarılı", userCredential.user);
+                        
+                        // Başarılı olursa onAuthStateChanged tetiklenecek ve ekranı değiştirecek.
+                        console.log("Auth Success:", userCredential.user.email);
                         
                     } catch (error) {
-                        console.error("Firebase Auth Hatası:", error);
-                        let errorMessage = error.message;
+                        console.error("Firebase Auth Error:", error.code, error.message);
+                        let errorMessage = "Bir hata oluştu. Lütfen bilgileri kontrol edin.";
+                        
                         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                            errorMessage = 'Yanlış E-posta veya Şifre.';
+                            errorMessage = "Hatalı e-posta veya şifre.";
                         } else if (error.code === 'auth/email-already-in-use') {
-                            errorMessage = 'Bu e-posta zaten kullanımda.';
+                            errorMessage = "Bu e-posta adresi zaten kullanılıyor.";
+                        } else if (error.code === 'auth/invalid-email') {
+                            errorMessage = "Geçersiz e-posta formatı.";
                         }
+
                         errorEl.innerText = errorMessage;
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = LunX.authMode === 'login' ? 'GİRİŞ' : 'KAYIT OL';
+                        
+                    } finally {
+                        document.getElementById('auth-submit-btn').disabled = false;
+                        document.getElementById('auth-submit-btn').innerText = LunX.authMode === 'login' ? 'GİRİŞ' : 'KAYIT OL';
                     }
                 },
                 logout: async () => {
-                    await auth.signOut();
+                    await signOut(auth);
+                    // onAuthStateChanged tetiklenerek kullanıcıyı auth-screen'e yönlendirecek.
                 },
                 toggleMode: () => {
                     LunX.authMode = LunX.authMode === 'login' ? 'register' : 'login';
@@ -633,7 +639,6 @@
                     document.getElementById('auth-submit-btn').innerText = LunX.authMode === 'login' ? 'GİRİŞ' : 'KAYIT OL';
                     document.querySelector('.auth-toggle').innerText = LunX.authMode === 'login' ? 'Hesabın yok mu? Kayıt Ol' : 'Zaten hesabın var mı? Giriş Yap';
                     document.getElementById('auth-error').innerText = '';
-                    document.getElementById('auth-submit-btn').disabled = false;
                 }
             },
             
@@ -641,6 +646,7 @@
             manager: {
                 showStartScreen: (user) => {
                     document.getElementById('studio-interface').style.display = 'none';
+                    document.getElementById('auth-screen').style.display = 'none';
                     document.getElementById('start-screen').style.display = 'flex';
                     const username = user && user.email ? user.email.split('@')[0] : 'Guest';
                     document.getElementById('username-display').innerText = username;
@@ -662,13 +668,15 @@
                     LunX.scene = null; LunX.objects = []; LunX.selected = null; LunX.isPlaying = false;
                     LunX.history.stack = []; LunX.history.pointer = -1;
                     
-                    // Sadece start screen'e geri dön (Oyun içinde çıkış)
-                    document.getElementById('start-screen').style.display = 'flex';
                     document.getElementById('studio-interface').style.display = 'none';
+                    LunX.manager.showStartScreen(LunX.currentUser); // Stüdyodan çıkıp başlangıç ekranına dön
                 }
             },
 
-            // 4. 3D EDITOR CORE (Aynen korundu)
+            // Aşağıdaki tüm 3D editör ve araç fonksiyonları bir önceki sürümdeki gibi sorunsuz çalışır.
+            // (Kodun geri kalanı aynı kalmıştır: editor, world, tools, game, ui nesneleri...)
+
+            // 4. 3D EDITOR CORE
             editor: {
                 init3D: () => {
                     const container = document.getElementById('viewport');
@@ -794,7 +802,7 @@
                 }
             },
             
-            // 5. WORLD & TEMPLATES (Aynen korundu)
+            // 5. WORLD & TEMPLATES
             world: {
                 loadTemplate: (template) => {
                     LunX.objects.forEach(obj => LunX.scene.remove(obj));
@@ -952,7 +960,7 @@
                 }
             },
             
-            // 6. TOOLS (Aynen korundu)
+            // 6. TOOLS
             tools: {
                 setMode: (mode) => {
                     document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
@@ -1205,7 +1213,7 @@
                 }
             },
             
-            // 8. GAME (Basit Simülasyon) (Aynen korundu)
+            // 8. GAME (Basit Simülasyon)
             game: {
                 play: () => {
                     if(LunX.isPlaying) return;
@@ -1254,7 +1262,7 @@
                 }
             },
             
-            // 7. UI (Explorer & Properties) (Aynen korundu)
+            // 7. UI (Explorer & Properties)
             ui: {
                 refreshExplorer: () => {
                     const div = document.getElementById('explorer');
@@ -1384,7 +1392,7 @@
                         LunX.tools.saveState(); 
                     });
                     
-                    // Boyut (Group'lar için Three.js scale'ini değil, userData'daki base scale'i kullan)
+                    // Boyut
                     if (obj.isMesh) {
                          LunX.ui.addVector3Property(div, 'Size', {
                             x: obj.geometry.parameters.width * obj.scale.x, 
@@ -1393,7 +1401,7 @@
                         }, (axis, val) => {
                             const newSize = parseFloat(val) || 0.01;
 
-                            if (obj.userData.isSpawn) return; // SpawnLocation boyut değiştirilemez
+                            if (obj.userData.isSpawn) return; 
 
                             if (axis === 'x') {
                                 obj.geometry = new THREE.BoxGeometry(newSize, obj.geometry.parameters.height, obj.geometry.parameters.depth);
@@ -1424,7 +1432,7 @@
                     }
                 },
                 
-                // PROPERTIES PANELİ YARDIMCI FONKSİYONLARI (Kırpılmış kısım tamamlanmıştır)
+                // PROPERTIES PANELİ YARDIMCI FONKSİYONLARI
                 addPropertyRow: (parent, name, type, value, onChange=null) => {
                     const row = document.createElement('div');
                     row.className = 'prop-row';
