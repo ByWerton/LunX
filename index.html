@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.9 - Düzeltilmiş Tek Dosya</title>
+    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya</title>
     <style>
-        /* CSS Stilleri - Orijinal Koddan Alınmıştır */
+        /* ==================================================================== */
+        /* CSS Stilleri - TAMAMI BURADA BİRLEŞTİRİLDİ */
+        /* ==================================================================== */
         :root {
             --primary-color: #007acc;
             --secondary-color: #2da042;
@@ -16,6 +18,8 @@
         }
 
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background-dark); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Genel Konteyner Stilleri */
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 30, 30, 0.95); z-index: 5000; justify-content: center; align-items: center; }
         
         /* Loading Screen Styles */
@@ -24,11 +28,20 @@
         #restart-button { background-color: #c92c2c; }
 
         /* Auth/Modal Container Styles */
-        .auth-container, .settings-panel, .project-container { background: var(--panel-bg); padding: 40px; width: 400px; max-width: 90%; max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid var(--primary-color); text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box; transition: width 0.3s; }
+        .auth-container, .settings-panel, .project-container { 
+            background: var(--panel-bg); padding: 40px; width: 400px; max-width: 90%; 
+            max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid var(--primary-color); 
+            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; 
+            flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box; 
+            transition: width 0.3s; 
+        }
         .logo { font-size: 20px; font-weight: bold; color: var(--primary-color); margin-right: 20px; letter-spacing: 1px; }
 
         /* Input & Button Styles */
-        input[type="text"], input[type="email"], input[type="password"], #template-select, textarea, select, .start-btn { width: 100%; padding: 12px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        input[type="text"], input[type="email"], input[type="password"], #template-select, textarea, select, .start-btn { 
+            width: 100%; padding: 12px; background: #333; border: 1px solid #555; 
+            color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; 
+        }
         .start-btn { background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s; }
         .start-btn:hover { background-color: #006bbd; }
         #auth-error, #security-status { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
@@ -48,7 +61,7 @@
         .hierarchy-item.selected { background-color: var(--primary-color); }
         .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .prop-row input { width: 60%; }
-
+        
         /* Customization Styles */
         .settings-menu { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
         .settings-menu .menu-item { padding: 10px; cursor: pointer; background: var(--panel-bg); border-radius: 4px; transition: 0.2s; border: 1px solid transparent;}
@@ -62,76 +75,35 @@
         
         /* Mobile Controls */
         #mobile-controls { 
-            position: absolute; 
-            bottom: 10px; 
-            left: 10px; 
-            display: none; 
-            z-index: 10; 
-            gap: 20px;
-            pointer-events: none; 
-            width: calc(100% - 20px);
-            justify-content: space-between;
+            position: absolute; bottom: 10px; left: 10px; display: none; z-index: 10; gap: 20px;
+            pointer-events: none; width: calc(100% - 20px); justify-content: space-between;
         }
-        #mobile-controls.active {
-             pointer-events: auto; 
-        }
+        #mobile-controls.active { pointer-events: auto; }
         #joystick-wrapper { width: 100px; height: 100px; }
         #joystick-area { width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
         #joystick-handle { 
-            width: 40px; 
-            height: 40px; 
-            background: var(--primary-color); 
-            border-radius: 50%; 
-            position: absolute; 
-            top: 30px; 
-            left: 30px; 
-            touch-action: none; 
+            width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; 
+            position: absolute; top: 30px; left: 30px; touch-action: none; 
         }
         #jump-button { 
-            width: 60px; 
-            height: 60px; 
-            background: var(--secondary-color); 
-            border-radius: 50%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 30px; 
-            color: white; 
-            z-index: 10; 
+            width: 60px; height: 60px; background: var(--secondary-color); border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; font-size: 30px; 
+            color: white; z-index: 10; 
         }
         
         /* Skybox Panel Stilleri */
         #skybox-gallery { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-            gap: 10px; 
-            margin-top: 10px;
-            padding: 5px;
-            max-height: 300px;
-            overflow-y: auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; 
+            margin-top: 10px; padding: 5px; max-height: 300px; overflow-y: auto;
             border: 1px solid var(--border-color);
         }
         .skybox-thumbnail {
-            width: 100%;
-            padding-top: 100%; 
-            position: relative;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
-            overflow: hidden;
+            width: 100%; padding-top: 100%; position: relative; cursor: pointer;
+            border: 2px solid transparent; transition: border-color 0.2s; overflow: hidden;
             background-color: #333;
         }
-        .skybox-thumbnail.selected {
-            border-color: var(--primary-color);
-        }
-        .skybox-thumbnail img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .skybox-thumbnail.selected { border-color: var(--primary-color); }
+        .skybox-thumbnail img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -334,6 +306,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
+        
+        // ====================================================================
+        // JAVASCRIPT KODU - TAMAMI BURADA BİRLEŞTİRİLDİ
+        // ====================================================================
         
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
@@ -608,8 +584,6 @@
         }
 
         // --- 4. GİRİŞ / KAYIT YÖNETİMİ ---
-
-        // (Orijinal Koddan Alınan Giriş/Kayıt, Çıkış, Kullanıcı Güncelleme Fonksiyonları...)
         
         window.showAuth = (mode) => {
             window.hideAllScreens();
@@ -1999,4 +1973,26 @@
             if (!isSimulationMode) {
                 // Düzenleme Modu
                 const isMobile = window.innerWidth <= 768;
-                controls.enabled = !isMobile
+                controls.enabled = !isMobile;
+                if (controls.enabled) controls.update(); 
+                if (transformControls) transformControls.update();
+            } else {
+                // Simülasyon Modu
+                controls.enabled = false;
+                window.updatePlayer(delta);
+                
+                objects.forEach(obj => {
+                    if (obj.userData.script) {
+                        window.applyScript(obj, obj.userData.script);
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+        
+        // --- Başlatma ---
+        window.onload = loadApplicationStep;
+    </script>
+</body>
+</html>
