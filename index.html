@@ -499,7 +499,7 @@
          
         // 1. Firebase Yapılandırması (Kendi Anahtarınızla Değiştirin!)
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", // ⚠️ BURAYI GERÇEK API KEY İLE DEĞİŞTİRİN
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", // ⚠️ BURASI GÜNCELLENDİ
             authDomain: "lunxstudio.firebaseapp.com",
             projectId: "lunxstudio-v7"
         };
@@ -1222,87 +1222,4 @@
                     obj.userData.material = matName;
                     
                     obj.material.needsUpdate = true;
-                    LunX.renderer.render(LunX.scene, LunX.camera);
-                    LunX.tools.saveState();
-                },
-                
-                togglePanelSide: () => {
-                    const mainLayout = document.getElementById('main-layout');
-                    mainLayout.classList.toggle('panel-left');
-                    LunX.editor.onResize(); 
-                }
-            },
-            
-            // 8. GAME (PLAY/STOP/PHYSICS)
-            game: {
-                play: () => {
-                    if (!LunX.scene) return;
-                    LunX.isPlaying = true;
-                    LunX.editor.select(null);
-                    LunX.controls.enabled = false;
-                    LunX.game.spawnPlayer();
-                },
-                
-                stop: () => {
-                    LunX.isPlaying = false;
-                    LunX.controls.enabled = true;
-                    if(LunX.player) {
-                        LunX.scene.remove(LunX.player);
-                        LunX.player = null;
-                    }
-                    LunX.camera.position.set(10, 10, 10);
-                    LunX.camera.lookAt(0,0,0);
-                    LunX.controls.target.set(0,0,0);
-                },
-                
-                spawnPlayer: () => {
-                    const spawnObject = LunX.objects.find(o => o.userData.isSpawn);
-                    const pos = spawnObject ? spawnObject.position.clone().add(new THREE.Vector3(0, 3, 0)) : new THREE.Vector3(0, 3, 0);
-
-                    const group = new THREE.Group();
-                    
-                    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({color:0xFFE4C4}));
-                    head.position.y = 3;
-                    group.add(head);
-
-                    const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({color:0x007acc}));
-                    torso.position.y = 1;
-                    group.add(torso);
-                    
-                    group.position.copy(pos);
-                    LunX.scene.add(group);
-                    LunX.player = group;
-                    LunX.playerVelocity = new THREE.Vector3(0,0,0);
-                },
-                
-                updatePhysics: () => {
-                    if(!LunX.player) return;
-                    
-                    const dt = 0.016; 
-                    const gravity = -30;
-                    
-                    LunX.playerVelocity.y += gravity * dt;
-                    LunX.player.position.addScaledVector(LunX.playerVelocity, dt);
-                    
-                    // Basit zemin çarpışması
-                    if (LunX.player.position.y <= 3) {
-                        LunX.player.position.y = 3;
-                        LunX.playerVelocity.y = 0;
-                    }
-                    
-                    // Kamera Takibi
-                    LunX.camera.position.x = LunX.player.position.x + 10;
-                    LunX.camera.position.y = LunX.player.position.y + 10;
-                    LunX.camera.position.z = LunX.player.position.z + 10;
-                    LunX.controls.target.copy(LunX.player.position);
-                    LunX.controls.update();
-                }
-            }
-        };
-
-        // Uygulamayı Başlat
-        window.onload = LunX.init;
-
-    </script>
-</body>
-</html>
+                    LunX.renderer.render(LunX.scene
