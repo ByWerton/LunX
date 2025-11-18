@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya (Gelişmiş Mobil Kontrol)</title>
+    <title>LunX Studio V2.9 - Birleştirilmiş Tek Dosya (Gelişmiş Mobil Kontrol) - DÜZELTİLMİŞ</title>
     <style>
         /* ==================================================================== */
         /* CSS Stilleri - TAMAMI BURADA BİRLEŞTİRİLDİ */
@@ -421,9 +421,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/CapsuleGeometry.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/WebGL.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/tween.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
     
@@ -434,7 +431,7 @@
     <script>
         
         // ====================================================================
-        // JAVASCRIPT KODU - TAMAMI BURADA BİRLEŞTİRİLDİ
+        // JAVASCRIPT KODU - TAMAMI BURADA BİRLEŞTİRİLDİ (DÜZELTİLMİŞ)
         // ====================================================================
         
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
@@ -489,15 +486,17 @@
             torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0"
         };
         
-        // Galeriden seçilebilecek Skybox dokuları (Placeholder/Örnek)
+        // Galeriden seçilebilecek Skybox dokuları (Placeholder/Örnek) - GÜNCEL CDN YOLLARI
         const skyboxTextures = {
             'ocean_sky': { 
                 type: 'cube', 
-                value: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/cube/Bridge2/' 
+                // YENİ YOLLAR - Bridge2 yerine Milkyway
+                value: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/cube/MilkyWay/' 
             },
             'star_sky': { 
                 type: 'cube', 
-                value: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/cube/pisa/' 
+                // YENİ YOLLAR - pisa yerine Bridge
+                value: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/cube/Bridge/' 
             },
             'default_sky': { 
                 type: 'color', 
@@ -533,7 +532,8 @@
             else if (msg.includes("auth/missing-email")) displayMsg = "Lütfen e-posta ve şifreyi girin.";
             else if (msg.includes("KRİTİK HATA:")) displayMsg = msg.replace("KRİTİK HATA: ", "");
             else if (msg.includes("Skybox yükleme hatası:")) displayMsg = "Skybox yüklenirken hata oluştu, varsayılana dönülüyor.";
-            else if (msg.includes("Cannot read properties of undefined (reading 'isWebGLAvailable')")) displayMsg = "Three.js kütüphanesi tam yüklenemedi. Lütfen internet bağlantınızı kontrol edin.";
+            // DÜZELTİLDİ: Three.js çekirdek kontrolü
+            else if (msg.includes("isWebGLAvailable is not a function") || msg.includes("Cannot read properties of undefined (reading 'isWebGLAvailable')")) displayMsg = "WebGL başlatılamadı veya Three.js tam yüklenmedi.";
 
 
             errDiv.innerText = "Hata: " + displayMsg; 
@@ -564,7 +564,7 @@
 
         // --- 3. YÜKLEME EKRANI YÖNETİMİ ---
         
-        // Kütüphanelerin yüklenip yüklenmediğini kontrol eden ana fonskiyon
+        // DÜZELTİLDİ: THREE.WebGL.isWebGLAvailable yerine doğrudan THREE.WebGLRenderer kontrolü
         const checkLibraries = () => {
              if (typeof firebase === 'undefined') {
                   throw new Error("KRİTİK HATA: Firebase kütüphaneleri yüklenemedi.");
@@ -572,7 +572,8 @@
              if (typeof THREE === 'undefined') {
                   throw new Error("KRİTİK HATA: Three.js kütüphanesi yüklenemedi.");
              }
-             if (!THREE.WEBGL.isWebGLAvailable()) {
+             // Three.js çekirdeğine dahil edildi.
+             if (!window.WebGLRenderingContext) {
                   throw new Error("KRİTİK HATA: Cihazınız WebGL'i desteklemiyor.");
              }
         };
@@ -1283,8 +1284,9 @@
                  if (transformControls) transformControls.enabled = false;
             } else {
                  // Editör modunda, mobilse OrbitControls kapatılır.
-                 if (controls) controls.enabled = !isMobile;
-                 if (transformControls) transformControls.enabled = !isMobile;
+                 // DÜZELTİLDİ: Editör modunda her zaman OrbitControls aktif olmalı (mobil-masaüstü fark etmeksizin)
+                 if (controls) controls.enabled = true; // Editörde OrbitControls aktif kalmalı
+                 if (transformControls) transformControls.enabled = true;
             }
 
         }
@@ -1344,6 +1346,12 @@
             transformControls.addEventListener('change', () => renderer.render(scene, camera));
             scene.add(transformControls);
             transformControls.addEventListener('mouseUp', () => { window.updateSelectedObjectProperty(); });
+            
+            // DÜZELTİLDİ: Simülasyon modunda OrbitControls'u devre dışı bırak.
+            transformControls.addEventListener('dragging-changed', function (event) {
+                if (controls) controls.enabled = !event.value && !isSimulationMode;
+            });
+
 
             // Kontrol olaylarını sadece bir kere ekle
             document.removeEventListener('keydown', window.onKeyDown, false);
@@ -1458,9 +1466,12 @@
                 }
                 
                 // Başlangıç noktasını her zaman ekle (Karakterin nerede doğacağını bilmek için)
-                const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
-                scene.add(spawnMesh);
-                objects.push(spawnMesh);
+                const spawnPointExists = objects.some(obj => obj.userData.isSpawnPoint);
+                if (!spawnPointExists) {
+                    const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
+                    scene.add(spawnMesh);
+                    objects.push(spawnMesh);
+                }
                 
                 if (env === 'simple_cube') {
                     window.addShape('cube', { position: { x: 0, y: 0.5, z: 0 }, name: "Küp_1" });
@@ -1511,6 +1522,7 @@
                 const template = document.getElementById('template-select').value;
                 window.setupEnvironment(template);
             } else if (objects.length === 0) {
+                 // DÜZELTİLDİ: Kayıtlı sahne yoksa da varsayılan ortam kurulmalı
                  window.setupEnvironment('default_template');
             }
             
@@ -1542,6 +1554,11 @@
                     material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
                     break;
                 case 'spawn':
+                    const existingSpawn = objects.find(obj => obj.userData.isSpawnPoint);
+                    if (existingSpawn) {
+                         window.log("Zaten bir Oyuncu Başlangıç Noktası mevcut. Yeni eklenmedi.");
+                         return;
+                    }
                     const spawnMesh = window.createSpawnPointMesh(new THREE.Vector3(0, 0.05, 0));
                     spawnMesh.position.set(existingData ? existingData.position.x : 0, existingData ? existingData.position.y : 0.05, existingData ? existingData.position.z : 0);
                     spawnMesh.name = name; // İsim bilgisini koru
@@ -1604,7 +1621,11 @@
                 } else if (obj.userData.isSpawnPoint) {
                     type = 'spawn';
                 } else if (obj.geometry) {
-                    type = obj.geometry.type.replace('Geometry', '').toLowerCase();
+                    // DÜZELTİLDİ: Geometry tipini doğru al.
+                    if (obj.geometry instanceof THREE.BoxGeometry) type = 'cube';
+                    else if (obj.geometry instanceof THREE.SphereGeometry) type = 'sphere';
+                    else if (obj.geometry instanceof THREE.CylinderGeometry && obj.userData.isSpawnPoint) type = 'spawn';
+                    else return null;
                 } else {
                     return null; 
                 }
@@ -1667,7 +1688,7 @@
                         }
                     });
                     
-                    // Önce varsayılan ortamı kur
+                    // Önce varsayılan ortamı kur (Zemin/Grid/Spawn)
                     window.setupEnvironment('default_template');
                     
                     // Ardından skybox'ı ayarla
@@ -1727,6 +1748,9 @@
                      transformControls.detach();
                 } else {
                     transformControls.attach(obj);
+                    // DÜZELTİLDİ: transformControls'u her zaman aktif tut editör modunda.
+                    if (controls) controls.enabled = false;
+                    
                     if (!obj.userData.isSpawnPoint && !obj.userData.isEnvironment) {
                         scriptPanel.style.display = 'block';
                         document.getElementById('code-editor').value = obj.userData.script || '';
@@ -1743,6 +1767,7 @@
                 }
             } else {
                 transformControls.detach();
+                if (controls) controls.enabled = true;
             }
             
             window.updateSelectedObjectProperty();
@@ -1785,7 +1810,8 @@
         window.runSelectedScript = () => {
              if (selectedObject && selectedObject.userData.script) {
                 try {
-                    const func = new Function('object', selectedObject.userData.script);
+                    // DÜZELTİLDİ: Script'in sadece object'i döndüren fonksiyon olarak çalıştırılması
+                    const func = new Function('object', document.getElementById('code-editor').value);
                     func(selectedObject);
                     window.log(`${selectedObject.name} kodu çalıştırıldı.`);
                     window.updateSelectedObjectProperty();
@@ -1827,13 +1853,13 @@
             // Tarayıcının Kaydetme iletişim kutusunu engelle (Ctrl+S / Cmd+S)
             if ((event.ctrlKey || event.metaKey) && event.code === 'KeyS') {
                 event.preventDefault(); 
-                if (!isSimulationMode) {
-                    // Kaydetme kısayolu: Seçili nesnenin script'ini kaydet
+                if (selectedObject && !isSimulationMode) {
                     window.saveScript(); 
                     window.log("Script Kaydedildi (Ctrl+S)");
+                } else if (!isSimulationMode) {
+                     window.saveScene(); // Script değil, genel sahne kaydet
+                     window.log("Sahne Kaydedildi (Ctrl+S)");
                 } else {
-                     // Simülasyon modunda tüm sahneyi kaydetmek de mantıklı olabilir
-                     // Veya sadece loglama
                      window.log("Simülasyon modunda Kaydetme devre dışı.");
                 }
             }
@@ -1883,28 +1909,35 @@
 
             if (transformControls.dragging) return;
             if (event.target !== renderer.domElement || isSimulationMode) return;
+            
+            // DÜZELTİLDİ: Sol tıklamayla TransformControls'un otomatik kapanmasını engelle
+            if (controls && controls.enabled) {
+                 // Eğer OrbitControls aktifse, kamera hareketini tetikleyebilir.
+                 // Raycasting'i sadece kontrol sürüklenmiyorsa yap.
+                 if (event.button === 0) {
+                     const rect = renderer.domElement.getBoundingClientRect();
+                     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                     raycaster.setFromCamera(mouse, camera);
+                     const intersects = raycaster.intersectObjects(objects, true);
 
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects, true);
-
-            if (intersects.length > 0) {
-                let hitObject = intersects[0].object;
-                
-                while (hitObject.parent !== scene && hitObject.parent) {
-                    hitObject = hitObject.parent; 
-                }
-                
-                if (hitObject && objects.includes(hitObject)) {
-                    window.selectObject(hitObject);
-                } else {
-                    window.selectObject(null);
-                }
-            } else {
-                window.selectObject(null);
+                     if (intersects.length > 0) {
+                         let hitObject = intersects[0].object;
+                         
+                         while (hitObject.parent !== scene && hitObject.parent) {
+                             hitObject = hitObject.parent; 
+                         }
+                         
+                         if (hitObject && objects.includes(hitObject)) {
+                             window.selectObject(hitObject);
+                         } else {
+                             window.selectObject(null);
+                         }
+                     } else {
+                         window.selectObject(null);
+                     }
+                 }
             }
         }
 
@@ -2192,6 +2225,11 @@
             document.getElementById('sidebar-right').style.display = 'none';
             document.getElementById('play-button').classList.remove('active');
             document.getElementById('stop-button').classList.add('active');
+            
+            // DÜZELTİLDİ: Simülasyon modunda OrbitControls'u ve TransformControls'u devre dışı bırak
+            if (controls) controls.enabled = false;
+            if (transformControls) transformControls.enabled = false;
+            
             window.onWindowResize(); 
             window.log("Simülasyon Modu: AKTİF");
         }
@@ -2207,6 +2245,11 @@
             document.getElementById('sidebar-right').style.display = 'block';
             document.getElementById('play-button').classList.add('active');
             document.getElementById('stop-button').classList.remove('active');
+            
+            // DÜZELTİLDİ: Editör moduna dönerken OrbitControls'u ve TransformControls'u etkinleştir
+            if (controls) controls.enabled = true; 
+            if (transformControls) transformControls.enabled = true;
+            
             window.onWindowResize(); 
             window.log("Simülasyon Modu: PASİF");
         }
@@ -2269,7 +2312,8 @@
             }
             
             const cameraDirection = new THREE.Vector3();
-            camera.getWorldDirection(cameraDirection);
+            // DÜZELTİLDİ: Karakterin hareket yönünü hesaplarken OrbitControls'un kamerasının yönünü kullan
+            controls.object.getWorldDirection(cameraDirection);
             cameraDirection.y = 0; 
             cameraDirection.normalize();
 
