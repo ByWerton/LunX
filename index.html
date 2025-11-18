@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.32 - Entegre Sürüm</title>
+    <title>LunX Studio V2.4 - Tam Entegre Sürüm</title>
     <style>
-        /* CSS Stilleri */
+        /* CSS Stilleri (Daha önce gönderilen stil seti korunmuştur) */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
         .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
         
@@ -29,10 +29,10 @@
         /* Input & Button Styles */
         .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select, .start-btn { width: 100%; padding: 12px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         .start-btn { background-color: #007acc; border: none; color: white; cursor: pointer; }
-        #auth-error { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
+        #auth-error, #security-status { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
         .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; display: inline-block; }
         
-        /* Editor/Studio Styles (Toolbars, Sidebar, Customization) */
+        /* Editor/Studio Styles */
         #toolbar { background-color: #252526; display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
         .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
@@ -47,9 +47,6 @@
         .hierarchy-item.selected { background-color: #007acc; }
 
         /* Customization Styles */
-        #settings-view-customize { display: flex; gap: 20px; width: 100%; height: 600px; }
-        .customize-panel { width: 300px; text-align: left; padding: 20px; }
-        #customize-viewport { height: 100%; flex-grow: 1; background: #000; border: 1px solid #007acc; }
         .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
         .color-row input[type="color"] { width: 50px; height: 30px; border: none; padding: 0; }
         .custom-preview { width: 50px; height: 50px; border: 1px solid #555; background-size: cover; background-position: center; display: inline-block; margin-left: 10px; vertical-align: middle; line-height: 50px; text-align: center; font-size: 10px;}
@@ -173,7 +170,8 @@
             <div class="panel-section" id="script-panel" style="display:none;">
                 <h4>LUNX SCRIPT (JS)</h4>
                 <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
-                <button class="run-btn tool-btn" onclick="window.saveScript()" style="background-color: #2da042; width: 100%;">⚡ Kodu Çalıştır</button>
+                <button class="run-btn tool-btn" onclick="window.saveScript()" style="background-color: #2da042; width: 100%;">⚡ Kodu Kaydet</button>
+                <button class="run-btn tool-btn" onclick="window.runSelectedScript()" style="background-color: #f7931e; width: 100%; margin-top: 5px;">▶️ Kodu Test Et</button>
             </div>
         </div>
     </div>
@@ -210,7 +208,7 @@
                         <label>Kafa Resmi:</label> 
                         <div style="display: flex; align-items: center;">
                             <div id="head-preview" class="custom-preview">Boş</div>
-                            <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'headTexture')">
+                            <input type="file" id="head-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'headTexture')" style="display: none;">
                             <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('head-image-file').click()">🖼️ Yükle</button>
                         </div>
                     </div>
@@ -219,7 +217,7 @@
                         <label>Gövde Resmi:</label> 
                          <div style="display: flex; align-items: center;">
                             <div id="torso-preview" class="custom-preview">Boş</div>
-                            <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torsoTexture')">
+                            <input type="file" id="torso-image-file" accept="image/*" onchange="window.handleImageUpload(this, 'torsoTexture')" style="display: none;">
                             <button type="button" class="tool-btn upload-btn" onclick="document.getElementById('torso-image-file').click()">👕 Yükle</button>
                         </div>
                     </div>
@@ -230,7 +228,7 @@
                 <h2>Güvenlik Ayarları</h2>
                  <input type="password" id="setting-new-password" placeholder="Yeni şifre (en az 6 karakter)">
                 <button class="tool-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
-                <p id="security-status" style="color: #ff4444; margin-top: 10px;"></p>
+                <p id="security-status" style="color: #4caf50; margin-top: 10px;"></p>
             </div>
         </div>
     </div>
@@ -254,7 +252,7 @@
         // --- 1. FIREBASE BAŞLATMA VE GLOBAL DEĞİŞKENLER ---
         
         const firebaseConfig = {
-          // ⚠️ KENDİ FIREBASE BİLGİLERİNİZLE DEĞİŞTİRİN ⚠️
+          // ✅ VERDİĞİNİZ API ANAHTARI VE DİĞER TEMEL BİLGİLER
           apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", 
           authDomain: "lunxstudio.firebaseapp.com",
           databaseURL: "https://lunxstudio-default-rtdb.firebaseio.com",
@@ -294,16 +292,27 @@
             const errDiv = document.getElementById(elementId);
             if (!errDiv) { console.error("Hata elementi bulunamadı: " + elementId); return; }
 
-            // Hata mesajlarını kullanıcı dostu hale getir
+            // Kullanıcı dostu hata mesajları
             if (msg.includes("auth/email-already-in-use")) msg = "Bu e-posta adresi zaten kayıtlı.";
             else if (msg.includes("auth/user-not-found")) msg = "Kullanıcı bulunamadı. E-posta adresi hatalı.";
             else if (msg.includes("auth/wrong-password")) msg = "Şifre hatalı.";
             else if (msg.includes("auth/invalid-email")) msg = "Geçersiz e-posta formatı.";
             else if (msg.includes("auth/weak-password")) msg = "Şifre en az 6 karakter olmalıdır.";
+            else if (msg.includes("Failed to fetch")) msg = "Bağlantı Hatası: İnternet bağlantınızı veya Firebase ayarlarınızı kontrol edin.";
 
             errDiv.innerText = "Hata: " + msg; 
             errDiv.style.display = 'block';
-            window.log("Auth Hatası: " + msg);
+            errDiv.style.color = '#ff4444';
+            errDiv.style.backgroundColor = '#301010';
+            window.log("Hata: " + msg);
+        }
+
+        window.showSuccess = (msg, elementId = 'security-status') => {
+             const successDiv = document.getElementById(elementId);
+             successDiv.innerText = msg;
+             successDiv.style.color = '#4caf50';
+             successDiv.style.backgroundColor = '#103010';
+             successDiv.style.display = 'block';
         }
 
         window.hideAllScreens = () => {
@@ -313,14 +322,15 @@
             document.getElementById('main-area').style.display = 'none';
             document.getElementById('settings-screen').style.display = 'none';
             document.getElementById('auth-error').style.display = 'none'; 
+            document.getElementById('security-status').style.display = 'none';
         }
 
-        // --- 3. YÜKLEME EKRANI YÖNETİMİ (YENİ) ---
+        // --- 3. YÜKLEME EKRANI YÖNETİMİ (TAKILMA ÖNLEMLİ) ---
 
         const loadSteps = [
             { name: "Kütüphane Kontrolü", duration: 1000, percentage: 30, action: () => {
                 if (typeof firebase === 'undefined' || typeof THREE === 'undefined') {
-                    throw new Error("KRİTİK HATA: Gerekli kütüphaneler yüklenemedi.");
+                    throw new Error("KRİTİK HATA: Gerekli kütüphaneler (Firebase/Three.js) yüklenemedi.");
                 }
             }},
             { name: "Firebase Bağlantısı", duration: 1500, percentage: 60, action: () => {
@@ -330,17 +340,32 @@
             }},
             { name: "Kullanıcı Durumu Kontrolü", duration: 1000, percentage: 95, action: async () => {
                 return new Promise(resolve => {
-                    auth.onAuthStateChanged(user => {
+                    let isResolved = false;
+                    const resolveOnce = () => {
+                        if (!isResolved) {
+                             isResolved = true;
+                             resolve();
+                        }
+                    };
+                    
+                    // Oturum kontrolünü yapıyoruz
+                    const unsubscribe = auth.onAuthStateChanged(user => {
                         window.log(user ? "Oturum Açık: " + user.email : "Oturum Kapalı.");
+                        // Kontrol yapıldıktan sonra dinleyiciyi kaldır
+                        if (unsubscribe) unsubscribe(); 
                         if (user) {
-                            // Kullanıcı varsa, verisini hemen çek
-                            window.fetchAndUpdateUser(user).then(resolve).catch(resolve);
+                            window.fetchAndUpdateUser(user).then(resolveOnce).catch(resolveOnce);
                         } else {
-                            resolve();
+                            resolveOnce();
                         }
                     });
-                    // Max bekleme süresi
-                    setTimeout(resolve, 3000); 
+                    
+                    // KRİTİK: Maksimum bekleme süresi (Takılmayı önler)
+                    setTimeout(() => {
+                        window.log("Oturum kontrolü zaman aşımına uğradı, devam ediliyor.");
+                        if (unsubscribe) unsubscribe(); 
+                        resolveOnce();
+                    }, 3000); 
                 });
             }},
         ];
@@ -420,6 +445,8 @@
             progressValue = 0;
             clearInterval(loadingInterval);
             document.getElementById('restart-button').style.display = 'none';
+            document.getElementById('progress-text').style.color = '#ddd';
+            document.getElementById('progress-text').style.backgroundColor = 'transparent';
             loadApplicationStep();
         }
 
@@ -495,27 +522,31 @@
 
         window.fetchAndUpdateUser = async (user) => {
             if (!user) return;
-            const snapshot = await db.ref('users/' + user.uid).once('value');
-            const userData = snapshot.val() || { username: user.email.split('@')[0], gender: 'male', torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0" };
+            try {
+                 const snapshot = await db.ref('users/' + user.uid).once('value');
+                 const userData = snapshot.val() || { username: user.email.split('@')[0], gender: 'male', torsoColor: "#007acc", legColor: "#007acc", skinColor: "#f0c0b0" };
             
-            currentCustomization = {
-                username: userData.username || user.email.split('@')[0],
-                gender: userData.gender || 'male',
-                headTexture: userData.headTexture || "",
-                torsoTexture: userData.torsoTexture || "",
-                torsoColor: userData.torsoColor || "#007acc",
-                legColor: userData.legColor || "#007acc",
-                skinColor: userData.skinColor || "#f0c0b0"
-            };
-            
-            const userPanel = document.getElementById('project-user-email');
-            userPanel.innerHTML = `
-                 <span style="background-color: ${currentCustomization.gender === 'male' ? '#007acc' : '#ff4aff'}; 
-                              padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 10px;">
-                    ${currentCustomization.username.charAt(0).toUpperCase()}
-                 </span> 
-                 ${currentCustomization.username} (${user.email})
-            `;
+                currentCustomization = {
+                    username: userData.username || user.email.split('@')[0],
+                    gender: userData.gender || 'male',
+                    headTexture: userData.headTexture || "",
+                    torsoTexture: userData.torsoTexture || "",
+                    torsoColor: userData.torsoColor || "#007acc",
+                    legColor: userData.legColor || "#007acc",
+                    skinColor: userData.skinColor || "#f0c0b0"
+                };
+                
+                const userPanel = document.getElementById('project-user-email');
+                userPanel.innerHTML = `
+                     <span style="background-color: ${currentCustomization.gender === 'male' ? '#007acc' : '#ff4aff'}; 
+                                  padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 10px;">
+                        ${currentCustomization.username.charAt(0).toUpperCase()}
+                     </span> 
+                     ${currentCustomization.username} (${user.email})
+                `;
+            } catch(e) {
+                 window.log("Kullanıcı verisi çekilemedi: " + e.message);
+            }
         }
         
         window.showProjectScreen = (user) => {
@@ -540,45 +571,6 @@
         };
         
         // --- 6. AYARLAR VE ÖZELLEŞTİRME FONKSİYONLARI ---
-
-        // (Bu bölümün kodları uzun olduğu için altta, en son kısımda yer almaktadır.)
-        
-        // ... (Karakter Oluşturma, 3D Özelleştirme Görünümü, Profil Güncelleme, Şifre Değiştirme ve Doku Yükleme fonksiyonları buraya gelecektir) ...
-        
-        // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI ---
-        
-        // (Bu bölümün kodları da uzun olduğu için altta, en son kısımda yer almaktadır.)
-        
-        // ... (initFullScene, setupEnvironment, startStudio, toggleSimulationMode, initPlayerControls, animate, event handlers vb. fonksiyonlar buraya gelecektir) ...
-
-        // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Cihaz Modu Butonlarını JavaScript ile Bağla (Çalışmama sorununu çözer)
-            const setupDeviceModeListeners = () => {
-                const buttons = document.querySelectorAll('#device-mode-switcher .mode-btn');
-                buttons.forEach(button => {
-                    button.removeEventListener('click', setAuthContainerMode); 
-                    button.addEventListener('click', function() {
-                        const mode = this.getAttribute('data-mode');
-                        setAuthContainerMode(mode, this); 
-                    });
-                });
-            };
-            setupDeviceModeListeners(); 
-            window.addEventListener('resize', window.onWindowResize, false);
-            window.onWindowResize();
-
-            // Yüklemeyi Başlat
-            document.getElementById('restart-button').addEventListener('click', window.restartLoad);
-            loadApplicationStep();
-        });
-        
-        // ----------------------------------------------------------------------------------------------------
-        // --- BÖLÜM 6 & 7: AYARLAR VE 3D STUDIO FONKSİYONLARININ TAMAMI (UZUN KOD) ---
-        // ----------------------------------------------------------------------------------------------------
-
-        // --- 6. AYARLAR VE ÖZELLEŞTİRME FONKSİYONLARI (DEVAM) ---
 
         window.showSettingsScreen = (initialView) => {
             window.hideAllScreens();
@@ -621,6 +613,10 @@
                 document.getElementById('setting-username').value = currentCustomization.username;
                 document.getElementById('setting-email').value = auth.currentUser.email;
                 document.getElementById('setting-gender').value = currentCustomization.gender;
+            }
+            if (viewId === 'security') {
+                document.getElementById('security-status').style.display = 'none';
+                document.getElementById('setting-new-password').value = '';
             }
         }
         
@@ -680,7 +676,8 @@
                 update[key] = value;
                 await db.ref('users/' + user.uid).update(update);
                 window.fetchAndUpdateUser(user); 
-            } catch (e) { window.log(`Hata: Profil güncellenemedi.`); }
+                window.showSuccess("Profil bilgisi güncellendi.");
+            } catch (e) { window.showError("Profil güncellenemedi.", 'security-status'); }
         }
         
         window.updatePassword = async () => {
@@ -692,9 +689,7 @@
              }
              try {
                  await auth.currentUser.updatePassword(newPassword);
-                 statusEl.innerText = "Şifre başarıyla güncellendi!";
-                 statusEl.style.color = '#4caf50';
-                 statusEl.style.display = 'block';
+                 window.showSuccess("Şifre başarıyla güncellendi!", 'security-status');
                  document.getElementById('setting-new-password').value = '';
              } catch (e) {
                  window.showError(e.message, 'security-status');
@@ -844,7 +839,7 @@
             return group;
         };
 
-        // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI (DEVAM) ---
+        // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI ---
         
         window.onWindowResize = () => {
             const isMobile = window.innerWidth <= 768;
@@ -895,6 +890,7 @@
             document.addEventListener('keydown', window.onKeyDown, false);
             document.addEventListener('keyup', window.onKeyUp, false);
             document.addEventListener('mousedown', window.onMouseDown, false);
+            document.addEventListener('contextmenu', (e) => e.preventDefault()); // Sağ tık menüsünü engelle
             window.log("3D Sahne Hazır.");
         }
         
@@ -998,9 +994,9 @@
             transformControls.detach();
             if (player) { scene.remove(player); player = null; }
 
-            objects.forEach(obj => {
-                if (obj.parent) scene.remove(obj);
-            });
+            const toRemove = objects.filter(obj => obj.parent === scene);
+            toRemove.forEach(obj => scene.remove(obj));
+            
             objects = [];
             selectedObject = null;
             window.updateHierarchyList();
@@ -1012,15 +1008,28 @@
         window.saveScene = async () => {
             if (!auth.currentUser) { window.showError("Kaydetmek için oturum açmalısınız."); return; }
             
-            const sceneData = objects.map(obj => ({
-                name: obj.name,
-                type: obj.geometry.type.replace('Geometry', '').toLowerCase(),
-                position: obj.position.toJSON(),
-                rotation: obj.rotation.toJSON(),
-                scale: obj.scale.toJSON(),
-                color: obj.material.color ? `#${obj.material.color.getHexString()}` : '#ffffff',
-                script: obj.userData.script || ''
-            })).filter(data => !data.name.includes("Zemin") && !data.name.includes("Grid")); 
+            const sceneData = objects.map(obj => {
+                if (obj.name === "Zemin" || obj.name === "Grid") return null;
+                
+                let type;
+                if (obj.userData.isSpawnPoint) {
+                    type = 'spawn';
+                } else if (obj.geometry) {
+                    type = obj.geometry.type.replace('Geometry', '').toLowerCase();
+                } else {
+                    return null; 
+                }
+                
+                return {
+                    name: obj.name,
+                    type: type,
+                    position: obj.position.toJSON(),
+                    rotation: obj.rotation.toJSON(),
+                    scale: obj.scale.toJSON(),
+                    color: obj.material && obj.material.color ? `#${obj.material.color.getHexString()}` : '#ffffff',
+                    script: obj.userData.script || ''
+                };
+            }).filter(data => data !== null); 
             
             try {
                 await db.ref('users/' + auth.currentUser.uid + '/scene').set(sceneData);
@@ -1057,7 +1066,7 @@
         
         window.selectObject = (obj) => {
             if (selectedObject) {
-                if (!selectedObject.userData.isSpawnPoint) {
+                if (!selectedObject.userData.isSpawnPoint && selectedObject.material.color) {
                     if (selectedObject.userData.originalColor) {
                         selectedObject.material.color.set(selectedObject.userData.originalColor);
                     }
@@ -1067,8 +1076,8 @@
             selectedObject = obj;
             
             if (obj) {
-                if (!obj.userData.isSpawnPoint) {
-                    if (!obj.userData.originalColor && obj.material.color) {
+                if (!obj.userData.isSpawnPoint && obj.material.color) {
+                    if (!obj.userData.originalColor) {
                          obj.userData.originalColor = obj.material.color.getHex();
                     }
                     obj.material.color.set(0x00ff00); 
@@ -1147,13 +1156,13 @@
         
         window.onKeyDown = (event) => {
             switch (event.code) {
-                case 'KeyW': moveForward = true; transformControls.mode === 'translate' ? transformControls.mode = 'translate' : window.setTool('translate'); break;
+                case 'KeyW': moveForward = true; if(!isSimulationMode) window.setTool('translate'); break;
                 case 'KeyS': moveBackward = true; break;
                 case 'KeyA': moveLeft = true; break;
                 case 'KeyD': moveRight = true; break;
-                case 'KeyQ': window.setTool('rotate'); break;
-                case 'KeyE': window.setTool('scale'); break;
-                case 'KeyR': window.setTool('select'); break; 
+                case 'KeyQ': if(!isSimulationMode) window.setTool('rotate'); break;
+                case 'KeyE': if(!isSimulationMode) window.setTool('scale'); break;
+                case 'KeyR': if(!isSimulationMode) window.setTool('select'); break; 
                 case 'Space': if (isSimulationMode && player && playerVelocity.y === 0) playerVelocity.y = 10; break;
                 case 'Delete': window.deleteSelectedObject(); break;
             }
@@ -1250,12 +1259,13 @@
             playerDirection = new THREE.Vector3(0, 0, 0);
             
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
-            let startPos = spawnPoint ? spawnPoint.position : new THREE.Vector3(0, 2, 0);
+            let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); // Spawn point y'yi karakterin alt seviyesi için ayarla
 
             player = window.createBlockCharacter(currentCustomization.gender);
             player.position.copy(startPos);
             scene.add(player);
             
+            // Kamera oyuncuyu takip edecek şekilde ayarlanır
             camera.position.set(player.position.x - 3, player.position.y + 2, player.position.z - 3);
             controls.target.copy(player.position);
             controls.update();
@@ -1308,4 +1318,173 @@
         }
 
         window.updatePlayerMovement = (delta) => {
-            if (!
+            if (!player || !isSimulationMode) return;
+            
+            const speed = 5.0; 
+            const gravity = -9.8; 
+            const playerHeight = 2.0;
+            
+            playerVelocity.y += gravity * delta;
+            
+            playerDirection.z = 0;
+            playerDirection.x = 0;
+
+            if (moveForward || joystickY > 0.1) playerDirection.z -= 1;
+            if (moveBackward || joystickY < -0.1) playerDirection.z += 1;
+            if (moveLeft || joystickX < -0.1) playerDirection.x -= 1;
+            if (moveRight || joystickX > 0.1) playerDirection.x += 1;
+            
+            if (playerDirection.z !== 0 || playerDirection.x !== 0) {
+                playerDirection.normalize();
+            }
+            
+            // Yönü kamera açısına göre dönüştürme (Oyun hissiyatı için)
+            const cameraDirection = controls.getAzimuthalAngle(); 
+            const rotationMatrix = new THREE.Matrix4().makeRotationY(cameraDirection);
+            playerDirection.applyMatrix4(rotationMatrix);
+
+
+            const moveX = playerDirection.x * speed * delta;
+            const moveZ = playerDirection.z * speed * delta;
+
+            player.position.x += moveX;
+            player.position.z += moveZ;
+            
+            // Yer kontrolü (Basit zemin çarpışması)
+            const groundLevel = 0.5; // Karakterin yarısı yerin üstünde (y=1.0)
+            if (player.position.y <= groundLevel) {
+                playerVelocity.y = 0;
+                player.position.y = groundLevel; 
+            }
+            
+            player.position.y += playerVelocity.y * delta;
+            
+            // Kamera ve Kontrol Güncellemesi (3. şahıs bakış açısı)
+            const targetPosition = player.position.clone();
+            controls.target.copy(targetPosition);
+            
+            // Sabit kamera açısı korunarak oyuncu takip edilir.
+            const offset = new THREE.Vector3(-3, 2, -3);
+            const cameraFollowRotation = new THREE.Matrix4().makeRotationY(controls.getAzimuthalAngle());
+            offset.applyMatrix4(cameraFollowRotation);
+            camera.position.copy(targetPosition).add(offset);
+            
+            controls.update();
+        }
+
+        window.initMobileControls = () => {
+            const joystickArea = document.getElementById('joystick-area');
+            const handle = document.getElementById('joystick-handle');
+            const jumpButton = document.getElementById('jump-button');
+
+            const maxRadius = 50; 
+            
+            const startDrag = (e) => {
+                joystickActive = true;
+                e.preventDefault();
+            };
+
+            const doDrag = (e) => {
+                if (!joystickActive) return;
+                const bounds = joystickArea.getBoundingClientRect();
+                const centerX = bounds.left + bounds.width / 2;
+                const centerY = bounds.top + bounds.height / 2;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                window.updateJoystickPosition(clientX, clientY, centerX, centerY, maxRadius, handle);
+            };
+
+            const endDrag = () => {
+                joystickActive = false;
+                window.resetJoystick(handle);
+            };
+
+            // Event Listener'lar
+            joystickArea.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', endDrag);
+
+            joystickArea.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', doDrag);
+            document.addEventListener('touchend', endDrag);
+
+            jumpButton.addEventListener('click', () => {
+                if (player && playerVelocity.y === 0) playerVelocity.y = 10;
+            });
+        }
+
+        window.updateJoystickPosition = (clientX, clientY, centerX, centerY, maxRadius, handle) => {
+            let deltaX = clientX - centerX;
+            let deltaY = clientY - centerY;
+            
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance > maxRadius) {
+                const angle = Math.atan2(deltaY, deltaX);
+                deltaX = Math.cos(angle) * maxRadius;
+                deltaY = Math.sin(angle) * maxRadius;
+            }
+
+            // Handle pozisyonunu güncelle
+            handle.style.left = `${deltaX + 30}px`; 
+            handle.style.top = `${deltaY + 30}px`; 
+
+            // Hareket yönü değerlerini güncelle
+            joystickX = deltaX / maxRadius;
+            joystickY = -(deltaY / maxRadius); // Y ekseni tersine çevrilir
+        }
+
+        window.resetJoystick = (handle) => {
+            handle.style.left = '30px';
+            handle.style.top = '30px';
+            joystickX = 0;
+            joystickY = 0;
+        }
+
+        window.animate = () => {
+            requestAnimationFrame(window.animate);
+            const delta = clock.getDelta();
+
+            if (renderer) {
+                
+                if (isSimulationMode) {
+                    window.updatePlayerMovement(delta);
+                    objects.forEach(obj => {
+                        if (obj.userData.script) {
+                            window.applyScript(obj, obj.userData.script);
+                        }
+                    });
+                } else {
+                     controls.update();
+                     transformControls.update();
+                }
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cihaz Modu Butonlarını JavaScript ile Bağla
+            const setupDeviceModeListeners = () => {
+                const buttons = document.querySelectorAll('#device-mode-switcher .mode-btn');
+                buttons.forEach(button => {
+                    button.removeEventListener('click', setAuthContainerMode); 
+                    button.addEventListener('click', function() {
+                        const mode = this.getAttribute('data-mode');
+                        setAuthContainerMode(mode, this); 
+                    });
+                });
+            };
+            setupDeviceModeListeners(); 
+            window.addEventListener('resize', window.onWindowResize, false);
+            window.onWindowResize();
+
+            // Yüklemeyi Başlat
+            document.getElementById('restart-button').addEventListener('click', window.restartLoad);
+            loadApplicationStep();
+        });
+    </script>
+</body>
+</html>
