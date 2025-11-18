@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Web Tabanlı Fizik Stüdyosu - Mobil Uyumlu</title>
+    <title>Web Tabanlı Fizik Stüdyosu - Canlı</title>
     <style>
         /* Ekranın Tamamını Kaplama ve Mobil Kaydırmayı Engelleme */
         body { margin: 0; overflow: hidden; touch-action: none; } 
@@ -37,7 +37,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
     <script src="https://threejs.org/examples/js/controls/TransformControls.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.min.js"></script>
 
     <script>
@@ -62,16 +61,16 @@
         }
 
         function initThree() {
-            // Sahne (Arka planı MAVİ tonlarda yapalım ki görünsün)
+            // Sahne: Mavi Gökyüzü (Artık görünür olmalı)
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Açık Mavi (Sky Blue)
+            scene.background = new THREE.Color(0x87CEEB); 
             
             // Işıklandırma
             const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
             sunLight.position.set(5, 10, 5);
             sunLight.castShadow = true;
             scene.add(sunLight);
-            const ambientLight = new THREE.AmbientLight(0x606060); // Yumuşak Işık
+            const ambientLight = new THREE.AmbientLight(0x606060); 
             scene.add(ambientLight);
 
             // Kamera
@@ -87,30 +86,29 @@
 
             // --- Görünür Zemin ---
             const floorGeometry = new THREE.PlaneGeometry(20, 20);
-            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x556B2F }); // Koyu Yeşil (Toprak)
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x556B2F }); // Koyu Yeşil Zemin
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
             
-            // --- Ana Küp (Görsel) ---
+            // --- Ana Küp (Görsel - Parlak Kırmızı) ---
             const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
             const cubeMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xff0000 // Parlak Kırmızı
+                color: 0xff0000 
             }); 
             activeCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
             activeCube.castShadow = true;
             scene.add(activeCube);
 
-            // Küpün Fiziksel Cismi
+            // Küpün Fiziksel Cismi (Başlangıç pozisyonu yüksekte)
             const cubeShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
             cubeBody = new CANNON.Body({ mass: 5, shape: cubeShape }); 
-            cubeBody.position.set(0, 5, 0); // Yüksekten başlasın
+            cubeBody.position.set(0, 5, 0); 
             world.addBody(cubeBody);
 
             // --- Kontroller ---
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Mobil cihazlarda varsayılan kamera gezinme hızını ayarla
             controls.enableDamping = true; 
             controls.dampingFactor = 0.05;
 
@@ -118,14 +116,13 @@
             transformControls.attach(activeCube); 
             scene.add(transformControls);
 
-            // Kontrol kullanılırken kamerayı durdur ve fizik simülasyonunu yönet
+            // Kontrol kullanılırken fizik simülasyonunu yönet
             transformControls.addEventListener('dragging-changed', function (event) {
-                // Sürükleme başladığında kamerayı devre dışı bırak
                 controls.enabled = !event.value;
                 if (event.value) {
-                    cubeBody.type = CANNON.Body.STATIC; // Düzenleme sırasında statik yap
+                    cubeBody.type = CANNON.Body.STATIC; 
                 } else {
-                    cubeBody.type = CANNON.Body.DYNAMIC; // Bırakılınca dinamik yap (düşsün)
+                    cubeBody.type = CANNON.Body.DYNAMIC; 
                     cubeBody.position.copy(activeCube.position);
                     cubeBody.quaternion.copy(activeCube.quaternion);
                     cubeBody.velocity.set(0, 0, 0);
@@ -147,7 +144,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 3. Ana Döngü (Fizik ve Görsel Güncelleme) ---
+        // --- 3. Ana Döngü ---
         function animate(time) {
             requestAnimationFrame(animate);
 
@@ -156,7 +153,7 @@
                 world.step(timeStep, dt);
             }
 
-            // Görsel Küpü, Fiziksel Küpün Konumuna Güncelle
+            // Fizik pozisyonunu görsel pozisyona kopyala
             activeCube.position.copy(cubeBody.position);
             activeCube.quaternion.copy(cubeBody.quaternion);
 
