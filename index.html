@@ -3,56 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Studio V2.5 - Nihai Entegre Sürüm (YÜKLEME DÜZELTME)</title>
+    <title>LunX Studio V2.6 - Nihai Düzeltme ve Arayüz Güncellemesi</title>
     <style>
         /* CSS Stilleri */
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #ddd; display: flex; flex-direction: column; height: 100vh; }
-        .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 5000; justify-content: center; align-items: center; }
+        :root {
+            --primary-color: #007acc;
+            --secondary-color: #2da042;
+            --background-dark: #1e1e1e;
+            --panel-bg: #252526;
+            --text-color: #ddd;
+            --border-color: #3e3e42;
+        }
+
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background-dark); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; }
+        .full-screen-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 30, 30, 0.95); z-index: 5000; justify-content: center; align-items: center; }
         
         /* Loading Screen Styles */
-        #loading-screen { flex-direction: column; background: #1e1e1e; z-index: 9999; }
-        #progress-bar { height: 100%; width: 0%; background: #007acc; transition: width 0.3s; border-radius: 5px; }
+        #loading-screen { flex-direction: column; background: var(--background-dark); z-index: 9999; }
+        #progress-bar { height: 100%; width: 0%; background: var(--primary-color); transition: width 0.3s; border-radius: 5px; }
         #restart-button { background-color: #c92c2c; }
 
-        /* Device Mode Buttons (Top Right) */
-        #device-mode-switcher { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 5100; }
-        .mode-btn { background-color: #3e3e42; color: white; border: 1px solid #555; padding: 8px 12px; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 14px; }
-        .mode-btn:hover { background-color: #505050; }
-        .mode-btn.active { background-color: #007acc; border-color: #007acc; }
+        /* Auth/Modal Container Styles */
+        .auth-container, .settings-panel, .project-container { background: var(--panel-bg); padding: 40px; width: 400px; max-width: 90%; max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid var(--primary-color); text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box; transition: width 0.3s; }
+        .logo { font-size: 20px; font-weight: bold; color: var(--primary-color); margin-right: 20px; letter-spacing: 1px; }
 
-        /* Auth Container Styles */
-        .auth-container, .settings-panel { background: #252526; padding: 40px; width: 400px; max-width: 90%; max-height: 80vh; overflow-y: auto; border-radius: 8px; border: 2px solid #007acc; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box; transition: width 0.3s; }
-        .auth-container.sim-phone { width: 375px; }
-        .auth-container.sim-tablet { width: 768px; max-width: 90%; }
-        .auth-container.sim-pc { width: 450px; max-width: 90%; }
-        
         /* Input & Button Styles */
-        .auth-container input[type="text"], .auth-container input[type="email"], .auth-container input[type="password"], #template-select, .auth-container textarea, .settings-panel input, .settings-panel select, .start-btn { width: 100%; padding: 12px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        .start-btn { background-color: #007acc; border: none; color: white; cursor: pointer; }
+        input[type="text"], input[type="email"], input[type="password"], #template-select, textarea, select, .start-btn { width: 100%; padding: 12px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .start-btn { background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s; }
+        .start-btn:hover { background-color: #006bbd; }
         #auth-error, #security-status { color: #ff4444; font-size: 13px; padding: 8px; border: 1px solid #ff4444; background: #301010; display: none; width: 100%; box-sizing: border-box;}
-        .switch-auth { color: #007acc; cursor: pointer; font-size: 14px; display: inline-block; }
+        .switch-auth { color: var(--primary-color); cursor: pointer; font-size: 14px; display: inline-block; }
         
         /* Editor/Studio Styles */
-        #toolbar { background-color: #252526; display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid #3e3e42; height: 40px; }
-        .logo { font-size: 20px; font-weight: bold; color: #007acc; margin-right: 20px; letter-spacing: 1px; }
+        #toolbar { background-color: var(--panel-bg); display: none; align-items: center; padding: 5px 10px; border-bottom: 1px solid var(--border-color); height: 40px; }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
         .tool-btn { background-color: #3e3e42; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; }
         .tool-btn:hover { background-color: #505050; }
-        .tool-btn.active { background-color: #007acc; }
+        .tool-btn.active { background-color: var(--primary-color); }
         
         #main-area { flex-grow: 1; display: none; overflow: hidden; position: relative; }
         #viewport { flex-grow: 1; position: relative; background-color: #000; }
-        #sidebar-right { width: 250px; background-color: #252526; padding: 10px; border-left: 1px solid #3e3e42; overflow-y: auto; }
+        #sidebar-right { width: 250px; background-color: var(--panel-bg); padding: 10px; border-left: 1px solid var(--border-color); overflow-y: auto; }
         .hierarchy-item { padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .hierarchy-item.selected { background-color: #007acc; }
+        .hierarchy-item.selected { background-color: var(--primary-color); }
         .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .prop-row input { width: 60%; }
 
         /* Customization Styles */
         .settings-menu { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
-        .settings-menu .menu-item { padding: 10px; cursor: pointer; background: #252526; border-radius: 4px; transition: 0.2s; }
+        .settings-menu .menu-item { padding: 10px; cursor: pointer; background: var(--panel-bg); border-radius: 4px; transition: 0.2s; border: 1px solid transparent;}
         .settings-menu .menu-item:hover { background: #3e3e42; }
-        .settings-menu .menu-item.active { background: #007acc; }
+        .settings-menu .menu-item.active { background: var(--primary-color); border-color: var(--primary-color); }
 
         .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
         .color-row input[type="color"] { width: 50px; height: 30px; border: none; padding: 0; }
@@ -60,33 +61,28 @@
         .file-upload-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;}
         
         /* Mobile Controls */
-        #mobile-controls { position: absolute; bottom: 10px; left: 10px; display: none; z-index: 10; }
-        #joystick-area { width: 100px; height: 100px; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
-        #joystick-handle { width: 40px; height: 40px; background: #007acc; border-radius: 50%; position: absolute; top: 30px; left: 30px; }
-        #jump-button { position: absolute; bottom: 10px; right: 10px; width: 60px; height: 60px; background: #2da042; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; z-index: 10; }
+        #mobile-controls { position: absolute; bottom: 10px; left: 10px; display: none; z-index: 10; gap: 20px;}
+        #joystick-wrapper { width: 100px; height: 100px; }
+        #joystick-area { width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); border-radius: 50%; position: relative; }
+        #joystick-handle { width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; position: absolute; top: 30px; left: 30px; }
+        #jump-button { position: absolute; bottom: 10px; right: 10px; width: 60px; height: 60px; background: var(--secondary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; z-index: 10; }
     </style>
 </head>
 <body>
 
     <div id="loading-screen" class="full-screen-container" style="display: flex;">
-        <h1 style="color: #007acc; font-size: 40px; margin-bottom: 20px;">LUNX STUDIO</h1>
+        <h1 style="color: var(--primary-color); font-size: 40px; margin-bottom: 20px;">LUNX STUDIO</h1>
         <div style="width: 300px; height: 10px; background: #333; border-radius: 5px;">
-            <div id="progress-bar" style="height: 100%; width: 0%; background: #007acc; transition: width 0.3s;"></div>
+            <div id="progress-bar"></div>
         </div>
-        <p id="progress-text" style="color: #ddd; margin-top: 15px; font-size: 18px;">Yükleniyor...</p>
+        <p id="progress-text" style="color: var(--text-color); margin-top: 15px; font-size: 18px;">Yükleniyor...</p>
         <button id="restart-button" class="start-btn" style="display: none; background-color: #c92c2c; margin-top: 20px;">Baştan Yükle</button>
     </div>
     
-    <div id="auth-screen" class="full-screen-container" style="display: none;">
-        <div id="device-mode-switcher">
-            <button class="mode-btn active" data-mode="pc">💻 PC</button>
-            <button class="mode-btn" data-mode="tablet">📱 Tablet</button>
-            <button class="mode-btn" data-mode="phone">📞 Telefon</button>
-        </div>
-        
-        <div id="auth-container" class="auth-container sim-pc">
+    <div id="auth-screen" class="full-screen-container">
+        <div id="auth-container" class="auth-container">
             <h1 class="logo" style="font-size: 36px; margin-bottom: 10px;">LUNX STUDIO</h1>
-            <h2 id="auth-title" style="color:#007acc; margin-bottom: 10px;">GİRİŞ YAP</h2>
+            <h2 id="auth-title" style="color:var(--primary-color); margin-bottom: 10px;">GİRİŞ YAP</h2>
             <div id="auth-error" style="display: none;"></div>
             
             <input type="text" id="auth-username-input" placeholder="Kullanıcı Adı" style="display: none;">
@@ -94,7 +90,7 @@
             <input type="password" id="auth-password-input" placeholder="Şifre">
             
             <div id="initial-settings" style="display: none; width: 100%; text-align: left; padding-left: 5px;">
-                <label style="color: #007acc; font-weight: bold;">Başlangıç Cinsiyeti:</label><br>
+                <label style="color: var(--primary-color); font-weight: bold;">Başlangıç Cinsiyeti:</label><br>
                 <input type="radio" id="gender-male" name="gender-auth" value="male" checked> Erkek
                 <input type="radio" id="gender-female" name="gender-auth" value="female" style="margin-left: 15px;"> Kız
             </div>
@@ -105,28 +101,28 @@
     </div>
     
     <div id="project-screen" class="full-screen-container">
-        <div class="project-header" style="width: 90%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; background-color: #252526; padding: 15px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #007acc;">
-            <div class="logo">LunX Studio</div>
-            <div class="user-panel" style="display: flex; align-items: center; gap: 10px;">
-                 <span id="project-user-email" style="font-size: 14px;"></span>
-                <button id="settings-btn" class="tool-btn" onclick="window.showSettingsScreen('profile')">⚙️ Ayarlar</button>
-                <button class="tool-btn" onclick="window.logoutUser()">Çıkış Yap</button>
+        <div class="project-container" style="width: 90%; max-width: 800px; padding: 30px; display: flex; flex-direction: column;">
+            <div class="project-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+                <div class="logo" style="font-size: 28px;">LUNX PROJELER</div>
+                <div class="user-panel" style="display: flex; align-items: center; gap: 10px;">
+                    <span id="project-user-email" style="font-size: 14px;"></span>
+                    <button id="settings-btn" class="tool-btn" onclick="window.showSettingsScreen('profile')">⚙️ Ayarlar</button>
+                    <button class="tool-btn" onclick="window.logoutUser()">Çıkış Yap</button>
+                </div>
             </div>
-        </div>
-        <div class="project-content" style="width: 90%; max-width: 1000px; background-color: #333; padding: 30px; border-radius: 0 0 8px 8px; display: flex; justify-content: space-between;">
-            <div class="template-area" style="flex: 1; padding-right: 20px;">
-                <h3 style="color:#007acc;">BAŞLANGIÇ ŞABLONLARI</h3>
-                <select id="template-select" style="width: 100%; margin-bottom: 10px;">
+            
+            <h3 style="color:var(--primary-color); text-align: left; margin-bottom: 15px;">YENİ PROJE OLUŞTUR</h3>
+            <div class="template-area" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                <select id="template-select" style="flex-grow: 1;">
                     <option value="empty">Boş Sahne</option>
                     <option value="default_template">Zemin ve Grid</option>
                     <option value="simple_cube">Basit Küp Örneği</option>
                 </select>
-                <button class="start-btn" onclick="window.startStudio(true)" style="background-color: #007acc;">Yeni Proje Başlat</button>
+                <button class="start-btn" onclick="window.startStudio(true)" style="width: 200px; background-color: var(--secondary-color);">Yeni Başlat</button>
             </div>
-            <div class="my-projects-area" style="flex: 1; padding-left: 20px; border-left: 1px solid #444;">
-                <h3 style="color:#2da042;">KAYITLI PROJELERİNİZ</h3>
-                <button class="tool-btn" style="background-color: #2da042; width: 100%;" onclick="window.loadScene()">Kayıtlı Projeyi Yükle (Bulut)</button>
-            </div>
+            
+            <h3 style="color:var(--secondary-color); text-align: left; margin-bottom: 15px; border-top: 1px solid var(--border-color); padding-top: 20px;">KAYITLI PROJELER</h3>
+            <button class="start-btn" onclick="window.loadScene()" style="background-color: #3e3e42;">Buluttan Proje Yükle</button>
         </div>
     </div>
     
@@ -158,27 +154,29 @@
     </div>
     <div id="main-area" style="display: none; flex-direction: row;">
         <div id="viewport">
-             <div id="mobile-controls">
-                <div id="joystick-area">
-                    <div id="joystick-handle"></div>
+             <div id="mobile-controls" style="display: flex; align-items: flex-end;">
+                <div id="joystick-wrapper">
+                    <div id="joystick-area">
+                        <div id="joystick-handle"></div>
+                    </div>
                 </div>
-                <div id="jump-button">+</div>
+                <div id="jump-button" style="margin-left: auto;">^</div>
             </div>
         </div>
         <div id="sidebar-right">
             <div class="panel-section">
                 <h4>HİYERARŞİ (NESNELER) 📦</h4>
-                <div id="hierarchy-panel" style="overflow-y: auto; height: 150px; border: 1px solid #3e3e42; padding: 5px;"></div>
+                <div id="hierarchy-panel" style="overflow-y: auto; height: 150px; border: 1px solid var(--border-color); padding: 5px;"></div>
             </div>
-            <div class="panel-section" id="property-panel">
+            <div class="panel-section" id="property-panel" style="margin-top: 20px;">
                 <h4>ÖZELLİKLER</h4>
                 <div id="object-info">Seçili değil.</div>
             </div>
-            <div class="panel-section" id="script-panel" style="display:none;">
+            <div class="panel-section" id="script-panel" style="display:none; margin-top: 20px;">
                 <h4>LUNX SCRIPT (JS)</h4>
                 <textarea id="code-editor" placeholder="// object.rotation.y += 0.01;"></textarea>
-                <button class="run-btn tool-btn" onclick="window.saveScript()" style="background-color: #2da042; width: 100%;">⚡ Kodu Kaydet</button>
-                <button class="run-btn tool-btn" onclick="window.runSelectedScript()" style="background-color: #f7931e; width: 100%; margin-top: 5px;">▶️ Kodu Test Et</button>
+                <button class="run-btn start-btn" onclick="window.saveScript()" style="background-color: var(--secondary-color); margin-top: 5px;">⚡ Kodu Kaydet</button>
+                <button class="run-btn start-btn" onclick="window.runSelectedScript()" style="background-color: #f7931e; margin-top: 5px;">▶️ Kodu Test Et</button>
             </div>
         </div>
     </div>
@@ -235,13 +233,13 @@
                 <div id="settings-view-security" class="settings-panel" style="width: 100%; display: none; text-align: left;">
                     <h2>Güvenlik Ayarları</h2>
                     <input type="password" id="setting-new-password" placeholder="Yeni şifre (en az 6 karakter)">
-                    <button class="tool-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
+                    <button class="start-btn" style="background-color: #c92c2c; width: 100%;" onclick="window.updatePassword()">Şifreyi Güncelle</button>
                     <p id="security-status" style="color: #4caf50; margin-top: 10px;"></p>
                 </div>
             </div>
         </div>
     </div>
-    <div id="context-menu" style="display: none; position: fixed; background: #3e3e42; border: 1px solid #007acc; border-radius: 4px; z-index: 9000; padding: 5px;">
+    <div id="context-menu" style="display: none; position: fixed; background: #3e3e42; border: 1px solid var(--primary-color); border-radius: 4px; z-index: 9000; padding: 5px;">
         <div class="context-item tool-btn" onclick="window.runSelectedScript()" style="margin-bottom: 5px;">Kodu Çalıştır</div>
         <div class="context-item tool-btn" onclick="window.deleteSelectedObject()" style="margin-bottom: 5px;">Sil</div>
         <div class="context-item tool-btn" onclick="window.duplicateSelectedObject()">Çoğalt</div>
@@ -277,7 +275,12 @@
         let objects = []; 
         let selectedObject = null;
         let isSimulationMode = false; 
+        
+        // ✅ PLAYER DEĞİŞKENLERİ SIFIRLANDI VE İYİLEŞTİRİLDİ
         let player, playerVelocity, playerDirection; 
+        const playerHeight = 1.0; // Karakterin yarı yüksekliği (tam boyu 2.0)
+        let isOnGround = true; // Yer kontrolü için yeni değişken
+
         let moveForward, moveBackward, moveLeft, moveRight; 
         let joystickActive = false; 
         let joystickX = 0, joystickY = 0; 
@@ -290,7 +293,7 @@
         let customScene, customCamera, customRenderer, customControls, customCharacter;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        let authMode = 'register'; 
+        let authMode = 'login'; // ✅ Varsayılan Giriş yap olarak ayarlandı
         const clock = new THREE.Clock(); 
 
         // --- 2. YARDIMCI FONKSİYONLAR ---
@@ -343,7 +346,6 @@
                 }
             }},
             { name: "Firebase Bağlantısı", duration: 1500, percentage: 60, action: () => {
-                // SADECE BAŞLATMA VE GLOBAL ATAMA YAPILIYOR
                 app = firebase.initializeApp(firebaseConfig);
                 auth = app.auth(); 
                 db = app.database(); 
@@ -351,22 +353,20 @@
             }},
             { name: "Kullanıcı Durumu Kontrolü", duration: 1000, percentage: 95, action: async () => {
                 return new Promise((resolve) => {
-                    const TIMEOUT_MS = 2000; // Maksimum 2 saniye bekle
+                    const TIMEOUT_MS = 2000; 
                     let resolved = false;
 
                     const unsubscribe = auth.onAuthStateChanged(user => {
                         if (!resolved) {
                             resolved = true;
-                            // Kullanıcı verisini arka planda çekmek için hemen resolve et
                             if (user) {
                                 window.fetchAndUpdateUser(user).then(() => window.log("Kullanıcı verisi güncelendi."));
                             }
-                            unsubscribe(); // Dinlemeyi hemen durdur
+                            unsubscribe(); 
                             resolve(); 
                         }
                     });
 
-                    // Eğer onAuthStateChanged hiç tetiklenmezse (nadir bağlantı sorunları), zaman aşımı ile ilerle.
                     setTimeout(() => {
                         if (!resolved) {
                             resolved = true;
@@ -406,14 +406,13 @@
             clearInterval(loadingInterval);
             window.updateProgress(10, "Yükleme Hatası!");
             
-            // Hata mesajını progress-text elementi üzerinde göster
             const progressTextEl = document.getElementById('progress-text');
             progressTextEl.innerText = "Hata: " + (error.message || "Bilinmeyen Hata."); 
             progressTextEl.style.color = '#ff4444';
             progressTextEl.style.backgroundColor = '#301010'; 
             
             document.getElementById('progress-bar').style.width = '10%';
-            document.getElementById('restart-button').style.display = 'block'; // Yeniden Başlat butonunu göster
+            document.getElementById('restart-button').style.display = 'block'; 
             window.log("Yükleme başarısız oldu. Yeniden başlatma bekleniyor.");
         }
 
@@ -423,13 +422,11 @@
             progressValue = 0;
             clearInterval(loadingInterval);
             
-            // Hata ve Restart butonunu gizle
             document.getElementById('restart-button').style.display = 'none';
             const progressTextEl = document.getElementById('progress-text');
-            progressTextEl.style.color = '#ddd';
+            progressTextEl.style.color = 'var(--text-color)';
             progressTextEl.style.backgroundColor = 'transparent';
             
-            // Yükleme ekranını tekrar göster (Simülasyon Modundan çıkmış olabilir)
             document.getElementById('loading-screen').style.display = 'flex'; 
             
             loadApplicationStep();
@@ -577,19 +574,6 @@
                 document.getElementById('user-email').innerText = user.email;
             });
         }
-        
-        const setAuthContainerMode = (mode, button) => {
-            const container = document.getElementById('auth-container');
-            container.classList.remove('sim-pc', 'sim-tablet', 'sim-phone');
-            container.classList.add(`sim-${mode}`);
-            
-            document.querySelectorAll('#device-mode-switcher .mode-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            window.log(`${mode.toUpperCase()} önizleme modu etkinleştirildi.`);
-        };
         
         // --- 6. AYARLAR VE ÖZELLEŞTİRME FONKSİYONLARI ---
 
@@ -753,7 +737,7 @@
 
             customRenderer = new THREE.WebGLRenderer({ antialias: true });
             customRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            customRenderer.shadowMap.enabled = true; // Gölgelendirme aktif
+            customRenderer.shadowMap.enabled = true; 
             viewport.appendChild(customRenderer.domElement);
 
             customControls = new THREE.OrbitControls(customCamera, customRenderer.domElement);
@@ -862,7 +846,7 @@
             group.add(createLeg(0.2));
             group.add(createLeg(-0.2));
             
-            group.position.y = 0.5;
+            group.position.y = 0.5; // Karakterin zemin seviyesinde durması için ayarlandı.
             
             return group;
         };
@@ -889,20 +873,21 @@
             
             const mobileControls = document.getElementById('mobile-controls');
             if (mobileControls) {
-                mobileControls.style.display = isMobile && isSimulationMode ? 'block' : 'none';
+                mobileControls.style.display = isMobile && isSimulationMode ? 'flex' : 'none';
             }
         }
         
-        // ✅ SİYAH EKRAN DÜZELTMESİ YAPILDI
+        // ✅ 3D SAHNE İLK BAŞLATMA VE IŞIKLANDIRMA DÜZELTMESİ
         window.initFullScene = () => {
             const viewport = document.getElementById('viewport');
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
             camera.position.set(5, 5, 5);
-            
-            // --- 💡 IŞIKLANDIRMA DÜZELTMELERİ (Gölgeli ve Parlak) ---
-            scene.add(new THREE.AmbientLight(0x404040, 1.0));
+            scene.background = new THREE.Color(0x222222); // Hafif koyu gri arka plan
+
+            // Işıklandırma
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
             
             const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); 
             dirLight.position.set(10, 15, 10);
@@ -916,8 +901,6 @@
             dirLight.shadow.camera.top = 20;
             dirLight.shadow.camera.bottom = -20;
             scene.add(dirLight);
-            
-            scene.add(new THREE.HemisphereLight(0xb1e1ff, 0xb97a20, 0.5));
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
@@ -927,6 +910,8 @@
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 0, 0);
             
             transformControls = new THREE.TransformControls(camera, renderer.domElement);
             transformControls.addEventListener('change', () => renderer.render(scene, camera));
@@ -942,8 +927,8 @@
         
         window.setupEnvironment = (env) => {
             window.clearScene(false);
-            if (env === 'default_template' || env === 'simple_cube') {
-                const plane = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x666666, side: THREE.DoubleSide }));
+            if (env === 'default_template' || env === 'simple_cube' || env === 'empty') {
+                const plane = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x444444, side: THREE.DoubleSide }));
                 plane.rotation.x = -Math.PI / 2;
                 plane.receiveShadow = true;
                 plane.name = "Zemin";
@@ -969,6 +954,8 @@
             if (isNew) {
                 const template = document.getElementById('template-select').value;
                 window.setupEnvironment(template);
+            } else if (objects.length === 0) {
+                 window.setupEnvironment('default_template');
             }
             window.animate();
             window.onWindowResize();
@@ -1101,7 +1088,7 @@
                     });
                     window.log("Kayıtlı sahne başarıyla yüklendi! 📂");
                 } else {
-                    window.log("Kayıtlı sahne verisi bulunamadı. Boş şablon yüklendi.");
+                    window.log("Kayıtlı sahne verisi bulunamadı. Varsayılan şablon yüklendi.");
                     window.setupEnvironment('default_template');
                 }
             } catch (e) {
@@ -1209,7 +1196,7 @@
                 case 'KeyQ': if(!isSimulationMode) window.setTool('rotate'); break;
                 case 'KeyE': if(!isSimulationMode) window.setTool('scale'); break;
                 case 'KeyR': if(!isSimulationMode) window.setTool('select'); break; 
-                case 'Space': if (isSimulationMode && player && playerVelocity.y === 0) playerVelocity.y = 10; break;
+                case 'Space': if (isSimulationMode && isOnGround) { playerVelocity.y = 8; isOnGround = false; } break; // Zıplama gücü 8 olarak ayarlandı
                 case 'Delete': window.deleteSelectedObject(); break;
             }
         }
@@ -1306,6 +1293,9 @@
             
             const spawnPoint = objects.find(obj => obj.userData.isSpawnPoint);
             let startPos = spawnPoint ? spawnPoint.position.clone() : new THREE.Vector3(0, 1.5, 0); 
+            
+            // Oyuncu pozisyonu zemin seviyesinde (playerHeight) başlar
+            startPos.y = playerHeight; 
 
             player = window.createBlockCharacter(currentCustomization.gender);
             player.position.copy(startPos);
@@ -1315,6 +1305,7 @@
             controls.target.copy(player.position);
             controls.update();
 
+            isOnGround = true; // Başlangıçta yerde kabul et
             window.initMobileControls();
         }
         
@@ -1334,7 +1325,7 @@
                 document.getElementById('play-button').classList.add('active');
                 document.getElementById('stop-button').classList.remove('active');
                 document.getElementById('status').innerText = "Simülasyon Modu: Açık";
-                if (isMobile) document.getElementById('mobile-controls').style.display = 'block';
+                if (isMobile) document.getElementById('mobile-controls').style.display = 'flex';
             } else {
                 window.stopSimulation();
                 document.getElementById('editor-tools').style.display = 'flex';
@@ -1362,60 +1353,71 @@
             document.getElementById('viewport').style.cursor = 'default';
         }
 
-        // ✅ KARAKTER HAREKET MANTIĞI DÜZELTİLDİ
+        // ✅ PLAYER HAREKET VE ÇARPIŞMA MANTIĞI İYİLEŞTİRİLDİ
         window.updatePlayerMovement = (delta) => {
             if (!player || !isSimulationMode) return;
             
-            const speed = 5.0; // Karakter hareket hızı
-            const gravity = -9.8; 
-            const playerHeight = 1.0; 
+            const speed = 5.0; 
+            const gravity = -20.0; // Daha gerçekçi yerçekimi
+            const friction = 0.9;
             
+            // 1. Yerçekimi Uygula
             playerVelocity.y += gravity * delta;
             
+            // 2. Hareket Yönünü Hesapla
             playerDirection.z = 0;
             playerDirection.x = 0;
 
-            const moveInputX = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
-            const moveInputZ = (moveBackward ? 1 : 0) - (moveForward ? 1 : 0);
-
-            let inputVector = new THREE.Vector3(moveInputX, 0, moveInputZ);
-            
-            if (joystickX !== 0 || joystickY !== 0) {
-                 inputVector.x += joystickX;
-                 inputVector.z += joystickY;
-            }
+            let inputVector = new THREE.Vector3(
+                (moveRight ? 1 : 0) - (moveLeft ? 1 : 0) + joystickX,
+                0,
+                (moveBackward ? 1 : 0) - (moveForward ? 1 : 0) + joystickY
+            );
 
             if (inputVector.lengthSq() > 0) {
                 inputVector.normalize();
             }
 
+            // Kamera açısına göre hareketi döndür
             const cameraDirectionY = controls.getAzimuthalAngle(); 
             const rotationMatrix = new THREE.Matrix4().makeRotationY(cameraDirectionY);
             
-            playerDirection.copy(inputVector).applyMatrix4(rotationMatrix);
-            
-            const moveX = playerDirection.x * speed * delta;
-            const moveZ = playerDirection.z * speed * delta;
+            const desiredMovement = inputVector.clone().applyMatrix4(rotationMatrix).multiplyScalar(speed * delta);
 
-            player.position.x += moveX;
-            player.position.z += moveZ;
+            // Hareket Vektörünü Hız Vektörüne Ekle
+            playerVelocity.x = desiredMovement.x / delta;
+            playerVelocity.z = desiredMovement.z / delta;
             
-            // Yer kontrolü 
-            const groundLevel = playerHeight / 2; 
-            if (player.position.y <= groundLevel) {
-                playerVelocity.y = 0;
-                player.position.y = groundLevel; 
+            // Yere Sürtünme Uygula (Havada değilse)
+            if (isOnGround) {
+                 playerVelocity.x *= friction;
+                 playerVelocity.z *= friction;
             }
+
+            // 3. Pozisyonu Güncelle
+            player.position.add(playerVelocity.clone().multiplyScalar(delta));
             
-            player.position.y += playerVelocity.y * delta;
-            
-            // Karakteri dönme 
-            if (moveX !== 0 || moveZ !== 0) {
-                 const angle = Math.atan2(-moveX, -moveZ);
+            // 4. Çarpışma ve Yer Kontrolü
+            const groundPlane = objects.find(obj => obj.name === "Zemin");
+            const groundY = groundPlane ? groundPlane.position.y : 0; 
+
+            if (player.position.y <= groundY + playerHeight) {
+                playerVelocity.y = 0;
+                player.position.y = groundY + playerHeight; // Tam zemin seviyesinde tut
+                if (!isOnGround) {
+                    isOnGround = true;
+                }
+            } else {
+                isOnGround = false;
+            }
+
+            // 5. Karakteri Dönme (Sadece hareket ederken)
+            if (playerVelocity.x !== 0 || playerVelocity.z !== 0) {
+                 const angle = Math.atan2(-playerVelocity.x, -playerVelocity.z);
                  player.rotation.y = angle + Math.PI; 
             }
 
-            // Kamera Takibi
+            // 6. Kamera Takibi
             const targetPosition = player.position.clone();
             controls.target.copy(targetPosition);
             
@@ -1436,6 +1438,7 @@
             const maxRadius = 50; 
             
             const startDrag = (e) => {
+                if (!isSimulationMode) return;
                 joystickActive = true;
                 e.preventDefault();
             };
@@ -1456,6 +1459,7 @@
                 window.resetJoystick(handle);
             };
 
+            // Fare ve Dokunmatik olaylar
             joystickArea.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', doDrag);
             document.addEventListener('mouseup', endDrag);
@@ -1464,8 +1468,12 @@
             document.addEventListener('touchmove', doDrag);
             document.addEventListener('touchend', endDrag);
 
-            jumpButton.addEventListener('click', () => {
-                if (player && playerVelocity.y === 0) playerVelocity.y = 10;
+            jumpButton.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                if (player && isOnGround) { 
+                    playerVelocity.y = 8;
+                    isOnGround = false;
+                }
             });
         }
 
@@ -1519,17 +1527,6 @@
         // --- 8. UYGULAMA BAŞLANGIÇ ÇAĞRILARI ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            const setupDeviceModeListeners = () => {
-                const buttons = document.querySelectorAll('#device-mode-switcher .mode-btn');
-                buttons.forEach(button => {
-                    button.removeEventListener('click', setAuthContainerMode); 
-                    button.addEventListener('click', function() {
-                        const mode = this.getAttribute('data-mode');
-                        setAuthContainerMode(mode, this); 
-                    });
-                });
-            };
-            setupDeviceModeListeners(); 
             window.addEventListener('resize', window.onWindowResize, false);
             window.onWindowResize();
 
