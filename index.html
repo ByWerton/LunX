@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Tabanlı Fizik Stüdyosu</title>
+    <title>Web Tabanlı Fizik Stüdyosu - Görünür</title>
     <style>
         body { margin: 0; overflow: hidden; } 
         canvas { display: block; }
@@ -44,20 +44,20 @@
         let activeCube;
         
         // --- 2. Cannon-es Fizik Kurulumu ---
-        let world; // Fizik dünyası
-        let cubeBody; // Küpün fiziksel karşılığı
-        const timeStep = 1 / 60; // Fizik simülasyon adımı (60 FPS)
+        let world; 
+        let cubeBody; 
+        const timeStep = 1 / 60; 
         let lastTime;
 
         function initCannon() {
             world = new CANNON.World();
-            world.gravity.set(0, -9.82, 0); // Yerçekimini ayarla (Y ekseni aşağı)
+            world.gravity.set(0, -9.82, 0); 
 
-            // --- Gizli Zemin (Sadece Fiziksel) ---
+            // --- Zemin (Fiziksel) ---
             const groundShape = new CANNON.Plane();
-            const groundBody = new CANNON.Body({ mass: 0 }); // Kütlesi 0 olduğu için hareket etmez (Statik)
+            const groundBody = new CANNON.Body({ mass: 0 }); // Statik (Hareket Etmez)
             groundBody.addShape(groundShape);
-            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // X ekseninde 90 derece döndür
+            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); 
             world.addBody(groundBody);
         }
 
@@ -68,9 +68,10 @@
             
             // Işıklandırma
             const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            sunLight.position.set(5, 5, 5);
+            sunLight.position.set(5, 10, 5);
+            sunLight.castShadow = true;
             scene.add(sunLight);
-            const ambientLight = new THREE.AmbientLight(0x404040); 
+            const ambientLight = new THREE.AmbientLight(0x606060); 
             scene.add(ambientLight);
 
             // Kamera
@@ -81,21 +82,30 @@
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Gölgeleri aç
             document.body.appendChild(renderer.domElement);
 
-            // --- Ana Küp (Görsel ve Fiziksel) ---
+            // --- Görünür Zemin ---
+            const floorGeometry = new THREE.PlaneGeometry(20, 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 }); // Koyu Gri
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+            
+            // --- Ana Küp (Görsel) ---
             const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
             const cubeMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x000000, 
-                emissive: 0x111111 
+                color: 0xff0000 // Parlak Kırmızı
             }); 
             activeCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            activeCube.castShadow = true;
             scene.add(activeCube);
 
             // Küpün Fiziksel Cismi
-            const cubeShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)); // Yarım boyutlar
-            cubeBody = new CANNON.Body({ mass: 5, shape: cubeShape }); // Kütlesi 5, hareketli
-            cubeBody.position.set(0, 5, 0); // Başlangıç pozisyonu (yukarıdan düşsün)
+            const cubeShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+            cubeBody = new CANNON.Body({ mass: 5, shape: cubeShape }); 
+            cubeBody.position.set(0, 5, 0); // Yüksekten başlasın ki düştüğünü görelim
             world.addBody(cubeBody);
 
             // --- Kontroller ---
@@ -113,10 +123,8 @@
                 } else {
                     // Düzenleme biterken fizik simülasyonunu tekrar başlat
                     cubeBody.type = CANNON.Body.DYNAMIC;
-                    // Yeni pozisyonu fizik motoruna aktar
                     cubeBody.position.copy(activeCube.position);
                     cubeBody.quaternion.copy(activeCube.quaternion);
-                    // Hızı sıfırla ki, kaldığı yerden düşmeye devam etmesin
                     cubeBody.velocity.set(0, 0, 0);
                     cubeBody.angularVelocity.set(0, 0, 0);
                 }
