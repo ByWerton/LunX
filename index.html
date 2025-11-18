@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.1 - Mobil Uyumlu</title>
+    <title>LunX Studio V7.1 - Mobil Uyumlu (Kırmızı Tema)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -18,9 +18,10 @@
             --bg-panel: #ffffff;
             --border-color: #dcdcdc;
             --text-main: #333333;
-            --accent-blue: #00a2ff;
-            --accent-hover: #e1f2ff;
-            --selection-bg: #eef6ff;
+            /* 🔴 KIRMIZI TEMA GÜNCELLEMESİ */
+            --accent-blue: #ff3333; 
+            --accent-hover: #ffe5e5; 
+            --selection-bg: #ffeef2;
             --toolbar-height: 100px;
         }
 
@@ -91,7 +92,7 @@
             border-radius: 4px; 
             margin-top: 10px;
         }
-        button:hover { background: #007bbd; }
+        button:hover { background: #cc0000; } /* KIRMIZI HOVER */
         .auth-toggle { font-size: 12px; margin-top: 15px; cursor: pointer; color: var(--accent-blue); }
 
         /* START SCREEN */
@@ -502,14 +503,19 @@
             ],
             
             init: () => {
+                let firebaseSuccess = false; // Firebase durumunu tut
                 try {
                     firebase.initializeApp(firebaseConfig);
                     LunX.auth.check();
+                    firebaseSuccess = true;
                 } catch(e) {
-                    document.getElementById('auth-error').innerText = "Firebase yüklenemedi. (Local modda çalışıyor)";
-                    // Fallback to start screen if auth fails
-                    document.getElementById('auth-screen').style.display = 'none';
-                    LunX.manager.showStartScreen({email: 'guest@lunx.com'}); 
+                    document.getElementById('auth-error').innerText = "Firebase yüklenemedi. (Simüle edilmiş misafir modunda başlıyor)";
+                }
+                
+                // Firebase başlatılamazsa veya misafir modu gerekirse, doğrudan Start Screen'e geç
+                if (!firebaseSuccess) {
+                     document.getElementById('auth-screen').style.display = 'none';
+                     LunX.manager.showStartScreen({email: 'guest@lunx.com'}); 
                 }
                 
                 // Event Listeners (Must be attached early)
