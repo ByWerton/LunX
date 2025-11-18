@@ -62,6 +62,7 @@
             padding: 5px var(--default-padding); border-bottom: 1px solid var(--border-color); 
             height: var(--default-toolbar-height); font-size: var(--default-font-size);
             transition: all 0.2s ease-in-out;
+            position: relative; /* UI kontrol butonu için göreceli konum */
         }
         .tool-group { display: flex; gap: 5px; margin-right: 20px; }
         .tool-btn { 
@@ -213,6 +214,7 @@
         }
         #mobile-control-menu .menu-item:hover { background-color: #505050; }
         #mobile-control-menu .menu-item.active { background-color: var(--secondary-color); }
+        .compact-ui #mobile-control-menu .menu-item { font-size: 11px; padding: 5px 8px; }
     </style>
 </head>
 <body id="lunx-body">
@@ -408,7 +410,7 @@
     
     <div id="mobile-control-menu">
         <strong>UI Boyutu Ayarı</strong>
-        <div class="menu-item" data-size="default" onclick="window.toggleUISize(false)">Büyük UI (Varsayılan)</div>
+        <div class="menu-item active" data-size="default" onclick="window.toggleUISize(false)">Büyük UI (Varsayılan)</div>
         <div class="menu-item" data-size="compact" onclick="window.toggleUISize(true)">Küçük UI (Kompakt)</div>
         <hr style="border-color: #3e3e42; margin: 5px 0;">
         <strong>Mobil Kontrol Tipi (Oynat Modu)</strong>
@@ -1166,14 +1168,17 @@
         window.toggleUISize = (isCompact) => {
             const body = document.getElementById('lunx-body');
             isCompactUI = isCompact;
+            const defaultMenuItem = document.querySelector('#mobile-control-menu .menu-item[data-size="default"]');
+            const compactMenuItem = document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]');
+
             if (isCompact) {
                 body.classList.add('compact-ui');
-                document.querySelector('#mobile-control-menu .menu-item[data-size="default"]').classList.remove('active');
-                document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]').classList.add('active');
+                if (defaultMenuItem) defaultMenuItem.classList.remove('active');
+                if (compactMenuItem) compactMenuItem.classList.add('active');
             } else {
                 body.classList.remove('compact-ui');
-                document.querySelector('#mobile-control-menu .menu-item[data-size="default"]').classList.add('active');
-                document.querySelector('#mobile-control-menu .menu-item[data-size="compact"]').classList.remove('active');
+                if (defaultMenuItem) defaultMenuItem.classList.add('active');
+                if (compactMenuItem) compactMenuItem.classList.remove('active');
             }
             window.onWindowResize(); // Yeniden boyutlandırma olayını tetikle
             window.log(`UI Boyutu: ${isCompact ? 'Kompakt' : 'Varsayılan'} olarak ayarlandı.`);
@@ -1185,7 +1190,8 @@
             document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`#mobile-control-menu .menu-item[data-control="${mode}"]`).classList.add('active');
+            const selectedControl = document.querySelector(`#mobile-control-menu .menu-item[data-control="${mode}"]`);
+            if (selectedControl) selectedControl.classList.add('active');
             
             if (isSimulationMode) {
                 window.initMobileControls(); // Simülasyon modundaysa anında güncelle
@@ -1196,11 +1202,24 @@
         // UI Kontrol Menüsünü Göster/Gizle
         window.showUIControlMenu = () => {
              const menu = document.getElementById('mobile-control-menu');
-             if (menu.style.display === 'flex') {
-                 menu.style.display = 'none';
-             } else {
-                 menu.style.display = 'flex';
-             }
+             // menü açık mı, kontrol et.
+             const isMenuVisible = menu.style.display === 'flex'; 
+             
+             // Menüyü aç/kapat
+             menu.style.display = isMenuVisible ? 'none' : 'flex';
+             
+             // Açılışta aktif UI boyutunu menüde işaretle
+             const sizeKey = isCompactUI ? 'compact' : 'default';
+             document.querySelectorAll('#mobile-control-menu .menu-item[data-size]').forEach(item => {
+                 item.classList.remove('active');
+                 if (item.dataset.size === sizeKey) item.classList.add('active');
+             });
+             
+             // Açılışta aktif kontrol modunu menüde işaretle
+             document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
+                 item.classList.remove('active');
+                 if (item.dataset.control === mobileControlMode) item.classList.add('active');
+             });
         }
         
         // --- 7. 3D STUDIO VE SİMÜLASYON FONKSİYONLARI ---
@@ -1211,6 +1230,7 @@
             const joystickWrapper = document.getElementById('joystick-wrapper');
             const uiControlBtn = document.getElementById('ui-control-btn');
             const toolbar = document.getElementById('toolbar');
+            const mobileControlMenu = document.getElementById('mobile-control-menu');
 
             if (renderer && camera) {
                 const viewport = document.getElementById('viewport');
@@ -1244,13 +1264,16 @@
             }
             
             // UI Kontrol Düğmesini ayarla
-            if (uiControlBtn) {
-                 if (toolbar && toolbar.style.display === 'flex') {
+            if (uiControlBtn && toolbar) {
+                 if (toolbar.style.display === 'flex') {
                       uiControlBtn.style.display = 'block';
                       // Toolbar'ın padding'i kadar sol kaydır (düğme yer kaplamamalı)
                       uiControlBtn.style.left = isCompactUI ? '2px' : '5px';
+                      uiControlBtn.style.top = isCompactUI ? '2px' : '5px';
                  } else {
                       uiControlBtn.style.display = 'none';
+                      // Toolbar görünmüyorsa menüyü de kapat
+                      if (mobileControlMenu) mobileControlMenu.style.display = 'none';
                  }
             }
             
@@ -1480,7 +1503,8 @@
             document.querySelectorAll('#mobile-control-menu .menu-item[data-control]').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`#mobile-control-menu .menu-item[data-control="${mobileControlMode}"]`).classList.add('active');
+            const controlMenuItem = document.querySelector(`#mobile-control-menu .menu-item[data-control="${mobileControlMode}"]`);
+            if (controlMenuItem) controlMenuItem.classList.add('active');
 
 
             if (isNew) {
@@ -2040,6 +2064,11 @@
                  joystickWrapper.style.display = mobileControlMode === 'joystick' ? 'block' : 'none';
             }
             
+            const jumpButtonEl = document.getElementById('jump-button');
+            if (jumpButtonEl) {
+                 jumpButtonEl.style.display = mobileControlMode === 'joystick' ? 'flex' : 'none';
+            }
+            
             const joystickHandle = document.getElementById('joystick-handle');
             
             // Zıplama Butonu için yeni handler
@@ -2050,8 +2079,10 @@
                      isOnGround = false; 
                  }
             };
-            jumpButton.addEventListener('click', window.jumpClickHandler);
-            jumpButton.addEventListener('touchstart', window.jumpClickHandler, { passive: false });
+            if (mobileControlMode === 'joystick') {
+                 jumpButton.addEventListener('click', window.jumpClickHandler);
+                 jumpButton.addEventListener('touchstart', window.jumpClickHandler, { passive: false });
+            }
 
             // Joystick için yeni handler (Sadece joystick modu seçiliyse ekle)
             if (mobileControlMode === 'joystick') {
@@ -2288,72 +2319,3 @@
                 if (!isOnGround) {
                      isOnGround = true;
                      window.setAnimation(isMoving ? 'walk' : 'idle'); // Yere indiğinde animasyonu düzelt
-                }
-            } else {
-                player.position.y = newY;
-                isOnGround = false;
-            }
-            
-            // Zıplama tuşuna basıldığında animasyonu ayarla (zıplama kuvveti uygulandıysa)
-            if (playerVelocity.y > 0.1 && currentAction !== 'jump') {
-                 window.setAnimation('jump');
-            }
-
-
-            player.position.x += playerVelocity.x * delta;
-            player.position.z += playerVelocity.z * delta;
-
-            // Kamera takibi (Third Person Takip)
-            // İdeal offset: Oyuncunun arkasında, hafif yukarı, kameranın baktığı yöne göre.
-            const idealOffset = new THREE.Vector3(-3, 2, -3); 
-            idealOffset.applyQuaternion(controls.object.quaternion); // Mevcut kamera rotasyonunu uygula
-            idealOffset.add(player.position);
-
-            const idealLookat = new THREE.Vector3(0, playerHeight * 0.8, 0); // Karakterin kafasına odaklan
-            idealLookat.add(player.position);
-            
-            // Kamerayı yumuşak bir şekilde takip et
-            camera.position.lerp(idealOffset, 0.1); 
-            controls.target.lerp(idealLookat, 0.1); 
-            
-            controls.update(); 
-        }
-
-        window.animate = () => {
-            if (!renderer) return;
-
-            requestAnimationFrame(window.animate);
-            
-            const delta = clock.getDelta();
-
-            if (!isSimulationMode) {
-                // Düzenleme Modu
-                const isMobile = window.innerWidth <= 768;
-                controls.enabled = !isMobile;
-                if (controls.enabled) controls.update(); 
-                if (transformControls) transformControls.update();
-            } else {
-                // Simülasyon Modu
-                controls.enabled = true; // Third person kamera için kontrolleri açık bırak
-                controls.enablePan = false; // Kaydırmayı kapat
-                controls.enableZoom = false; // Zoom'u kapat (isteğe bağlı)
-                controls.maxDistance = 6; // Kameranın ne kadar uzakta olabileceği
-                controls.minDistance = 2; // Kameranın ne kadar yakında olabileceği
-                
-                window.updatePlayer(delta);
-                
-                objects.forEach(obj => {
-                    if (obj.userData.script) {
-                        window.applyScript(obj, obj.userData.script);
-                    }
-                });
-            }
-
-            renderer.render(scene, camera);
-        }
-        
-        // --- Başlatma ---
-        window.onload = loadApplicationStep;
-    </script>
-</body>
-</html>
