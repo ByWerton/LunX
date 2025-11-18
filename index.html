@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.0 - Toolbox Entegrasyonu</title>
+    <title>LunX Studio V7.1 - Mobil Uyumlu</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -24,44 +24,179 @@
             --toolbar-height: 100px;
         }
 
-        * { box-sizing: border-box; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            /* user-select: none; Kaldırıldı. Mobil uyum için kaydırmayı engellememek önemli. */
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+        }
         
-        body { margin: 0; overflow: hidden; background: var(--bg-app); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
+        body { 
+            margin: 0; 
+            overflow: hidden; /* Taşmayı engelle */
+            background: var(--bg-app); 
+            color: var(--text-main); 
+            height: 100vh; 
+            width: 100vw; /* Tam ekran genişliği */
+            display: flex; 
+            flex-direction: column; 
+        }
 
         /* Full Screen Containers */
-        .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; background: var(--bg-app); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .full-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 9000; 
+            background: var(--bg-app); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: auto; /* Küçük ekranlarda içerik sığmazsa kaydırılsın */
+        }
 
         /* AUTH SCREEN */
         #auth-screen { background: #fff; }
-        .auth-box { width: 350px; padding: 30px; background: #fff; border: 1px solid #eee; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-        input { width: 100%; padding: 10px; margin: 8px 0; background: #f9f9f9; border: 1px solid #ddd; color: var(--text-main); outline: none; border-radius: 4px; }
-        button { padding: 10px; background: var(--accent-blue); border: none; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; border-radius: 4px; }
+        .auth-box { 
+            width: 90%; 
+            max-width: 350px; /* Maksimum genişlik ile masaüstü görünümünü koru */
+            padding: 30px; 
+            background: #fff; 
+            border: 1px solid #eee; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 8px 0; 
+            background: #f9f9f9; 
+            border: 1px solid #ddd; 
+            color: var(--text-main); 
+            outline: none; 
+            border-radius: 4px; 
+        }
+        button { 
+            width: 100%; /* Butonları tam genişlik yap */
+            padding: 10px; 
+            background: var(--accent-blue); 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            border-radius: 4px; 
+            margin-top: 10px;
+        }
         button:hover { background: #007bbd; }
         .auth-toggle { font-size: 12px; margin-top: 15px; cursor: pointer; color: var(--accent-blue); }
 
         /* START SCREEN */
-        #start-screen { display: none; flex-direction: row; }
-        #start-sidebar { width: 250px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px; }
-        .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; padding: 40px; }
-        .template-card { border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        .template-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--accent-blue); }
-        .template-img { height: 120px; background: #ddd; display: flex; align-items: center; justify-content: center; color: #888; font-size: 40px; }
-        .template-name { padding: 10px; font-weight: bold; font-size: 14px; text-align: center; }
+        #start-screen { 
+            display: none; 
+            flex-direction: row; 
+            flex: 1; /* Alana yayılsın */
+        }
+        #start-sidebar { 
+            width: 250px; 
+            background: #ffffff; 
+            border-right: 1px solid var(--border-color); 
+            padding: 20px; 
+            /* Mobil için gizle */
+        }
+        .start-btn-side { width: auto; margin: 5px 0; }
+        .template-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 20px; 
+            padding: 40px; 
+        }
+        .template-card { 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        .template-card:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            border-color: var(--accent-blue); 
+        }
+        .template-img { 
+            height: 120px; 
+            background: #ddd; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #888; 
+            font-size: 40px; 
+        }
+        .template-name { 
+            padding: 10px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            text-align: center; 
+        }
+        
+        /* MOBİL UYUM İÇİN @MEDIA SORGUSU */
+        @media (max-width: 768px) {
+            #start-sidebar { display: none; } /* Mobil için yan menüyü gizle */
+            .template-grid { padding: 20px; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .auth-box { margin: 20px; }
+            
+            /* Studio UI Mobil Düzenleme */
+            #right-panel { width: 100%; border-left: none; }
+            #main-layout { flex-direction: column; }
+            #ribbon-bar { height: 75px; /* Daha kısa ribbon */ }
+            .section-label { display: none; } /* Mobil ribbon'da etiketleri gizle */
+            .ribbon-text { font-size: 10px; }
+            .ribbon-icon { font-size: 18px; }
+        }
+
 
         /* STUDIO UI */
         #studio-interface { display: none; height: 100vh; }
-        #ribbon-bar { height: var(--toolbar-height); background: var(--bg-ribbon); border-bottom: 1px solid var(--border-color); display: flex; align-items: flex-start; padding: 5px; }
+        #ribbon-bar { 
+            height: var(--toolbar-height); 
+            background: var(--bg-ribbon); 
+            border-bottom: 1px solid var(--border-color); 
+            display: flex; 
+            align-items: center; /* Butonları dikeyde ortala */
+            padding: 5px;
+            overflow-x: auto; /* YENİ: Yatay kaydırma */
+            overflow-y: hidden;
+            white-space: nowrap; /* İçeriğin tek satırda kalmasını sağla */
+        }
+        #ribbon-bar::-webkit-scrollbar { display: none; } /* Kaydırma çubuğunu gizle */
         
-        .tool-section { display: flex; flex-direction: column; align-items: center; border-right: 1px solid #ddd; padding: 5px 15px; gap: 2px; }
+        .tool-section { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            border-right: 1px solid #ddd; 
+            padding: 5px 15px; 
+            gap: 2px; 
+            height: 100%;
+        }
         .section-label { font-size: 10px; color: #888; margin-top: auto; }
         
-        .ribbon-tab-content { display: flex; gap: 10px; align-items: flex-start; }
+        .ribbon-tab-content { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            height: 100%;
+            padding-bottom: 5px;
+        }
 
         .ribbon-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: transparent; border: 1px solid transparent; border-radius: 3px;
             padding: 5px; cursor: pointer; min-width: 40px; height: 60px; color: #333;
             transition: background 0.1s;
+            flex-shrink: 0; /* Butonların sıkışmasını engelle */
         }
         .ribbon-btn:hover { background: var(--accent-hover); border-color: #cce8ff; }
         .ribbon-btn.active { background: var(--accent-hover); border-color: var(--accent-blue); }
@@ -69,7 +204,12 @@
         .ribbon-text { font-size: 11px; }
 
         /* Main Workspace */
-        #main-layout { display: flex; flex: 1; overflow: hidden; width: 100%; }
+        #main-layout { 
+            display: flex; 
+            flex: 1; 
+            overflow: hidden; 
+            width: 100%; 
+        }
         
         /* TOOLBOX PANEL STYLES */
         #toolbox-panel { 
@@ -81,11 +221,25 @@
             overflow: hidden; 
             display: flex; 
             flex-direction: column;
+            z-index: 10;
         }
         #toolbox-panel.open {
             width: 250px;
             min-width: 250px;
         }
+
+        @media (max-width: 768px) {
+            #toolbox-panel.open {
+                position: absolute;
+                left: 0;
+                top: 75px; /* Ribbon yüksekliği */
+                bottom: 0;
+                width: 70%;
+                min-width: 70%;
+                max-width: 250px;
+            }
+        }
+
         .toolbox-search-bar { padding: 10px; border-bottom: 1px solid var(--border-color); }
         .toolbox-search-bar input { width: 100%; padding: 8px; font-size: 12px; }
         #toolbox-content { flex: 1; overflow-y: auto; padding: 10px; }
@@ -104,27 +258,57 @@
         .toolbox-icon { font-size: 16px; margin-right: 10px; }
         
         /* VIEWPORT */
-        #viewport-container { flex: 1; position: relative; background: #99ccff; }
+        #viewport-container { 
+            flex: 1; 
+            position: relative; 
+            background: #99ccff; 
+            min-height: 200px; /* Mobil için minimum yükseklik */
+        }
         #viewport canvas { width: 100% !important; height: 100% !important; display: block; }
         
         /* Right Panel */
-        #right-panel { width: 300px; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); background: var(--bg-panel); }
+        #right-panel { 
+            width: 300px; 
+            display: flex; 
+            flex-direction: column; 
+            border-left: 1px solid var(--border-color); 
+            background: var(--bg-panel);
+            flex-shrink: 0; /* Sıkışmasını engelle */
+        }
         .panel-header { padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 12px; color: #555; }
         #explorer, #properties { flex: 1; overflow-y: auto; background: white; padding: 5px; font-size: 13px; }
-        #properties { height: 40%; border-top: 1px solid var(--border-color); }
-        
-        /* Hierarchy & Properties Styles */
-        .tree-node { padding: 2px 5px; display: flex; align-items: center; cursor: pointer; }
-        .tree-node:hover { background-color: #f0f0f0; }
-        .tree-node.selected { background-color: var(--selection-bg); }
-        .prop-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 12px; }
-        .prop-name { width: 100px; color: #555; padding-left: 5px; }
-        .prop-value { flex: 1; }
-        .prop-value input, .prop-value select { width: 100%; border: 1px solid #ddd; padding: 2px 5px; font-size: 12px; border-radius: 2px; }
+        #properties { min-height: 150px; border-top: 1px solid var(--border-color); }
         
         /* Script Editor */
-        #script-editor { position: absolute; top: var(--toolbar-height); left: 0; right: 300px; bottom: 0; background: #282c34; z-index: 50; display: none; flex-direction: column; }
-        #code-area { flex: 1; background: #282c34; color: #abb2bf; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; }
+        #script-editor { 
+            position: absolute; 
+            top: var(--toolbar-height); 
+            left: 0; 
+            right: 300px; 
+            bottom: 0; 
+            background: #282c34; 
+            z-index: 50; 
+            display: none; 
+            flex-direction: column; 
+        }
+
+        @media (max-width: 768px) {
+            #script-editor {
+                top: 75px;
+                right: 0;
+            }
+        }
+        
+        #code-area { 
+            flex: 1; 
+            background: #282c34; 
+            color: #abb2bf; 
+            padding: 15px; 
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            resize: none; 
+            outline: none; 
+        }
 
     </style>
 </head>
@@ -290,7 +474,7 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.0 - FULL EMULATION + TOOLBOX
+         * LUNX STUDIO CORE V7.1 - GÜNCELLENMİŞ VE MOBİL UYUMLU
          */
          
         // 1. Firebase Yapılandırması
@@ -307,13 +491,13 @@
             currentUser: null, authMode: 'login',
             history: { stack: [], pointer: -1, limit: 10 },
             
-            // YENİ: Toolbox Data
+            // YENİ: Toolbox Data (Materyalleri vurgular)
             toolboxItems: [
-                { name: "Neon Blok Kırmızı", type: "box", color: 0xff0000, material: "Neon" },
-                { name: "Neon Blok Mavi", type: "box", color: 0x0000ff, material: "Neon" },
-                { name: "Smooth Plastik Sarı", type: "box", color: 0xffff00, material: "SmoothPlastic" },
-                { name: "Metal Gri Küre", type: "sphere", color: 0x888888, material: "Metal" },
-                { name: "Ahşap Doku Blok", type: "box", color: 0x964b00, material: "Wood" },
+                { name: "Neon Blok", type: "box", color: 0x00ff00, material: "Neon" },
+                { name: "Metal Küre", type: "sphere", color: 0xaaaaaa, material: "Metal" },
+                { name: "Ahşap Blok", type: "box", color: 0x964b00, material: "Wood" },
+                { name: "Cam Blok", type: "box", color: 0xadd8e6, material: "Glass" },
+                { name: "Pürüzsüz Plastik", type: "box", color: 0xcccccc, material: "SmoothPlastic" },
                 // 100 Simülasyonunu tamamlamak için döngüsel olarak eklenecek
             ],
             
@@ -438,6 +622,12 @@
                     dirLight.position.set(20, 50, 20);
                     dirLight.castShadow = true;
                     dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
+                    dirLight.shadow.camera.near = 0.5;
+                    dirLight.shadow.camera.far = 100;
+                    dirLight.shadow.camera.left = -50;
+                    dirLight.shadow.camera.right = 50;
+                    dirLight.shadow.camera.top = 50;
+                    dirLight.shadow.camera.bottom = -50;
                     LunX.scene.add(dirLight);
 
                     // Kontroller
@@ -479,6 +669,9 @@
                 onMouseDown: (e) => {
                     if (LunX.isPlaying) return;
                     
+                    // TransformControls'un zaten bir nesne seçip seçmediğini kontrol et
+                    if(LunX.transform.dragging) return;
+
                     const rect = LunX.renderer.domElement.getBoundingClientRect();
                     const mouse = new THREE.Vector2(
                         ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -488,11 +681,12 @@
                     const raycaster = new THREE.Raycaster();
                     raycaster.setFromCamera(mouse, LunX.camera);
                     
-                    const selectableObjects = LunX.objects.filter(obj => obj.userData.selectable !== false);
+                    const selectableObjects = LunX.objects.filter(obj => obj.userData.selectable !== false && obj.isMesh);
                     const intersects = raycaster.intersectObjects(selectableObjects, true); 
                     
                     if (intersects.length > 0) {
                         let selectedObj = intersects[0].object;
+                        // En üstteki nesneyi (grup veya mesh) bul
                         while (selectedObj.parent && selectedObj.parent.name !== 'Scene' && selectedObj.parent.name !== '') {
                             selectedObj = selectedObj.parent;
                         }
@@ -520,6 +714,11 @@
                 },
                 
                 closeScript: () => {
+                    // Script içeriğini kaydet
+                    if (LunX.selected && LunX.selected.type === 'script') {
+                        LunX.selected.userData.code = document.getElementById('code-area').value;
+                        LunX.tools.saveState();
+                    }
                     document.getElementById('script-editor').style.display = 'none';
                 }
             },
@@ -527,10 +726,17 @@
             // 5. WORLD & TEMPLATES
             world: {
                 loadTemplate: (template) => {
-                    // Baseplate
-                    const geo = new THREE.BoxGeometry(100, 1, 100);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x666666 });
-                    const baseplate = new THREE.Mesh(geo, mat);
+                    // Sahneyi temizle
+                    LunX.objects.forEach(obj => LunX.scene.remove(obj));
+                    LunX.objects = [];
+                    LunX.editor.select(null);
+
+                    // Temel Gökyüzü (Skybox/Fog zaten var)
+                    LunX.scene.background = new THREE.Color(0x99ccff); 
+
+                    // Temel Zemin (Baseplate)
+                    const baseMat = new THREE.MeshStandardMaterial({ color: 0x666666 });
+                    const baseplate = new THREE.Mesh(new THREE.BoxGeometry(100, 1, 100), baseMat);
                     baseplate.position.y = -0.5;
                     baseplate.receiveShadow = true;
                     baseplate.name = "Baseplate";
@@ -548,26 +754,62 @@
                     LunX.scene.add(spawn);
                     LunX.objects.push(spawn);
 
+                    if (template === 'flat') {
+                         // Geniş düz zemin
+                        baseplate.geometry = new THREE.BoxGeometry(200, 1, 200);
+                        baseplate.material.color.setHex(0x4CAF50); // Çim rengi
+                        baseplate.userData.material = "Grass";
+                    } else if (template === 'village') {
+                        // Dağlar
+                        for(let i=0; i<5; i++) {
+                            const mountainGeo = new THREE.ConeGeometry(THREE.MathUtils.randFloat(15, 30), THREE.MathUtils.randFloat(20, 40), 16);
+                            const mountainMat = new THREE.MeshStandardMaterial({ color: 0x8D6E63 });
+                            const mountain = new THREE.Mesh(mountainGeo, mountainMat);
+                            mountain.position.set(THREE.MathUtils.randFloat(-80, 80), mountain.geometry.parameters.height/2, THREE.MathUtils.randFloat(-80, 80));
+                            mountain.receiveShadow = true;
+                            mountain.castShadow = true;
+                            mountain.name = "Mountain" + (i+1);
+                            mountain.userData = { anchored: true, canCollide: true, material: "Rock" };
+                            LunX.scene.add(mountain);
+                            LunX.objects.push(mountain);
+                        }
+                        
+                        // Basit Ev
+                        const houseGroup = new THREE.Group();
+                        houseGroup.name = "SimpleHouse";
+                        houseGroup.position.set(10, 2.5, -10);
+                        houseGroup.userData = { anchored: true, isGroup: true };
+                        
+                        const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), new THREE.MeshStandardMaterial({ color: 0xFFD700 }));
+                        wall.position.y = 2.5;
+                        wall.castShadow = true;
+                        houseGroup.add(wall);
+
+                        const roof = new THREE.Mesh(new THREE.ConeGeometry(4, 3, 4), new THREE.MeshStandardMaterial({ color: 0x8B0000 }));
+                        roof.position.y = 5.5;
+                        roof.rotation.y = Math.PI/4;
+                        roof.castShadow = true;
+                        houseGroup.add(roof);
+                        
+                        LunX.scene.add(houseGroup);
+                        LunX.objects.push(houseGroup);
+                    }
+
+
                     LunX.tools.saveState();
                     LunX.ui.refreshExplorer();
                 },
                 
+                // ... (addPart ve addScript mevcut haliyle iyi)
                 addPart: (type, color=null, material='Plastic') => {
                     let geo, mat;
-                    let name = "Part";
+                    let name = type.charAt(0).toUpperCase() + type.slice(1);
                     
-                    // Materyal belirleme
+                    // Rastgele bir renk, materyalin ana rengi olsun
                     const hexColor = color !== null ? color : Math.random() * 0xffffff;
 
-                    if (material === 'Neon') {
-                        mat = new THREE.MeshBasicMaterial({ color: hexColor });
-                    } else if (material === 'Metal') {
-                        mat = new THREE.MeshPhongMaterial({ color: hexColor, specular: 0x333333, shininess: 100 });
-                    } else if (material === 'Wood') {
-                        mat = new THREE.MeshStandardMaterial({ color: hexColor, roughness: 0.8, metalness: 0.1 });
-                    } else { // Plastic, SmoothPlastic vb.
-                        mat = new THREE.MeshStandardMaterial({ color: hexColor });
-                    }
+                    // Materyali oluştur
+                    mat = LunX.ui.createMaterial(material, hexColor);
                     
                     // Geometri belirleme
                     if(type=='box') { geo = new THREE.BoxGeometry(2,2,2); }
@@ -653,14 +895,15 @@
                 },
                 
                 saveState: () => {
+                    // ... (saveState mevcut haliyle iyi)
                     const state = LunX.objects.map(obj => ({
                         name: obj.name,
                         uuid: obj.uuid || THREE.MathUtils.generateUUID(), // UUID ekledik
                         type: obj.userData.type || (obj.isMesh ? 'Mesh' : (obj.userData.isGroup ? 'Group' : 'Script')),
-                        pos: obj.position ? obj.position.clone() : null,
-                        rot: obj.rotation ? obj.rotation.clone() : null,
+                        pos: obj.position ? { x: obj.position.x, y: obj.position.y, z: obj.position.z } : null,
+                        rot: obj.rotation ? { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z } : null,
                         userData: JSON.parse(JSON.stringify(obj.userData)),
-                        color: obj.material ? obj.material.color.getHex() : null
+                        color: obj.material && obj.material.color ? obj.material.color.getHex() : null
                     }));
                     
                     if (LunX.history.pointer < LunX.history.stack.length - 1) {
@@ -675,18 +918,61 @@
                 },
                 
                 applyState: (state) => {
-                    // Bu fonksiyon karmaşıklığı nedeniyle sadece temel pozisyonu geri alır
-                    // Gerçek bir Undo/Redo için tüm sahnenin yeniden inşa edilmesi gerekir.
                     const parsedState = JSON.parse(state);
                     
+                    // 1. Sahneden tüm dinamik objeleri temizle
+                    LunX.objects.forEach(obj => LunX.scene.remove(obj));
+                    LunX.objects = [];
+                    LunX.editor.select(null);
+
+                    // 2. Yeni objeleri oluştur ve ekle
                     parsedState.forEach(newState => {
-                        const obj = LunX.objects.find(o => o.uuid === newState.uuid);
-                        if(obj && obj.position) {
-                            if(newState.pos) obj.position.copy(newState.pos);
-                            if(newState.rot) obj.rotation.copy(newState.rot);
-                            obj.userData = newState.userData;
+                        let newObj = null;
+                        if (newState.type === 'Mesh') {
+                            let geo, meshType;
+                            // Basit bir şekilde geometriyi tahmin et (gerçekte bunu kaydetmek gerekir)
+                            if (newState.name.toLowerCase().includes('sphere')) {
+                                geo = new THREE.SphereGeometry(1, 32, 32);
+                                meshType = 'sphere';
+                            } else {
+                                geo = new THREE.BoxGeometry(2, 2, 2);
+                                meshType = 'box';
+                            }
+                            
+                            const mat = LunX.ui.createMaterial(newState.userData.material, newState.color);
+                            newObj = new THREE.Mesh(geo, mat);
+
+                            if(newState.userData.isBase) {
+                                newObj.geometry = new THREE.BoxGeometry(100, 1, 100);
+                                newObj.position.y = -0.5;
+                            }
+                            
+                            newObj.castShadow = true;
+                            newObj.receiveShadow = true;
+
+                        } else if (newState.type === 'Group') {
+                            newObj = new THREE.Group();
+                        } else if (newState.type === 'Script') {
+                            newObj = { name: newState.name, type: "script", uuid: newState.uuid, userData: newState.userData };
+                        }
+
+                        if (newObj) {
+                            newObj.name = newState.name;
+                            newObj.uuid = newState.uuid; // UUID'yi geri yükle
+                            newObj.userData = newState.userData;
+
+                            if (newState.pos && newObj.position) newObj.position.copy(newState.pos);
+                            if (newState.rot && newObj.rotation) newObj.rotation.copy(newState.rot);
+
+                            if (newObj.isObject3D) LunX.scene.add(newObj);
+                            LunX.objects.push(newObj);
                         }
                     });
+
+                    // 3. Obje hiyerarşisini yeniden kur (Group'lar için)
+                    // Basitleştirilmiş emülasyon olduğu için bu adım atlanabilir, ancak tam bir çözümde gereklidir.
+                    
+                    LunX.ui.refreshExplorer();
                     LunX.ui.updateProperties();
                 },
                 
@@ -711,17 +997,23 @@
                 
                 generateToolboxContent: () => {
                     // 100 farklı parça simülasyonu
-                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Ice'];
-                    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff, 0x000000, 0x964b00];
+                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
                     const types = ['box', 'sphere'];
                     
                     // Listeyi 100'e tamamla
                     while (LunX.toolboxItems.length < 100) {
                         const mat = materials[Math.floor(Math.random() * materials.length)];
-                        const col = colors[Math.floor(Math.random() * colors.length)];
                         const type = types[Math.floor(Math.random() * types.length)];
+                        // Rasgele renk seçmek yerine, materyale özgü bir varsayılan renk kullanalım
+                        let defaultColor = 0xcccccc;
+                        if(mat === 'Neon') defaultColor = 0xff00ff;
+                        else if(mat === 'Metal') defaultColor = 0xaaaaaa;
+                        else if(mat === 'Wood') defaultColor = 0x964b00;
+                        else if(mat === 'Grass') defaultColor = 0x4CAF50;
+                        else if(mat === 'Rock') defaultColor = 0x8D6E63;
+                        
                         const name = `${mat} ${type === 'box' ? 'Blok' : 'Küre'} ${LunX.toolboxItems.length}`;
-                        LunX.toolboxItems.push({ name: name, type: type, color: col, material: mat });
+                        LunX.toolboxItems.push({ name: name, type: type, color: defaultColor, material: mat });
                     }
                     
                     LunX.tools.renderToolbox();
@@ -754,6 +1046,7 @@
             
             // 7. UI (EXPLORER & PROPERTIES)
             ui: {
+                // ... (refreshExplorer ve updateProperties mevcut haliyle iyi)
                 refreshExplorer: () => {
                     const div = document.getElementById('explorer');
                     div.innerHTML = `<div class="tree-node" style="font-weight:bold;" onclick="LunX.editor.select(null)">Workspace</div>`;
@@ -772,7 +1065,7 @@
                         div.appendChild(node);
                     });
                 },
-                
+
                 updateProperties: () => {
                     const div = document.getElementById('properties');
                     const obj = LunX.selected;
@@ -786,22 +1079,30 @@
                         `;
                         return;
                     }
+
+                    // Three.js objelerinde isMesh kontrolü
+                    if (!obj.isMesh && !obj.userData.isGroup) {
+                         div.innerHTML = `<div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer()"></div></div>`;
+                        return;
+                    }
                     
-                    const colorHex = '#' + (obj.material ? obj.material.color.getHexString() : 'cccccc');
+                    const colorHex = '#' + (obj.material && obj.material.color ? obj.material.color.getHexString() : 'cccccc');
                     const pos = obj.position;
+
+                    // Materyal seçenekleri için listeyi al
+                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
+                    let matOptions = '';
+                    materials.forEach(mat => {
+                        matOptions += `<option value="${mat}" ${obj.userData.material === mat ? 'selected' : ''}>${mat}</option>`;
+                    });
                     
                     let html = `
-                        <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer()"></div></div>
+                        <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>
                         <div class="prop-row"><div class="prop-name">Position</div><div class="prop-value"><input value="${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}" disabled></div></div>
                         <div class="prop-row"><div class="prop-name">Color</div><div class="prop-value"><input type="color" value="${colorHex}" onchange="LunX.ui.setMaterial(LunX.selected.userData.material, this.value); LunX.tools.saveState()"></div></div>
                         <div class="prop-row"><div class="prop-name">Material</div><div class="prop-value">
                             <select onchange="LunX.ui.setMaterial(this.value, LunX.selected.material.color.getHex())">
-                                <option value="Plastic" ${obj.userData.material === 'Plastic' ? 'selected' : ''}>Plastic</option>
-                                <option value="SmoothPlastic" ${obj.userData.material === 'SmoothPlastic' ? 'selected' : ''}>SmoothPlastic</option>
-                                <option value="Neon" ${obj.userData.material === 'Neon' ? 'selected' : ''}>Neon</option>
-                                <option value="Metal" ${obj.userData.material === 'Metal' ? 'selected' : ''}>Metal</option>
-                                <option value="Glass" ${obj.userData.material === 'Glass' ? 'selected' : ''}>Glass</option>
-                                <option value="Wood" ${obj.userData.material === 'Wood' ? 'selected' : ''}>Wood</option>
+                                ${matOptions}
                             </select>
                         </div></div>
                         <div class="prop-row"><div class="prop-name">Anchored</div><div class="prop-value"><input type="checkbox" ${obj.userData.anchored?'checked':''} onchange="LunX.selected.userData.anchored=this.checked; LunX.tools.saveState()"></div></div>
@@ -809,24 +1110,46 @@
                     `;
                     div.innerHTML = html;
                 },
+
+                createMaterial: (matName, hexColor) => {
+                    const color = new THREE.Color(hexColor);
+                    
+                    switch(matName) {
+                        case 'Neon':
+                            return new THREE.MeshBasicMaterial({ color: color });
+                        case 'Metal':
+                            return new THREE.MeshPhongMaterial({ color: color, specular: 0x333333, shininess: 100 });
+                        case 'Glass':
+                             return new THREE.MeshPhysicalMaterial({ color: color, transmission: 0.9, roughness: 0.1, metalness: 0, transparent: true });
+                        case 'Wood':
+                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0.1 });
+                        case 'Grass':
+                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 });
+                        case 'Ice':
+                            return new THREE.MeshPhysicalMaterial({ color: 0xADD8E6, transmission: 0.9, roughness: 0.05, metalness: 0, transparent: true });
+                        case 'ForceField':
+                            return new THREE.MeshBasicMaterial({ color: color, opacity: 0.4, transparent: true, side: THREE.DoubleSide });
+                        case 'Concrete':
+                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.9, metalness: 0.1 });
+                        case 'Rock':
+                            return new THREE.MeshStandardMaterial({ color: color, roughness: 1.0, metalness: 0 });
+                        case 'SmoothPlastic':
+                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.1, metalness: 0 });
+                        case 'Plastic':
+                        default:
+                            return new THREE.MeshStandardMaterial({ color: color });
+                    }
+                },
                 
                 setMaterial: (matName, hexColor) => {
                     const obj = LunX.selected;
-                    if (!obj || !obj.material) return;
+                    if (!obj || !obj.isMesh) return;
                     
-                    const color = new THREE.Color(hexColor);
+                    const oldColor = obj.material.color.getHex();
+                    const newColor = hexColor ? new THREE.Color(hexColor) : new THREE.Color(oldColor);
+                    
+                    obj.material = LunX.ui.createMaterial(matName, newColor.getHex());
                     obj.userData.material = matName;
-                    
-                    // Materyal tipine göre fiziksel özelliklerini simüle et
-                    if (matName === 'Neon') {
-                        obj.material = new THREE.MeshBasicMaterial({ color: color });
-                    } else if (matName === 'Metal') {
-                         obj.material = new THREE.MeshPhongMaterial({ color: color, specular: 0x333333, shininess: 100 });
-                    } else if (matName === 'Glass') {
-                         obj.material = new THREE.MeshPhysicalMaterial({ color: color, transmission: 0.9, roughness: 0.1, metalness: 0 });
-                    } else { // Plastic, SmoothPlastic, Wood vb.
-                        obj.material = new THREE.MeshStandardMaterial({ color: color });
-                    }
                     
                     obj.material.needsUpdate = true;
                     LunX.renderer.render(LunX.scene, LunX.camera);
@@ -853,12 +1176,19 @@
                     }
                     LunX.camera.position.set(10, 10, 10);
                     LunX.camera.lookAt(0,0,0);
+                    LunX.controls.target.set(0,0,0);
                 },
                 
                 spawnPlayer: () => {
-                    const pos = LunX.objects.find(o => o.userData.isSpawn).position.clone().add(new THREE.Vector3(0, 3, 0));
+                    const spawnObject = LunX.objects.find(o => o.userData.isSpawn);
+                    const pos = spawnObject ? spawnObject.position.clone().add(new THREE.Vector3(0, 3, 0)) : new THREE.Vector3(0, 3, 0);
+
                     const group = new THREE.Group();
                     
+                    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({color:0xFFE4C4}));
+                    head.position.y = 3;
+                    group.add(head);
+
                     const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({color:0x007acc}));
                     torso.position.y = 1;
                     group.add(torso);
@@ -878,11 +1208,16 @@
                     LunX.playerVelocity.y += gravity * dt;
                     LunX.player.position.addScaledVector(LunX.playerVelocity, dt);
                     
+                    // Basit zemin çarpışması
                     if (LunX.player.position.y <= 3) {
                         LunX.player.position.y = 3;
                         LunX.playerVelocity.y = 0;
                     }
                     
+                    // Kamera Takibi
+                    LunX.camera.position.x = LunX.player.position.x + 10;
+                    LunX.camera.position.y = LunX.player.position.y + 10;
+                    LunX.camera.position.z = LunX.player.position.z + 10;
                     LunX.controls.target.copy(LunX.player.position);
                     LunX.controls.update();
                 }
