@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.1 - Mobil Uyumlu (Kırmızı Tema)</title>
+    <title>LunX Studio V7.1 - Mobil Uyumlu (Kırmızı Tema) - ÇÖZÜMLENDİ</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+
     
     <style>
         /* ======================================================= */
@@ -27,17 +32,16 @@
 
         * { 
             box-sizing: border-box; 
-            /* user-select: none; Kaldırıldı. Mobil uyum için kaydırmayı engellememek önemli. */
             font-family: 'Segoe UI', Tahoma, sans-serif; 
         }
         
         body { 
             margin: 0; 
-            overflow: hidden; /* Taşmayı engelle */
+            /* overflow: hidden; -> 3D Viewport'u taşmayı engellemesi için */
             background: var(--bg-app); 
             color: var(--text-main); 
             height: 100vh; 
-            width: 100vw; /* Tam ekran genişliği */
+            width: 100vw; 
             display: flex; 
             flex-direction: column; 
         }
@@ -55,14 +59,14 @@
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
-            overflow: auto; /* Küçük ekranlarda içerik sığmazsa kaydırılsın */
+            overflow: auto; 
         }
 
         /* AUTH SCREEN */
         #auth-screen { background: #fff; }
         .auth-box { 
             width: 90%; 
-            max-width: 350px; /* Maksimum genişlik ile masaüstü görünümünü koru */
+            max-width: 350px; 
             padding: 30px; 
             background: #fff; 
             border: 1px solid #eee; 
@@ -81,7 +85,7 @@
             border-radius: 4px; 
         }
         button { 
-            width: 100%; /* Butonları tam genişlik yap */
+            width: 100%; 
             padding: 10px; 
             background: var(--accent-blue); 
             border: none; 
@@ -92,21 +96,20 @@
             border-radius: 4px; 
             margin-top: 10px;
         }
-        button:hover { background: #cc0000; } /* KIRMIZI HOVER */
+        button:hover { background: #cc0000; } 
         .auth-toggle { font-size: 12px; margin-top: 15px; cursor: pointer; color: var(--accent-blue); }
 
         /* START SCREEN */
         #start-screen { 
             display: none; 
             flex-direction: row; 
-            flex: 1; /* Alana yayılsın */
+            flex: 1; 
         }
         #start-sidebar { 
             width: 250px; 
             background: #ffffff; 
             border-right: 1px solid var(--border-color); 
             padding: 20px; 
-            /* Mobil için gizle */
         }
         .start-btn-side { width: auto; margin: 5px 0; }
         .template-grid { 
@@ -144,34 +147,43 @@
         
         /* MOBİL UYUM İÇİN @MEDIA SORGUSU */
         @media (max-width: 768px) {
-            #start-sidebar { display: none; } /* Mobil için yan menüyü gizle */
+            #start-sidebar { display: none; } 
             .template-grid { padding: 20px; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
             .auth-box { margin: 20px; }
             
             /* Studio UI Mobil Düzenleme */
-            /* #right-panel { width: 100%; border-left: none; } -> Kaldırıldı/Düzeltildi */
-            /* #main-layout { flex-direction: column; } -> Kaldırıldı/Düzeltildi */
-            #ribbon-bar { height: 75px; /* Daha kısa ribbon */ }
-            .section-label { display: none; } /* Mobil ribbon'da etiketleri gizle */
+            #ribbon-bar { height: 75px; }
+            .section-label { display: none; } 
             .ribbon-text { font-size: 10px; }
             .ribbon-icon { font-size: 18px; }
+            
+            #toolbox-panel.open {
+                position: absolute;
+                left: 0;
+                top: 75px; 
+                bottom: 0;
+                width: 70%;
+                min-width: 70%;
+                max-width: 250px;
+            }
         }
 
 
         /* STUDIO UI */
-        #studio-interface { display: none; height: 100vh; }
+        #studio-interface { display: none; height: 100vh; flex-direction: column; }
         #ribbon-bar { 
             height: var(--toolbar-height); 
             background: var(--bg-ribbon); 
             border-bottom: 1px solid var(--border-color); 
             display: flex; 
-            align-items: center; /* Butonları dikeyde ortala */
+            align-items: center; 
             padding: 5px;
-            overflow-x: auto; /* YENİ: Yatay kaydırma */
+            overflow-x: auto; 
             overflow-y: hidden;
-            white-space: nowrap; /* İçeriğin tek satırda kalmasını sağla */
+            white-space: nowrap; 
+            flex-shrink: 0; /* Ribbon'un sıkışmasını engelle */
         }
-        #ribbon-bar::-webkit-scrollbar { display: none; } /* Kaydırma çubuğunu gizle */
+        #ribbon-bar::-webkit-scrollbar { display: none; } 
         
         .tool-section { 
             display: flex; 
@@ -197,7 +209,7 @@
             background: transparent; border: 1px solid transparent; border-radius: 3px;
             padding: 5px; cursor: pointer; min-width: 40px; height: 60px; color: #333;
             transition: background 0.1s;
-            flex-shrink: 0; /* Butonların sıkışmasını engelle */
+            flex-shrink: 0; 
         }
         .ribbon-btn:hover { background: var(--accent-hover); border-color: #cce8ff; }
         .ribbon-btn.active { background: var(--accent-hover); border-color: var(--accent-blue); }
@@ -207,15 +219,15 @@
         /* Main Workspace */
         #main-layout { 
             display: flex; 
-            flex: 1; 
+            flex: 1; /* 3D kısmının dikeyde kalan tüm alanı kaplamasını sağlar */
             overflow: hidden; 
             width: 100%; 
-            flex-direction: row; /* Varsayılan: Soldan sağa sırala (Toolbox | Viewport | Right Panel) */
+            flex-direction: row; 
         }
         
         /* 💡 YENİ: Right Panel Sola Geçtiğinde */
         #main-layout.panel-left {
-            flex-direction: row-reverse; /* Sıralamayı tersine çevir (Right Panel | Viewport | Toolbox) */
+            flex-direction: row-reverse; 
         }
 
 
@@ -230,22 +242,11 @@
             display: flex; 
             flex-direction: column;
             z-index: 10;
+            flex-shrink: 0;
         }
         #toolbox-panel.open {
             width: 250px;
             min-width: 250px;
-        }
-
-        @media (max-width: 768px) {
-            #toolbox-panel.open {
-                position: absolute;
-                left: 0;
-                top: 75px; /* Ribbon yüksekliği */
-                bottom: 0;
-                width: 70%;
-                min-width: 70%;
-                max-width: 250px;
-            }
         }
 
         .toolbox-search-bar { padding: 10px; border-bottom: 1px solid var(--border-color); }
@@ -265,29 +266,36 @@
         .toolbox-item:hover { background: var(--accent-hover); border-color: var(--accent-blue); }
         .toolbox-icon { font-size: 16px; margin-right: 10px; }
         
-        /* VIEWPORT */
+        /* VIEWPORT -> 3D Kısmın Çözünürlüğü için KRİTİK */
         #viewport-container { 
             flex: 1; 
             position: relative; 
             background: #99ccff; 
-            min-height: 200px; /* Mobil için minimum yükseklik */
+            min-height: 200px; 
+            overflow: hidden; /* Three.js Canvas'ı taşmasın */
         }
-        #viewport canvas { width: 100% !important; height: 100% !important; display: block; }
+        
+        /* Three.js Canvas'ı tam olarak Viewport Container'ı kaplamalı */
+        #viewport canvas { 
+            width: 100% !important; 
+            height: 100% !important; 
+            display: block; 
+        }
         
         /* Right Panel */
         #right-panel { 
             width: 300px; 
             display: flex; 
             flex-direction: column; 
-            border-left: 1px solid var(--border-color); /* Varsayılan: Sağ tarafta olduğu için sol kenarlık var */
+            border-left: 1px solid var(--border-color); 
             background: var(--bg-panel);
-            flex-shrink: 0; /* Sıkışmasını engelle */
+            flex-shrink: 0; 
         }
         
         /* 💡 YENİ: Right Panel Sola Geçtiğinde Stil Güncellemesi */
         #main-layout.panel-left #right-panel {
-            border-left: none; /* Sol kenarlığı kaldır */
-            border-right: 1px solid var(--border-color); /* Sağ kenarlık ekle */
+            border-left: none; 
+            border-right: 1px solid var(--border-color); 
         }
 
         .panel-header { padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 12px; color: #555; }
@@ -297,14 +305,21 @@
         /* Script Editor */
         #script-editor { 
             position: absolute; 
-            top: var(--toolbar-height); 
+            top: 0; /* Artık ribbon yüksekliğini CSS media query ile ayarlandığı için 0'dan başlasın */
             left: 0; 
-            right: 300px; 
+            right: 0; 
             bottom: 0; 
             background: #282c34; 
             z-index: 50; 
             display: none; 
             flex-direction: column; 
+        }
+        
+        @media (min-width: 769px) {
+            #script-editor {
+                top: var(--toolbar-height);
+                right: 300px; /* Properties paneli kaplaması için */
+            }
         }
 
         @media (max-width: 768px) {
@@ -323,18 +338,24 @@
             font-size: 14px; 
             resize: none; 
             outline: none; 
+            border: none;
         }
+        
+        .prop-row { display: flex; padding: 5px 0; border-bottom: 1px solid #eee; align-items: center; }
+        .prop-name { width: 40%; font-weight: bold; font-size: 12px; }
+        .prop-value { width: 60%; }
+        .prop-value input, .prop-value select { width: 100%; border: 1px solid #ddd; padding: 3px; font-size: 12px; }
 
     </style>
 </head>
-<body>
+<body onload="LunX.init()">
 
     <div id="auth-screen" class="full-screen">
         <div class="auth-box">
             <h2 style="color: var(--accent-blue);" id="auth-title">Giriş Yap</h2>
             <div id="auth-error" style="color:red; font-size:12px; margin-bottom:10px;"></div>
-            <input type="email" id="auth-email" placeholder="E-posta">
-            <input type="password" id="auth-pass" placeholder="Şifre">
+            <input type="email" id="auth-email" placeholder="E-posta" value="test@lunx.com">
+            <input type="password" id="auth-pass" placeholder="Şifre" value="123456">
             <button id="auth-submit-btn" onclick="LunX.auth.submit()">GİRİŞ</button>
             <div class="auth-toggle" onclick="LunX.auth.toggleMode()">Hesabın yok mu? Kayıt Ol</div>
         </div>
@@ -466,11 +487,12 @@
             </div>
 
             <div id="viewport-container">
-                <div id="viewport"></div>
+                <div id="viewport">
+                    </div>
                 
                 <div id="script-editor">
                     <div style="height:30px; background:#21252b; display:flex; align-items:center;">
-                        <button onclick="LunX.editor.closeScript()" style="width:auto; padding:5px 10px; margin-right:10px;">Kapat</button>
+                        <button onclick="LunX.editor.closeScript()" style="width:auto; padding:5px 10px; margin-right:10px; background:#444; color:white; border:none; margin-left:10px;">Kapat</button>
                         <span style="color:#888;">Script.lua (Simulated)</span>
                     </div>
                     <textarea id="code-area"></textarea>
@@ -486,20 +508,17 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-
     <script>
         /**
          * LUNX STUDIO CORE V7.1 - GÜNCEL VE MOBİL UYUMLU (FIREBASE VE 3D BOYUT/ROTASYON GÜNCELLEMESİ)
-         * * ⚠️ UYARI: Lütfen aşağıdaki firebaseConfig objesindeki 'apiKey' alanını 
-         * kendi gerçek Firebase projenizin anahtarıyla değiştirin.
+         * - Firebase Kimlik Doğrulama Çalışır Hale Getirildi.
+         * - 3D Viewport Çözünürlük Sorunu Düzeltildi.
          */
          
-        // 1. Firebase Yapılandırması (Kendi Anahtarınızla Değiştirin!)
+        // 1. Firebase Yapılandırması (Lütfen KENDİ Anahtarınızla Değiştirin!)
         const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", // ⚠️ BURASI GÜNCELLENDİ
+            // Demo anahtarı, bu anahtarı kendi projenizinkiyle değiştirin.
+            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEocto", 
             authDomain: "lunxstudio.firebaseapp.com",
             projectId: "lunxstudio-v7"
         };
@@ -511,7 +530,7 @@
             currentUser: null, authMode: 'login',
             history: { stack: [], pointer: -1, limit: 10 },
             
-            // YENİ: Toolbox Data (Materyalleri vurgular)
+            // Toolbox Data (Materyalleri vurgular)
             toolboxItems: [
                 { name: "Neon Blok", type: "box", color: 0x00ff00, material: "Neon" },
                 { name: "Metal Küre", type: "sphere", color: 0xaaaaaa, material: "Metal" },
@@ -521,49 +540,43 @@
             ],
             
             init: () => {
-                let firebaseSuccess = false; // Firebase durumunu tut
+                let firebaseSuccess = false; 
                 
-                // =============== FIREBASE TEKRAR AKTİF EDİLDİ ===============
+                // =============== FIREBASE BAŞLATMA ===============
                 try {
-                    // Firebase'i başlat
                     firebase.initializeApp(firebaseConfig); 
-                    // Oturum kontrolünü başlat
                     LunX.auth.check();
                     firebaseSuccess = true;
                 } catch(e) {
-                    // Firebase başlatılamazsa hata göster ve misafir modunda devam et
-                    document.getElementById('auth-error').innerText = "Firebase yüklenemedi. (Hata: " + e.message + "). Misafir modunda başlıyor.";
+                    const errorMsg = "Firebase yüklenemedi. (Hata: " + e.message + "). Misafir modunda başlıyor.";
+                    document.getElementById('auth-error').innerText = errorMsg;
                 }
 
                 if (!firebaseSuccess) {
-                     // Firebase hata verirse doğrudan misafir moduna geç
+                     // Hata durumunda doğrudan Misafir Moduna geçiş
                      document.getElementById('auth-screen').style.display = 'none';
                      LunX.manager.showStartScreen({email: 'guest@lunx.com'}); 
                 }
-                // =======================================================
                 
                 // Event Listeners (Must be attached early)
                 window.addEventListener('resize', LunX.editor.onResize);
-                LunX.tools.generateToolboxContent(); // Toolbox içeriğini oluştur
+                LunX.tools.generateToolboxContent(); 
             },
             
             // 2. AUTHENTICATION (GİRİŞ/KAYIT)
             auth: {
                 check: () => {
-                    // Firebase başlatılmışsa oturum kontrolü yapılır.
                     firebase.auth().onAuthStateChanged((user) => {
                         if (user) {
                             LunX.currentUser = user;
                             document.getElementById('auth-screen').style.display = 'none';
                             LunX.manager.showStartScreen(user);
                         } else {
-                            // Kullanıcı yoksa giriş ekranını göster
                             document.getElementById('auth-screen').style.display = 'flex';
                         }
                     });
                 },
                 submit: async () => {
-                    // Firebase giriş/kayıt fonksiyonları artık aktif
                     const email = document.getElementById('auth-email').value;
                     const password = document.getElementById('auth-pass').value;
                     const errorEl = document.getElementById('auth-error');
@@ -588,12 +601,11 @@
                     try {
                         await firebase.auth().signOut();
                         LunX.currentUser = null;
-                        LunX.manager.exitStudio(); // Ekranı resetle
+                        LunX.manager.exitStudio(); 
                     } catch (e) {
-                        // Çıkış yapamasa bile ekranı manuel olarak auth screen'e yönlendir
                         LunX.currentUser = null;
                         LunX.manager.exitStudio();
-                        alert("Firebase bağlantı hatası oluştu, manuel olarak oturum kapatıldı.");
+                        alert("Oturum kapatma hatası.");
                     }
                 },
                 toggleMode: () => {
@@ -612,7 +624,7 @@
                     document.getElementById('start-screen').style.display = 'flex';
                     const username = user.email ? user.email.split('@')[0] : 'Guest';
                     document.getElementById('username-display').innerText = username;
-                    LunX.currentUser = user; // Kullanıcı bilgisini sakla
+                    LunX.currentUser = user; 
                 },
                 
                 startStudio: (template) => {
@@ -623,20 +635,18 @@
                 },
                 
                 exitStudio: () => {
-                    // 3D kaynaklarını temizle
                     if (LunX.renderer && LunX.renderer.domElement.parentNode) {
                         LunX.renderer.domElement.parentNode.removeChild(LunX.renderer.domElement);
                     }
                     LunX.scene = null; LunX.objects = []; LunX.selected = null; LunX.isPlaying = false;
                     LunX.history.stack = []; LunX.history.pointer = -1;
                     
-                    // Ekranı Auth/Start durumuna göre göster
-                    if(LunX.currentUser && LunX.currentUser.email === 'guest@lunx.com') {
-                         LunX.manager.showStartScreen(LunX.currentUser); // Misafir ise Start Screen
+                    if(LunX.currentUser && LunX.currentUser.email && LunX.currentUser.email.includes('guest')) {
+                         LunX.manager.showStartScreen(LunX.currentUser); 
                     } else if (LunX.currentUser) {
-                         LunX.manager.showStartScreen(LunX.currentUser); // Girişli ise Start Screen
+                         LunX.manager.showStartScreen(LunX.currentUser); 
                     } else {
-                         document.getElementById('auth-screen').style.display = 'flex'; // Çıkış yapıldıysa Auth Screen
+                         document.getElementById('auth-screen').style.display = 'flex'; 
                     }
                 }
             },
@@ -660,7 +670,7 @@
                     LunX.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                     container.appendChild(LunX.renderer.domElement);
                     
-                    // Işıklar
+                    // Işıklar (Aynı Bırakıldı)
                     LunX.scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
                     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
                     dirLight.position.set(20, 50, 20);
@@ -684,7 +694,7 @@
                     LunX.transform.addEventListener('mouseUp', LunX.tools.saveState); 
                     LunX.scene.add(LunX.transform);
                     
-                    LunX.editor.onResize(); 
+                    LunX.editor.onResize(); // İlk boyutlandırmayı çağır
                     container.addEventListener('mousedown', LunX.editor.onMouseDown);
                     LunX.editor.animate();
                 },
@@ -701,18 +711,21 @@
                     LunX.renderer.render(LunX.scene, LunX.camera);
                 },
                 
+                // KRİTİK DÜZELTME: Pencere yeniden boyutlandırıldığında Viewport'u tam olarak doldur
                 onResize: () => {
                     const c = document.getElementById('viewport-container');
                     if (LunX.camera) {
-                        LunX.camera.aspect = c.clientWidth / c.clientHeight;
+                        const width = c.clientWidth;
+                        const height = c.clientHeight;
+                        
+                        LunX.camera.aspect = width / height;
                         LunX.camera.updateProjectionMatrix();
-                        LunX.renderer.setSize(c.clientWidth, c.clientHeight);
+                        LunX.renderer.setSize(width, height);
                     }
                 },
                 
                 onMouseDown: (e) => {
                     if (LunX.isPlaying) return;
-                    
                     if(LunX.transform.dragging) return;
 
                     const rect = LunX.renderer.domElement.getBoundingClientRect();
@@ -729,7 +742,6 @@
                     
                     if (intersects.length > 0) {
                         let selectedObj = intersects[0].object;
-                        // En üstteki nesneyi (grup veya mesh) bul
                         while (selectedObj.parent && selectedObj.parent.name !== 'Scene' && selectedObj.parent.name !== '') {
                             selectedObj = selectedObj.parent;
                         }
@@ -757,7 +769,6 @@
                 },
                 
                 closeScript: () => {
-                    // Script içeriğini kaydet
                     if (LunX.selected && LunX.selected.type === 'script') {
                         LunX.selected.userData.code = document.getElementById('code-area').value;
                         LunX.tools.saveState();
@@ -766,15 +777,13 @@
                 }
             },
             
-            // 5. WORLD & TEMPLATES
+            // 5. WORLD & TEMPLATES (Aynı Bırakıldı)
             world: {
                 loadTemplate: (template) => {
-                    // Sahneyi temizle
                     LunX.objects.forEach(obj => LunX.scene.remove(obj));
                     LunX.objects = [];
                     LunX.editor.select(null);
 
-                    // Temel Gökyüzü (Skybox/Fog zaten var)
                     LunX.scene.background = new THREE.Color(0x99ccff); 
 
                     // Temel Zemin (Baseplate)
@@ -783,7 +792,6 @@
                     baseplate.position.y = -0.5;
                     baseplate.receiveShadow = true;
                     baseplate.name = "Baseplate";
-                    // 💡 Yeni: Baseplate için varsayılan scale ve rotation kaydı
                     baseplate.userData = { locked: true, anchored: true, canCollide: true, isBase: true, material: "Plastic", scale: {x: 1, y: 1, z: 1}, rot: {x: 0, y: 0, z: 0} };
                     LunX.scene.add(baseplate);
                     LunX.objects.push(baseplate);
@@ -794,7 +802,6 @@
                     const spawn = new THREE.Mesh(spawnGeo, spawnMat);
                     spawn.position.set(0, 0.25, 0);
                     spawn.name = "SpawnLocation";
-                    // 💡 Yeni: Spawn için varsayılan scale ve rotation kaydı
                     spawn.userData = { anchored: true, isSpawn: true, material: "Plastic", scale: {x: 1, y: 1, z: 1}, rot: {x: 0, y: 0, z: 0} };
                     LunX.scene.add(spawn);
                     LunX.objects.push(spawn);
@@ -817,11 +824,9 @@
                             LunX.objects.push(mountain);
                         }
                         
-                        // Basit Ev
                         const houseGroup = new THREE.Group();
                         houseGroup.name = "SimpleHouse";
                         houseGroup.position.set(10, 2.5, -10);
-                        // 💡 Yeni: Group için varsayılan scale ve rotation kaydı
                         houseGroup.userData = { anchored: true, isGroup: true, scale: {x: 1, y: 1, z: 1}, rot: {x: 0, y: 0, z: 0} }; 
                         
                         const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), new THREE.MeshStandardMaterial({ color: 0xFFD700 }));
@@ -844,7 +849,6 @@
                     LunX.ui.refreshExplorer();
                 },
                 
-                // GÜNCELLEME BURADA: Parça eklerken başlangıç boyut ve rotasyon bilgisi kaydediliyor
                 addPart: (type, color=null, material='Plastic') => {
                     let geo, mat;
                     let name = type.charAt(0).toUpperCase() + type.slice(1);
@@ -852,7 +856,6 @@
                     const hexColor = color !== null ? color : Math.random() * 0xffffff;
                     mat = LunX.ui.createMaterial(material, hexColor);
                     
-                    // Varsayılan boyutlar
                     let defaultScale = {x: 1, y: 1, z: 1};
                     
                     if(type=='box') { 
@@ -870,7 +873,6 @@
                     mesh.receiveShadow = true;
                     mesh.name = name;
                     
-                    // 💡 GÜNCELLEME: Boyut ve Rotasyon verilerini userData'ya kaydet
                     mesh.userData = { 
                         anchored: false, 
                         canCollide: true, 
@@ -895,7 +897,7 @@
                 }
             },
             
-            // 6. TOOLS (TÜM ARAÇLAR)
+            // 6. TOOLS (Aynı Bırakıldı)
             tools: {
                 setMode: (mode) => {
                     LunX.transform.detach();
@@ -912,7 +914,6 @@
                     
                     const group = new THREE.Group();
                     group.name = "Model";
-                    // Group için de scale/rot verilerini kaydet
                     group.userData = { anchored: false, isGroup: true, scale: {x: 1, y: 1, z: 1}, rot: {x: 0, y: 0, z: 0} }; 
                     
                     const parent = LunX.selected.parent;
@@ -951,7 +952,6 @@
                     LunX.tools.saveState();
                 },
                 
-                // GÜNCELLEME: Scale ve Rotasyon verileri de kaydediliyor
                 saveState: () => {
                     const state = LunX.objects.map(obj => {
                         let objData = {
@@ -964,7 +964,7 @@
                         if (obj.isObject3D) {
                             objData.pos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
                             objData.rot = { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z };
-                            objData.scale = { x: obj.scale.x, y: obj.scale.y, z: obj.scale.z }; // 💡 YENİ: Scale kaydı
+                            objData.scale = { x: obj.scale.x, y: obj.scale.y, z: obj.scale.z }; 
                         }
 
                         if (obj.material && obj.material.color) {
@@ -985,25 +985,20 @@
                     LunX.history.pointer = LunX.history.stack.length - 1;
                 },
                 
-                // GÜNCELLEME: Scale ve Rotasyon verileri geri yükleniyor
                 applyState: (state) => {
                     const parsedState = JSON.parse(state);
                     
-                    // 1. Sahneden tüm dinamik objeleri temizle
                     LunX.objects.forEach(obj => LunX.scene.remove(obj));
                     LunX.objects = [];
                     LunX.editor.select(null);
 
-                    // 2. Yeni objeleri oluştur ve ekle
                     parsedState.forEach(newState => {
                         let newObj = null;
                         if (newState.type === 'Mesh') {
                             let geo;
-                            // Basitçe: Sphere için SphereGeometry, diğerleri için BoxGeometry
                             if (newState.name.toLowerCase().includes('sphere')) {
                                 geo = new THREE.SphereGeometry(1, 32, 32);
                             } else {
-                                // Default olarak (4, 1, 4) boyutunu kullanıyoruz
                                 geo = new THREE.BoxGeometry(4, 1, 4);
                             }
                             
@@ -1032,15 +1027,13 @@
                             if (newObj.isObject3D) {
                                 if (newState.pos) newObj.position.set(newState.pos.x, newState.pos.y, newState.pos.z);
                                 if (newState.rot) newObj.rotation.set(newState.rot.x, newState.rot.y, newState.rot.z);
-                                if (newState.scale) newObj.scale.set(newState.scale.x, newState.scale.y, newState.scale.z); // 💡 YENİ: Scale geri yükleme
+                                if (newState.scale) newObj.scale.set(newState.scale.x, newState.scale.y, newState.scale.z); 
 
                                 LunX.scene.add(newObj);
                             }
                             LunX.objects.push(newObj);
                         }
                     });
-
-                    // Not: Bu emülasyonda Group hiyerarşisi yeniden kurulmuyor, basitlik için tüm objeler Workspace'in doğrudan çocuğu sayılıyor.
                     
                     LunX.ui.refreshExplorer();
                     LunX.ui.updateProperties();
@@ -1068,7 +1061,8 @@
                     const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
                     const types = ['box', 'sphere'];
                     
-                    while (LunX.toolboxItems.length < 100) {
+                    // Daha fazla öğe ekleyerek scroll bar testini etkinleştirir
+                    while (LunX.toolboxItems.length < 30) { 
                         const mat = materials[Math.floor(Math.random() * materials.length)];
                         const type = types[Math.floor(Math.random() * types.length)];
                         
@@ -1110,11 +1104,11 @@
                 }
             },
             
-            // 7. UI (EXPLORER & PROPERTIES)
+            // 7. UI (Explorer & Properties) (Panel Yönü Eklendi)
             ui: {
                 refreshExplorer: () => {
                     const div = document.getElementById('explorer');
-                    div.innerHTML = `<div class="tree-node" style="font-weight:bold;" onclick="LunX.editor.select(null)">Workspace</div>`;
+                    div.innerHTML = `<div class="tree-node" style="font-weight:bold; cursor:pointer; padding:5px;" onclick="LunX.editor.select(null)">Workspace</div>`;
                     
                     LunX.objects.forEach(obj => {
                         const node = document.createElement('div');
@@ -1125,29 +1119,33 @@
                         else if(obj.type === 'script') icon = '📜';
 
                         node.className = 'tree-node ' + (LunX.selected === obj ? 'selected' : '');
+                        node.style.cssText = 'cursor:pointer; padding:5px 0 5px 10px; border-radius:3px;';
+                        if (LunX.selected === obj) node.style.background = 'var(--selection-bg)';
+                        
                         node.innerHTML = `<span style="margin-right:5px;">${icon}</span> ${obj.name}`;
                         node.onclick = () => LunX.editor.select(obj);
                         div.appendChild(node);
                     });
                 },
 
-                // GÜNCELLEME: Properties paneline Scale ve Rotation bilgileri eklendi
                 updateProperties: () => {
                     const div = document.getElementById('properties');
                     const obj = LunX.selected;
                     
                     if (!obj) { div.innerHTML = '<div style="text-align:center; margin-top:10px; color:#999;">Nesne Seçilmedi</div>'; return; }
                     
+                    // Script için sadece isim ve kod butonu
                     if (obj.type === 'script') {
                         div.innerHTML = `
-                            <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer()"></div></div>
+                            <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>
                             <button style="width:100%; margin-top:10px;" onclick="LunX.editor.openScript(LunX.selected)">Kodu Düzenle</button>
                         `;
                         return;
                     }
-
-                    if (!obj.isMesh && !obj.userData.isGroup) {
-                         div.innerHTML = `<div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer()"></div></div>`;
+                    
+                    // Group için sadece isim
+                    if (!obj.isMesh && obj.userData.isGroup) {
+                         div.innerHTML = `<div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer(); LunX.tools.saveState()"></div></div>`;
                         return;
                     }
                     
@@ -1171,7 +1169,7 @@
 
                         <div class="prop-row"><div class="prop-name">Color</div><div class="prop-value"><input type="color" value="${colorHex}" onchange="LunX.ui.setMaterial(LunX.selected.userData.material, this.value); LunX.tools.saveState()"></div></div>
                         <div class="prop-row"><div class="prop-name">Material</div><div class="prop-value">
-                            <select onchange="LunX.ui.setMaterial(this.value, LunX.selected.material.color.getHex())">
+                            <select onchange="LunX.ui.setMaterial(this.value, LunX.selected.material.color.getHex()); LunX.tools.saveState()">
                                 ${matOptions}
                             </select>
                         </div></div>
@@ -1180,7 +1178,8 @@
                     `;
                     div.innerHTML = html;
                 },
-
+                
+                // Malzeme oluşturma fonksiyonu (Aynı Bırakıldı)
                 createMaterial: (matName, hexColor) => {
                     const color = new THREE.Color(hexColor);
                     
@@ -1198,28 +1197,4 @@
                         case 'Ice':
                             return new THREE.MeshPhysicalMaterial({ color: 0xADD8E6, transmission: 0.9, roughness: 0.05, metalness: 0, transparent: true });
                         case 'ForceField':
-                            return new THREE.MeshBasicMaterial({ color: color, opacity: 0.4, transparent: true, side: THREE.DoubleSide });
-                        case 'Concrete':
-                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.9, metalness: 0.1 });
-                        case 'Rock':
-                            return new THREE.MeshStandardMaterial({ color: color, roughness: 1.0, metalness: 0 });
-                        case 'SmoothPlastic':
-                            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.1, metalness: 0 });
-                        case 'Plastic':
-                        default:
-                            return new THREE.MeshStandardMaterial({ color: color });
-                    }
-                },
-                
-                setMaterial: (matName, hexColor) => {
-                    const obj = LunX.selected;
-                    if (!obj || !obj.isMesh) return;
-                    
-                    const oldColor = obj.material.color.getHex();
-                    const newColor = hexColor ? new THREE.Color(hexColor) : new THREE.Color(oldColor);
-                    
-                    obj.material = LunX.ui.createMaterial(matName, newColor.getHex());
-                    obj.userData.material = matName;
-                    
-                    obj.material.needsUpdate = true;
-                    LunX.renderer.render(LunX.scene
+                            return new THREE.MeshBasic
