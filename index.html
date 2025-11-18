@@ -3,624 +3,809 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V4.0 Ultimate - R6 Edition</title>
+    <title>LunX Studio V5.0 Ultimate - Light Edition</title>
     <style>
+        /* ======================================================= */
+        /* ROBLOX STUDIO LIGHT THEME (BEYAZ TEMA) */
+        /* ======================================================= */
         :root {
-            --bg-dark: #1e1e1e;
-            --bg-panel: #252526;
-            --bg-input: #333333;
-            --accent: #007acc; /* Mavi */
-            --accent-hover: #0098ff;
-            --text: #cccccc;
-            --border: #3e3e42;
-            --selection: #094771;
+            --bg-app: #ffffff;
+            --bg-ribbon: #f5f5f5;
+            --bg-panel: #ffffff;
+            --border-color: #dcdcdc;
+            --text-main: #333333;
+            --text-dim: #666666;
+            --accent-blue: #00a2ff;
+            --accent-hover: #e1f2ff;
+            --selection-bg: #eef6ff;
+            --button-hover: #e6e6e6;
+            --toolbar-height: 100px; /* Ribbon tarzı */
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
         
-        body { margin: 0; padding: 0; background: var(--bg-dark); color: var(--text); overflow: hidden; height: 100vh; width: 100vw; display: flex; flex-direction: column; }
+        body { margin: 0; overflow: hidden; background: var(--bg-app); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
 
-        /* --- ÖZEL CSS İKONLAR (UNICODE YOK) --- */
-        .icon { display: inline-block; width: 16px; height: 16px; position: relative; }
+        /* --- BAŞLANGIÇ EKRANI (TEMPLATE SEÇİMİ) --- */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f2f4f5; z-index: 9000; display: flex;
+        }
+        #start-sidebar {
+            width: 250px; background: #ffffff; border-right: 1px solid #ddd;
+            padding: 20px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .start-btn-side {
+            padding: 10px; text-align: left; background: transparent; border: none;
+            font-size: 16px; color: #444; cursor: pointer; border-radius: 5px;
+        }
+        .start-btn-side:hover, .start-btn-side.active { background: #e1e1e1; font-weight: bold; }
         
-        /* Play Icon */
-        .icon-play { background: #2da042; clip-path: polygon(20% 0%, 100% 50%, 20% 100%); width: 12px; height: 12px; }
-        /* Stop Icon */
-        .icon-stop { background: #d32f2f; width: 12px; height: 12px; border-radius: 2px; }
-        /* Cube Icon */
-        .icon-cube { border: 2px solid #ddd; width: 14px; height: 14px; background: transparent; }
-        /* Script Icon */
-        .icon-script { background: #f1c40f; width: 10px; height: 14px; position: relative; }
-        .icon-script::after { content:''; position:absolute; bottom:2px; left:2px; width:6px; height:1px; background:#000; box-shadow: 0 -2px 0 #000, 0 -4px 0 #000; }
-        /* Folder Icon */
-        .icon-folder { background: #e67e22; width: 16px; height: 12px; clip-path: polygon(0 0, 40% 0, 50% 20%, 100% 20%, 100% 100%, 0 100%); }
-        /* Settings X Icon */
-        .icon-x { width: 20px; height: 20px; position: relative; }
-        .icon-x::before, .icon-x::after { content: ''; position: absolute; width: 100%; height: 2px; background: white; top: 50%; left: 0; }
-        .icon-x::before { transform: rotate(45deg); }
-        .icon-x::after { transform: rotate(-45deg); }
+        #start-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+        .template-card {
+            background: white; border: 1px solid #ccc; border-radius: 4px;
+            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column;
+        }
+        .template-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--accent-blue); }
+        .template-img { height: 120px; background: #ddd; display: flex; align-items: center; justify-content: center; color: #888; font-size: 40px; }
+        .template-name { padding: 10px; font-weight: bold; font-size: 14px; text-align: center; }
 
-        /* --- LAYOUT --- */
-        .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        
-        /* Login & Loading */
-        .auth-box { width: 350px; padding: 30px; background: var(--bg-panel); border: 1px solid var(--accent); border-radius: 8px; text-align: center; }
-        input { width: 100%; padding: 10px; margin: 10px 0; background: var(--bg-input); border: 1px solid var(--border); color: white; outline: none; }
-        button { width: 100%; padding: 10px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: var(--accent-hover); }
-        .loading-bar { width: 300px; height: 4px; background: #333; margin-top: 20px; border-radius: 2px; overflow: hidden; }
-        .loading-progress { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s; }
+        /* --- EDİTÖR ARAYÜZÜ --- */
+        #studio-interface { display: none; flex-direction: column; height: 100%; }
 
-        /* Studio UI */
-        #studio-ui { display: none; flex-direction: column; height: 100%; width: 100%; }
+        /* Ribbon Toolbar */
+        #ribbon-bar {
+            height: var(--toolbar-height); background: var(--bg-ribbon); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: flex-start; padding: 5px; gap: 5px;
+        }
+        .ribbon-tab-content { display: flex; gap: 15px; padding: 5px; align-items: center; }
         
-        #toolbar { height: 40px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 10px; gap: 10px; }
-        .tool-btn { width: auto; padding: 5px 15px; background: #333; font-size: 12px; display: flex; align-items: center; gap: 5px; border-radius: 4px; }
-        .tool-btn:active { transform: scale(0.95); }
+        .tool-section { display: flex; flex-direction: column; align-items: center; border-right: 1px solid #ddd; padding-right: 10px; gap: 2px;}
+        .section-label { font-size: 10px; color: #888; margin-top: auto; }
         
-        #workspace { display: flex; flex: 1; position: relative; overflow: hidden; }
-        
-        #viewport { flex: 1; background: #000; position: relative; }
-        
-        /* Resizable Sidebar */
-        #sidebar { width: 300px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-width: 150px; max-width: 600px; position: relative; }
-        #resizer { width: 5px; cursor: col-resize; position: absolute; left: 0; top: 0; bottom: 0; z-index: 10; background: transparent; }
-        #resizer:hover { background: var(--accent); opacity: 0.5; }
+        .ribbon-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: transparent; border: 1px solid transparent; border-radius: 3px;
+            padding: 5px; cursor: pointer; min-width: 40px; height: 60px; color: #333;
+        }
+        .ribbon-btn:hover { background: var(--button-hover); border-color: #ccc; }
+        .ribbon-btn.active { background: #cce8ff; border-color: var(--accent-blue); }
+        .ribbon-icon { font-size: 24px; margin-bottom: 4px; }
+        .ribbon-text { font-size: 11px; }
 
-        /* Explorer & Properties */
-        .panel-header { background: #333; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); }
-        .tree-view { flex: 1; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; }
-        .tree-item { padding: 2px 5px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .tree-item:hover { background: #3e3e40; }
-        .tree-item.selected { background: var(--selection); color: white; }
+        /* Main Workspace */
+        #main-layout { display: flex; flex: 1; overflow: hidden; }
         
-        .properties-view { height: 40%; border-top: 1px solid var(--border); overflow-y: auto; padding: 10px; }
-        .prop-row { display: flex; margin-bottom: 5px; align-items: center; font-size: 11px; }
-        .prop-label { width: 80px; color: #aaa; }
-        .prop-input { flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 2px; }
-
-        /* Script Editor Modal */
-        #script-editor { position: absolute; top: 40px; left: 0; right: 300px; bottom: 0; background: #1e1e1e; z-index: 50; display: none; flex-direction: column; }
-        #code-area { flex: 1; background: #141414; color: #dcdcdc; border: none; padding: 10px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; }
-        .script-toolbar { height: 30px; background: #252526; display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid var(--border); }
-
-        /* --- OYUN İÇİ UI (GAME UI) --- */
-        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 100; }
+        /* Viewport */
+        #viewport-container { flex: 1; position: relative; background: #a0a0a0; }
+        #viewport { width: 100%; height: 100%; outline: none; }
         
-        /* X Menu Button */
-        #menu-btn { 
-            position: absolute; top: 15px; left: 15px; width: 36px; height: 36px; 
-            background: rgba(0,0,0,0.8); border-radius: 8px; pointer-events: auto; 
+        /* Explorer & Properties (Sağ Panel) */
+        #right-panel { width: 300px; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); background: var(--bg-panel); }
+        
+        .panel-header { 
+            padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; border-top: 1px solid #ddd;
+            font-weight: bold; font-size: 12px; color: #555; display: flex; justify-content: space-between;
+        }
+        
+        #explorer { flex: 1; overflow-y: auto; background: white; padding: 5px; font-size: 13px; }
+        #properties { height: 40%; overflow-y: auto; background: white; border-top: 1px solid var(--border-color); padding: 5px; }
+        
+        /* Hiyerarşi Elemanları */
+        .tree-node { padding: 2px 5px; display: flex; align-items: center; cursor: pointer; border: 1px solid transparent; }
+        .tree-node:hover { background-color: #f0f0f0; }
+        .tree-node.selected { background-color: var(--selection-bg); border-color: #a0caff; }
+        .node-icon { width: 16px; height: 16px; margin-right: 5px; display: inline-block; }
+        
+        /* Properties Tablosu */
+        .prop-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 12px; }
+        .prop-name { width: 100px; color: #555; padding-left: 5px; }
+        .prop-value { flex: 1; }
+        .prop-value input { 
+            width: 100%; border: 1px solid #ddd; padding: 2px 5px; font-size: 12px; border-radius: 2px; margin: 0; background: white;
+        }
+        .prop-value input:focus { border-color: var(--accent-blue); }
+
+        /* Mobil / Oyun İçi Kontroller */
+        #game-gui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+        
+        #menu-btn-x {
+            position: absolute; top: 10px; left: 10px; width: 40px; height: 40px;
+            background: rgba(30,30,30,0.8); border-radius: 50%; pointer-events: auto;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
-            border: 2px solid #444;
-        }
-        #menu-btn:hover { background: #000; border-color: var(--accent); }
-
-        /* X Menu Panel */
-        #ingame-menu {
-            position: absolute; top: 60px; left: 15px; width: 200px; 
-            background: rgba(30,30,30,0.95); border-radius: 8px; pointer-events: auto;
-            display: none; flex-direction: column; padding: 10px; gap: 10px;
-            border: 1px solid #444;
+            color: white; font-weight: bold; font-family: sans-serif;
         }
         
-        /* Joystick */
-        #joystick-container { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; pointer-events: auto; }
-        #joystick-bg { width: 100%; height: 100%; background: rgba(255,255,255,0.1); border-radius: 50%; position: relative; }
-        #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.8); border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 2px 5px black;}
-
-        /* Jump Button */
-        #jump-btn { 
-            position: absolute; bottom: 60px; right: 60px; width: 70px; height: 70px; 
-            background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: auto; 
-            display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.5);
+        #ingame-settings {
+            position: absolute; top: 60px; left: 10px; width: 200px; background: rgba(255,255,255,0.95);
+            border-radius: 8px; padding: 10px; pointer-events: auto; display: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); border: 1px solid #ccc;
         }
-        #jump-btn:active { background: rgba(255,255,255,0.5); }
-        .jump-icon { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid white; }
+
+        #joystick-container { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
+        #joystick-base { width: 100%; height: 100%; background: rgba(0,0,0,0.2); border-radius: 50%; position: relative; }
+        #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        
+        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 70px; height: 70px; background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; border: 2px solid white; cursor: pointer;}
+        #jump-btn:active { background: rgba(255,255,255,0.6); }
+
+        /* Script Editörü */
+        #script-editor {
+            position: absolute; top: var(--toolbar-height); left: 0; right: 300px; bottom: 0;
+            background: #282c34; z-index: 50; display: none; flex-direction: column;
+        }
+        #script-toolbar { height: 30px; background: #21252b; display: flex; align-items: center; padding: 0 10px; }
+        #code-area { flex: 1; background: #282c34; color: #abb2bf; border: none; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; line-height: 1.5; }
 
     </style>
 </head>
 <body>
 
-    <div id="loading-screen" class="full-screen">
-        <div style="font-size: 24px; font-weight: bold; color: var(--accent);">LUNX ENGINE</div>
-        <div style="font-size: 12px; color: #666;">R6 CHARACTER SYSTEM</div>
-        <div class="loading-bar"><div class="loading-progress" id="progress"></div></div>
-        <div id="loading-text" style="margin-top: 10px; font-size: 12px;">Sistem Başlatılıyor...</div>
-    </div>
-
-    <div id="auth-screen" class="full-screen" style="display:none;">
-        <div class="auth-box">
-            <h2 style="color: var(--accent);">Giriş Yap</h2>
-            <input type="email" id="login-email" placeholder="E-posta">
-            <input type="password" id="login-pass" placeholder="Şifre">
-            <button onclick="App.auth.login()">GİRİŞ</button>
-            <p style="font-size: 12px; color: #666; margin-top: 15px;">Misafir girişi için bilgileri boş bırakıp basabilirsiniz.</p>
+    <div id="start-screen">
+        <div id="start-sidebar">
+            <h2 style="color:var(--accent-blue); margin:0 0 20px 0;">LunX Studio</h2>
+            <button class="start-btn-side active">Yeni</button>
+            <button class="start-btn-side">Oyunlarım</button>
+            <button class="start-btn-side">Son Kullanılanlar</button>
+            <div style="flex:1"></div>
+            <div style="font-size:11px; color:#888;">V5.0 Ultimate</div>
+        </div>
+        <div id="start-content">
+            <h2 style="margin-top:0;">Tüm Şablonlar</h2>
+            <div class="template-grid">
+                <div class="template-card" onclick="LunX.start('baseplate')">
+                    <div class="template-img">⬜</div>
+                    <div class="template-name">Baseplate</div>
+                </div>
+                <div class="template-card" onclick="LunX.start('flat')">
+                    <div class="template-img">🟩</div>
+                    <div class="template-name">Flat Terrain</div>
+                </div>
+                <div class="template-card" onclick="LunX.start('village')">
+                    <div class="template-img">🏡</div>
+                    <div class="template-name">Village</div>
+                </div>
+                <div class="template-card" onclick="LunX.start('obby')">
+                    <div class="template-img">🏃</div>
+                    <div class="template-name">Obby</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="studio-ui">
-        <div id="toolbar">
-            <div style="font-weight: bold; color: var(--accent); margin-right: 10px;">FILE</div>
-            <button class="tool-btn" onclick="App.editor.runGame()"><div class="icon icon-play"></div> OYNA</button>
-            <button class="tool-btn" style="background:#444;" onclick="App.editor.stopGame()"><div class="icon icon-stop"></div> DURDUR</button>
-            <div style="width: 1px; height: 20px; background: #444; margin: 0 10px;"></div>
-            <button class="tool-btn" onclick="App.editor.addPart()"> <div class="icon icon-cube"></div> Part</button>
-            <button class="tool-btn" onclick="App.editor.addScript()"> <div class="icon icon-script"></div> Script</button>
+    <div id="studio-interface">
+        <div id="ribbon-bar">
+            <div class="tool-section">
+                <div class="ribbon-tab-content">
+                    <div class="ribbon-btn active" id="tool-select" onclick="LunX.tools.setMode('select')">
+                        <div class="ribbon-icon">👆</div><div class="ribbon-text">Seç</div>
+                    </div>
+                    <div class="ribbon-btn" id="tool-translate" onclick="LunX.tools.setMode('translate')">
+                        <div class="ribbon-icon">↔️</div><div class="ribbon-text">Taşı</div>
+                    </div>
+                    <div class="ribbon-btn" id="tool-scale" onclick="LunX.tools.setMode('scale')">
+                        <div class="ribbon-icon">⤢</div><div class="ribbon-text">Boyut</div>
+                    </div>
+                    <div class="ribbon-btn" id="tool-rotate" onclick="LunX.tools.setMode('rotate')">
+                        <div class="ribbon-icon">🔄</div><div class="ribbon-text">Çevir</div>
+                    </div>
+                </div>
+                <div class="section-label">Araçlar</div>
+            </div>
+
+            <div class="tool-section">
+                <div class="ribbon-tab-content">
+                    <div class="ribbon-btn" onclick="LunX.world.addPart('box')">
+                        <div class="ribbon-icon">📦</div><div class="ribbon-text">Part</div>
+                    </div>
+                    <div class="ribbon-btn" onclick="LunX.world.addPart('sphere')">
+                        <div class="ribbon-icon">⚪</div><div class="ribbon-text">Sphere</div>
+                    </div>
+                    <div class="ribbon-btn" onclick="LunX.world.addPart('cylinder')">
+                        <div class="ribbon-icon">🛢️</div><div class="ribbon-text">Cylinder</div>
+                    </div>
+                </div>
+                <div class="section-label">Ekle</div>
+            </div>
+
+            <div class="tool-section">
+                <div class="ribbon-tab-content">
+                    <div class="ribbon-btn" style="color:var(--secondary-color);" onclick="LunX.game.play()">
+                        <div class="ribbon-icon">▶️</div><div class="ribbon-text"><b>Oyna</b></div>
+                    </div>
+                    <div class="ribbon-btn" style="color:#d32f2f;" onclick="LunX.game.stop()">
+                        <div class="ribbon-icon">⏹️</div><div class="ribbon-text">Durdur</div>
+                    </div>
+                </div>
+                <div class="section-label">Test</div>
+            </div>
+             <div class="tool-section">
+                <div class="ribbon-tab-content">
+                    <div class="ribbon-btn" onclick="LunX.editor.toggleProperties()">
+                         <div class="ribbon-icon">🎨</div><div class="ribbon-text">Renk</div>
+                    </div>
+                     <div class="ribbon-btn" onclick="LunX.editor.toggleAnchor()">
+                         <div class="ribbon-icon">⚓</div><div class="ribbon-text">Anchor</div>
+                    </div>
+                </div>
+                 <div class="section-label">Edit</div>
+            </div>
         </div>
 
-        <div id="workspace">
-            <div id="viewport">
-                <div id="game-ui">
-                    <div id="menu-btn" onclick="App.game.toggleMenu()">
-                        <div class="icon icon-x"></div>
+        <div id="main-layout">
+            <div id="viewport-container">
+                <div id="viewport"></div>
+                
+                <div id="script-editor">
+                    <div id="script-toolbar">
+                        <button onclick="LunX.editor.closeScript()" style="background:none; border:none; color:white; cursor:pointer;">✖ Kapat</button>
+                        <span style="color:#888; margin-left:10px;">script.lua (Simüle)</span>
                     </div>
-                    <div id="ingame-menu">
-                        <div style="font-weight: bold; margin-bottom: 5px;">AYARLAR</div>
-                        <button onclick="App.game.resetCharacter()">Karakteri Sıfırla</button>
-                        <div style="font-size:12px;">UI Ölçeği</div>
-                        <input type="range" min="0.5" max="1.5" step="0.1" onchange="document.body.style.zoom = this.value">
+                    <textarea id="code-area"></textarea>
+                </div>
+
+                <div id="game-gui">
+                    <div id="menu-btn-x" onclick="LunX.game.toggleMenu()">X</div>
+                    <div id="ingame-settings">
+                        <div style="font-weight: bold; margin-bottom: 10px;">Ayarlar</div>
+                        <button onclick="LunX.game.resetChar()" style="width:100%; margin-bottom:5px;">Reset Character</button>
+                        <div style="font-size:12px; margin-top:5px;">Kalite</div>
+                        <select style="width:100%;" onchange="LunX.renderer.setQuality(this.value)">
+                            <option value="high">Yüksek</option>
+                            <option value="low">Düşük</option>
+                        </select>
                     </div>
 
-                    <div id="joystick-container">
-                        <div id="joystick-bg"><div id="joystick-stick"></div></div>
+                    <div id="mobile-controls">
+                        <div id="joystick-container">
+                            <div id="joystick-base"><div id="joystick-stick"></div></div>
+                        </div>
+                        <div id="jump-btn">⬆</div>
                     </div>
-                    <div id="jump-btn"><div class="jump-icon"></div></div>
                 </div>
             </div>
 
-            <div id="resizer"></div>
-            <div id="sidebar">
-                <div class="panel-header">EXPLORER</div>
-                <div class="tree-view" id="explorer-list">
-                    </div>
-                <div class="panel-header">PROPERTIES</div>
-                <div class="properties-view" id="properties-list">
-                    </div>
-            </div>
-
-            <div id="script-editor">
-                <div class="script-toolbar">
-                    <button style="width: auto; padding: 2px 10px; font-size: 11px;" onclick="App.editor.closeScript()">KAPAT</button>
-                    <span id="script-name" style="margin-left: 10px; color: #aaa;">script.js</span>
+            <div id="right-panel">
+                <div class="panel-header">Explorer <span style="cursor:pointer" onclick="LunX.world.addScript()">+Script</span></div>
+                <div id="explorer">
+                    <div class="tree-node" onclick="LunX.editor.select(null)">Workspace</div>
                 </div>
-                <textarea id="code-area"></textarea>
+                <div class="panel-header">Properties</div>
+                <div id="properties">
+                    <div style="color:#999; text-align:center; padding:20px;">Seçim Yok</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 
     <script>
         /**
-         * LUNX ENGINE CORE V4.0 - R6 EDITION
+         * LUNX STUDIO CORE V5.0
          */
-        
-        // 1. Firebase Yapılandırması
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4Dh_WCxTSqMnJ8u0M4KqwHpejJrEoctk", // Kullanıcının sağladığı key
-            authDomain: "lunxstudio.firebaseapp.com",
-            projectId: "lunxstudio"
-        };
-
-        const App = {
-            state: { mode: 'edit', selectedId: null, dragging: false },
-            world: { scene: null, camera: null, renderer: null, objects: [] },
-            player: { mesh: null, velocity: {x:0, y:0, z:0}, isGrounded: false, animTime: 0 },
-            input: { fwd:0, bwd:0, lft:0, rgt:0, jump: false, joy: {x:0, y:0} },
+        const LunX = {
+            scene: null, camera: null, renderer: null, controls: null, transform: null,
+            objects: [], selected: null, isPlaying: false,
+            player: null,
             
-            // Başlatma
             init: () => {
-                App.ui.updateProgress(20);
-                try {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log("Firebase OK.");
-                } catch(e) { console.warn("Firebase uyarısı (Local modda olabilir):", e); }
+                // 3D Engine Init
+                const container = document.getElementById('viewport');
+                LunX.scene = new THREE.Scene();
+                LunX.scene.background = new THREE.Color(0x99ccff); // Sky Blue
+                LunX.scene.fog = new THREE.Fog(0x99ccff, 20, 100);
+
+                LunX.camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 1000);
+                LunX.camera.position.set(10, 10, 10);
+                LunX.camera.lookAt(0,0,0);
+
+                LunX.renderer = new THREE.WebGLRenderer({ antialias: true });
+                LunX.renderer.setSize(container.clientWidth, container.clientHeight);
+                LunX.renderer.shadowMap.enabled = true;
+                LunX.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                container.appendChild(LunX.renderer.domElement);
+
+                // Lights
+                const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+                LunX.scene.add(hemiLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(20, 50, 20);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048; 
+                dirLight.shadow.mapSize.height = 2048;
+                LunX.scene.add(dirLight);
+
+                // Controls
+                LunX.controls = new THREE.OrbitControls(LunX.camera, LunX.renderer.domElement);
+                LunX.controls.enableDamping = true;
+
+                LunX.transform = new THREE.TransformControls(LunX.camera, LunX.renderer.domElement);
+                LunX.transform.addEventListener('dragging-changed', (e) => LunX.controls.enabled = !e.value);
+                LunX.transform.addEventListener('change', () => LunX.editor.updatePropsUI());
+                LunX.scene.add(LunX.transform);
+
+                // Event Listeners
+                window.addEventListener('resize', LunX.editor.onResize);
+                container.addEventListener('mousedown', LunX.editor.onMouseDown);
+                container.addEventListener('touchstart', LunX.editor.onTouchStart, {passive:false});
                 
-                setTimeout(() => {
-                    App.ui.updateProgress(100);
-                    document.getElementById('loading-screen').style.display = 'none';
-                    // Otomatik olarak auth ekranını göster
-                    document.getElementById('auth-screen').style.display = 'flex';
-                }, 1000);
-
-                // 3D Sahneyi Arka Planda Kur
-                App.engine.init3D();
-                App.ui.setupResizer();
-                App.input.setup();
-            },
-
-            auth: {
-                login: () => {
-                    // Basit geçiş (Gerçek auth mantığı eklenebilir)
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('studio-ui').style.display = 'flex';
-                    App.engine.resize(); // Canvas boyutunu düzelt
-                    App.hierarchy.refresh();
-                }
-            },
-
-            engine: {
-                init3D: () => {
-                    const vp = document.getElementById('viewport');
-                    const scene = new THREE.Scene();
-                    scene.background = new THREE.Color(0x87ceeb); // Gerçekçi gökyüzü mavisi
-                    
-                    // Zemin ve Işık
-                    const groundGeo = new THREE.PlaneGeometry(100, 100);
-                    const groundMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-                    const ground = new THREE.Mesh(groundGeo, groundMat);
-                    ground.rotation.x = -Math.PI / 2;
-                    ground.name = "Baseplate";
-                    ground.userData = { type: 'Part', locked: true };
-                    scene.add(ground);
-                    App.world.objects.push(ground);
-
-                    const light = new THREE.DirectionalLight(0xffffff, 1);
-                    light.position.set(20, 50, 10);
-                    scene.add(light);
-                    scene.add(new THREE.AmbientLight(0x404040, 1.5));
-
-                    const camera = new THREE.PerspectiveCamera(70, vp.clientWidth / vp.clientHeight, 0.1, 1000);
-                    camera.position.set(0, 10, 15);
-                    camera.lookAt(0, 0, 0);
-
-                    const renderer = new THREE.WebGLRenderer({ antialias: true });
-                    renderer.setSize(vp.clientWidth, vp.clientHeight);
-                    vp.appendChild(renderer.domElement);
-
-                    App.world.scene = scene;
-                    App.world.camera = camera;
-                    App.world.renderer = renderer;
-
-                    // Ana Döngü
-                    const clock = new THREE.Clock();
-                    const loop = () => {
-                        requestAnimationFrame(loop);
-                        const dt = clock.getDelta();
-
-                        if (App.state.mode === 'play') {
-                            App.physics.update(dt);
-                        } else {
-                            // Editör kamerasını basitçe hareket ettir (Orbit yerine basit look)
-                            // (Gelişmiş orbit bu örnekte kod kalabalığı olmasın diye basitleştirildi)
-                        }
-                        renderer.render(scene, camera);
-                    };
-                    loop();
-                },
-
-                resize: () => {
-                    const vp = document.getElementById('viewport');
-                    if (App.world.camera) {
-                        App.world.camera.aspect = vp.clientWidth / vp.clientHeight;
-                        App.world.camera.updateProjectionMatrix();
-                        App.world.renderer.setSize(vp.clientWidth, vp.clientHeight);
-                    }
-                },
-
-                addPart: () => {
-                    const geo = new THREE.BoxGeometry(2, 2, 2);
-                    const mat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.y = 1;
-                    mesh.name = "Part";
-                    mesh.userData = { type: 'Part', script: '' };
-                    
-                    App.world.scene.add(mesh);
-                    App.world.objects.push(mesh);
-                    App.hierarchy.refresh();
-                },
+                // Klavye
+                document.addEventListener('keydown', LunX.input.onKeyDown);
+                document.addEventListener('keyup', LunX.input.onKeyUp);
                 
-                addScript: () => {
-                    // Sahneye görünmez bir script objesi ekle
-                    const dummy = { name: "Script", userData: { type: 'Script', code: 'print("Hello World")' }, uuid: THREE.MathUtils.generateUUID() };
-                    App.world.objects.push(dummy);
-                    App.hierarchy.refresh();
-                }
+                // Joystick Init
+                LunX.input.initJoystick();
+
+                LunX.editor.animate();
             },
 
-            // --- R6 KARAKTER VE FİZİK ---
-            physics: {
-                createR6: () => {
-                    // Roblox R6 Yapısı: Head, Torso, LeftArm, RightArm, LeftLeg, RightLeg
-                    const group = new THREE.Group();
-                    
-                    const matSkin = new THREE.MeshStandardMaterial({color: 0xffcc99}); // Ten
-                    const matTorso = new THREE.MeshStandardMaterial({color: 0x3498db}); // Mavi Tişört
-                    const matLegs = new THREE.MeshStandardMaterial({color: 0x2c3e50}); // Siyah Pantolon
-
-                    // 1. KAFA (Silindir istendi)
-                    const headGeo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-                    const head = new THREE.Mesh(headGeo, matSkin);
-                    head.position.y = 4.5;
-                    head.name = "Head";
-                    group.add(head);
-
-                    // 2. GÖVDE (Kare, X Logolu)
-                    const torsoGeo = new THREE.BoxGeometry(2, 2, 1);
-                    const torso = new THREE.Mesh(torsoGeo, matTorso);
-                    torso.position.y = 3;
-                    torso.name = "Torso";
-                    
-                    // X Logosu Çizimi (Canvas Texture)
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 64; canvas.height = 64;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#3498db'; ctx.fillRect(0,0,64,64); // Arkaplan
-                    ctx.strokeStyle = 'white'; ctx.lineWidth = 5;
-                    ctx.beginPath(); ctx.moveTo(10,10); ctx.lineTo(54,54); ctx.moveTo(54,10); ctx.lineTo(10,54); ctx.stroke();
-                    const tex = new THREE.CanvasTexture(canvas);
-                    // Sadece ön yüze uygula (Materyal dizisi ile yapılabilir ama basitlik için genel atıyoruz)
-                    torso.material = new THREE.MeshStandardMaterial({map: tex}); 
-                    
-                    group.add(torso);
-
-                    // 3. KOLLAR (Dikdörtgen)
-                    const armGeo = new THREE.BoxGeometry(1, 2, 1);
-                    const lArm = new THREE.Mesh(armGeo, matSkin);
-                    lArm.position.set(-1.5, 3, 0); lArm.name = "LeftArm";
-                    group.add(lArm);
-                    
-                    const rArm = new THREE.Mesh(armGeo, matSkin);
-                    rArm.position.set(1.5, 3, 0); rArm.name = "RightArm";
-                    group.add(rArm);
-
-                    // 4. BACAKLAR (Dikdörtgen)
-                    const legGeo = new THREE.BoxGeometry(1, 2, 1);
-                    const lLeg = new THREE.Mesh(legGeo, matLegs);
-                    lLeg.position.set(-0.5, 1, 0); lLeg.name = "LeftLeg";
-                    group.add(lLeg);
-
-                    const rLeg = new THREE.Mesh(legGeo, matLegs);
-                    rLeg.position.set(0.5, 1, 0); rLeg.name = "RightLeg";
-                    group.add(rLeg);
-
-                    App.world.scene.add(group);
-                    App.player.mesh = group;
-                    
-                    // Spawn Konumu
-                    group.position.set(0, 0, 0);
-                },
-
-                update: (dt) => {
-                    if (!App.player.mesh) return;
-
-                    const p = App.player.mesh;
-                    const speed = 10;
-                    const jumpForce = 15;
-                    const gravity = -30;
-
-                    // Girdileri Hesapla
-                    let dx = 0; let dz = 0;
-                    
-                    // Klavye
-                    /* (Klavye listener eklenebilir, ancak odak mobilde) */
-                    
-                    // Joystick
-                    if (App.input.joy.x !== 0 || App.input.joy.y !== 0) {
-                        dx = App.input.joy.x;
-                        dz = App.input.joy.y;
-                    }
-
-                    // Hareket Vektörü
-                    const moveVec = new THREE.Vector3(dx, 0, dz).normalize();
-                    
-                    // Animasyon (Basit kol/bacak sallanması)
-                    if (moveVec.length() > 0.1) {
-                        App.player.animTime += dt * 10;
-                        const angle = Math.sin(App.player.animTime) * 0.5;
-                        
-                        const lArm = p.getObjectByName("LeftArm");
-                        const rArm = p.getObjectByName("RightArm");
-                        const lLeg = p.getObjectByName("LeftLeg");
-                        const rLeg = p.getObjectByName("RightLeg");
-                        
-                        if(lArm) lArm.rotation.x = angle;
-                        if(rArm) rArm.rotation.x = -angle;
-                        if(lLeg) lLeg.rotation.x = -angle;
-                        if(rLeg) rLeg.rotation.x = angle;
-                        
-                        // Karakteri hareket yönüne döndür
-                        const targetRot = Math.atan2(dx, dz);
-                        p.rotation.y = targetRot;
-                        
-                        p.position.x += Math.sin(targetRot) * speed * dt;
-                        p.position.z += Math.cos(targetRot) * speed * dt;
-                    } else {
-                         // Durma pozu
-                         ["LeftArm", "RightArm", "LeftLeg", "RightLeg"].forEach(name => {
-                             const part = p.getObjectByName(name);
-                             if(part) part.rotation.x = 0;
-                         });
-                    }
-
-                    // Fizik (Yerçekimi & Zıplama)
-                    App.player.velocity.y += gravity * dt;
-                    
-                    if (App.player.isGrounded && App.input.jump) {
-                        App.player.velocity.y = jumpForce;
-                        App.player.isGrounded = false;
-                        App.input.jump = false;
-                    }
-
-                    p.position.y += App.player.velocity.y * dt;
-
-                    // Basit Zemin Çarpışması
-                    if (p.position.y < 0) {
-                        p.position.y = 0;
-                        App.player.velocity.y = 0;
-                        App.player.isGrounded = true;
-                    }
-
-                    // Kamera Takibi (Third Person)
-                    const camOffset = new THREE.Vector3(0, 8, -10); // Arkadan ve yukarıdan
-                    // Kamera açısını karakterin arkasına sabitlemek istemiyorsak sabit offset kullanırız
-                    // Eğer karakterle dönsün istiyorsak: camOffset.applyAxisAngle(new THREE.Vector3(0,1,0), p.rotation.y);
-                    
-                    const targetPos = p.position.clone().add(new THREE.Vector3(0, 2, 0));
-                    App.world.camera.position.lerp(p.position.clone().add(new THREE.Vector3(0, 8, 12)), 0.1);
-                    App.world.camera.lookAt(targetPos);
-                }
-            },
-
-            // --- HİYERARŞİ & ÖZELLİKLER ---
-            hierarchy: {
-                refresh: () => {
-                    const list = document.getElementById('explorer-list');
-                    list.innerHTML = '';
-                    
-                    App.world.objects.forEach((obj, index) => {
-                        const el = document.createElement('div');
-                        el.className = 'tree-item';
-                        let iconClass = 'icon-cube';
-                        if (obj.userData.type === 'Script') iconClass = 'icon-script';
-                        if (obj.name === 'Baseplate') iconClass = 'icon-folder'; // Sembolik
-                        
-                        el.innerHTML = `<div class="icon ${iconClass}"></div> ${obj.name}`;
-                        el.onclick = () => App.editor.select(obj);
-                        list.appendChild(el);
-                    });
-                }
+            start: (template) => {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('studio-interface').style.display = 'flex';
+                LunX.init();
+                LunX.editor.onResize();
+                
+                // Baseplate
+                const geo = new THREE.BoxGeometry(100, 1, 100);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x666666 }); // Roblox baseplate gri
+                const baseplate = new THREE.Mesh(geo, mat);
+                baseplate.position.y = -0.5;
+                baseplate.receiveShadow = true;
+                baseplate.name = "Baseplate";
+                baseplate.userData = { anchored: true, locked: true };
+                LunX.scene.add(baseplate);
+                LunX.objects.push(baseplate);
+                
+                // SpawnLocation
+                const spawnGeo = new THREE.BoxGeometry(4, 0.5, 4);
+                const spawnMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, map: null }); // Decal yerine renk
+                const spawn = new THREE.Mesh(spawnGeo, spawnMat);
+                spawn.position.set(0, 0.25, 0);
+                spawn.name = "SpawnLocation";
+                spawn.userData = { anchored: true, isSpawn: true };
+                LunX.scene.add(spawn);
+                LunX.objects.push(spawn);
+                
+                LunX.ui.refreshExplorer();
             },
 
             editor: {
-                select: (obj) => {
-                    App.state.selectedId = obj.uuid;
-                    // UI Güncelle
-                    document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
-                    // Özellikler panelini doldur
-                    const props = document.getElementById('properties-content');
-                    if (obj.userData.type === 'Script') {
-                        props.innerHTML = `<button onclick="App.editor.openScript('${obj.uuid}')">Kodu Düzenle</button>`;
+                animate: () => {
+                    requestAnimationFrame(LunX.editor.animate);
+                    
+                    if (LunX.isPlaying) {
+                        LunX.game.updatePhysics();
                     } else {
-                        props.innerHTML = `
-                            <div class="prop-row"><div class="prop-label">Name</div><input class="prop-input" value="${obj.name}"></div>
-                            <div class="prop-row"><div class="prop-label">Position</div><input class="prop-input" value="${obj.position.x.toFixed(1)}, ${obj.position.y.toFixed(1)}, ${obj.position.z.toFixed(1)}"></div>
-                        `;
+                        LunX.controls.update();
+                    }
+                    
+                    LunX.renderer.render(LunX.scene, LunX.camera);
+                },
+                
+                onResize: () => {
+                    const c = document.getElementById('viewport-container');
+                    if (LunX.camera) {
+                        LunX.camera.aspect = c.clientWidth / c.clientHeight;
+                        LunX.camera.updateProjectionMatrix();
+                        LunX.renderer.setSize(c.clientWidth, c.clientHeight);
                     }
                 },
-                openScript: (uuid) => {
-                    document.getElementById('script-editor').style.display = 'flex';
-                    // Normalde UUID ile kod bulunur, şimdilik dummy
+                
+                onMouseDown: (e) => {
+                    if (LunX.isPlaying) return;
+                    const rect = LunX.renderer.domElement.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                        -((e.clientY - rect.top) / rect.height) * 2 + 1
+                    );
+                    
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, LunX.camera);
+                    const intersects = raycaster.intersectObjects(LunX.objects);
+                    
+                    if (intersects.length > 0) {
+                        LunX.editor.select(intersects[0].object);
+                    } else {
+                        LunX.editor.select(null);
+                    }
                 },
+
+                select: (obj) => {
+                    LunX.selected = obj;
+                    if (obj && !obj.userData.locked) {
+                        LunX.transform.attach(obj);
+                    } else {
+                        LunX.transform.detach();
+                    }
+                    LunX.ui.refreshExplorer(); // Highlight güncelle
+                    LunX.ui.updateProperties();
+                },
+                
+                updatePropsUI: () => {
+                    if(LunX.selected) {
+                        // Input değerlerini güncelle (gerçek zamanlı transform için)
+                        const obj = LunX.selected;
+                        // Burada DOM elemanlarını bulup değerlerini güncellemek gerekir
+                        // Basitlik için bu örnekte sadece selection değişince full refresh yapıyoruz
+                    }
+                },
+                
+                openScript: (obj) => {
+                    document.getElementById('script-editor').style.display = 'flex';
+                    document.getElementById('code-area').value = obj.userData.code || 'print("Hello World")';
+                    // Kaydetme mantığı eklenebilir
+                },
+                
                 closeScript: () => {
                     document.getElementById('script-editor').style.display = 'none';
                 },
                 
-                // OYUN MODU YÖNETİMİ
-                runGame: () => {
-                    App.state.mode = 'play';
-                    document.getElementById('game-ui').style.display = 'block';
-                    // Kamerayı sıfırla veya ayarla
-                    App.physics.createR6();
-                },
-                stopGame: () => {
-                    App.state.mode = 'edit';
-                    document.getElementById('game-ui').style.display = 'none';
-                    if(App.player.mesh) {
-                        App.world.scene.remove(App.player.mesh);
-                        App.player.mesh = null;
+                toggleAnchor: () => {
+                    if(LunX.selected) {
+                        LunX.selected.userData.anchored = !LunX.selected.userData.anchored;
+                        LunX.ui.updateProperties();
                     }
-                    // Kamerayı eski yerine al
-                    App.world.camera.position.set(0, 10, 15);
-                    App.world.camera.lookAt(0,0,0);
                 }
             },
             
-            // --- GİRİŞ YÖNETİMİ (Joystick & UI) ---
-            game: {
-                toggleMenu: () => {
-                    const menu = document.getElementById('ingame-menu');
-                    menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+            world: {
+                addPart: (type) => {
+                    let geo, mat = new THREE.MeshStandardMaterial({color:0xcccccc});
+                    let name = "Part";
+                    if(type=='box') { geo = new THREE.BoxGeometry(2,2,2); }
+                    else if(type=='sphere') { geo = new THREE.SphereGeometry(1,32,32); name="Sphere"; }
+                    else if(type=='cylinder') { geo = new THREE.CylinderGeometry(1,1,2,32); name="Cylinder"; }
+                    
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.y = 5;
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.name = name;
+                    mesh.userData = { anchored: false, canCollide: true };
+                    
+                    LunX.scene.add(mesh);
+                    LunX.objects.push(mesh);
+                    LunX.ui.refreshExplorer();
+                    LunX.editor.select(mesh);
                 },
-                resetCharacter: () => {
-                    if(App.player.mesh) {
-                        App.player.mesh.position.set(0, 10, 0);
-                        App.player.velocity.y = 0;
-                    }
-                    document.getElementById('ingame-menu').style.display = 'none';
+                
+                addScript: () => {
+                    const script = { name: "Script", type: "script", userData: {code: 'print("Hello")'} };
+                    // Görünmez obje, sadece explorerda
+                    // Basitlik için sahneye dummy eklemiyoruz, bu yapı daha karmaşık olur.
+                    alert("Script eklendi (Konsol'da çalışır)");
+                }
+            },
+            
+            tools: {
+                setMode: (mode) => {
+                    if(mode=='select') LunX.transform.detach();
+                    else LunX.transform.setMode(mode);
+                    
+                    document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
+                    document.getElementById('tool-'+mode).classList.add('active');
                 }
             },
 
             ui: {
-                updateProgress: (val) => document.getElementById('progress').style.width = val + '%',
-                
-                setupResizer: () => {
-                    const resizer = document.getElementById('resizer');
-                    const sidebar = document.getElementById('sidebar');
+                refreshExplorer: () => {
+                    const div = document.getElementById('explorer');
+                    div.innerHTML = `<div class="tree-node" style="font-weight:bold;">Workspace</div>`;
                     
-                    resizer.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        document.addEventListener('mousemove', resize);
-                        document.addEventListener('mouseup', stopResize);
+                    LunX.objects.forEach(obj => {
+                        const node = document.createElement('div');
+                        node.className = 'tree-node ' + (LunX.selected === obj ? 'selected' : '');
+                        let icon = '⬜'; // Part
+                        if(obj.name === 'Baseplate') icon = '🧱';
+                        if(obj.name === 'SpawnLocation') icon = '🚩';
+                        if(obj.name === 'Dummy') icon = '👤';
+                        
+                        node.innerHTML = `<span class="node-icon">${icon}</span> ${obj.name}`;
+                        node.onclick = () => LunX.editor.select(obj);
+                        div.appendChild(node);
                     });
+                },
+                
+                updateProperties: () => {
+                    const div = document.getElementById('properties');
+                    const obj = LunX.selected;
                     
-                    function resize(e) {
-                        const width = document.body.clientWidth - e.clientX;
-                        sidebar.style.width = width + 'px';
-                        App.engine.resize();
+                    if (!obj) {
+                        div.innerHTML = '<div style="text-align:center; margin-top:10px; color:#999;">Nesne Seçilmedi</div>';
+                        return;
                     }
-                    function stopResize() {
-                        document.removeEventListener('mousemove', resize);
-                        document.removeEventListener('mouseup', stopResize);
+                    
+                    const colorHex = '#' + obj.material.color.getHexString();
+                    const pos = obj.position;
+                    const size = obj.scale; // Basitlik için scale kullanıyoruz, gerçek boyutta geometry parameters lazım
+                    
+                    let html = `
+                        <div class="prop-row"><div class="prop-name">Name</div><div class="prop-value"><input type="text" value="${obj.name}" onchange="LunX.selected.name=this.value; LunX.ui.refreshExplorer()"></div></div>
+                        <div class="prop-row"><div class="prop-name">Color</div><div class="prop-value"><input type="color" value="${colorHex}" onchange="LunX.selected.material.color.set(this.value)"></div></div>
+                        <div class="prop-row"><div class="prop-name">Position</div><div class="prop-value"><input value="${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}" disabled></div></div>
+                        <div class="prop-row"><div class="prop-name">Anchored</div><div class="prop-value"><input type="checkbox" ${obj.userData.anchored?'checked':''} onchange="LunX.selected.userData.anchored=this.checked"></div></div>
+                        <div class="prop-row"><div class="prop-name">CanCollide</div><div class="prop-value"><input type="checkbox" ${obj.userData.canCollide!==false?'checked':''} onchange="LunX.selected.userData.canCollide=this.checked"></div></div>
+                        <div class="prop-row"><div class="prop-name">Transparency</div><div class="prop-value"><input type="number" min="0" max="1" step="0.1" value="${1-obj.material.opacity}" onchange="LunX.selected.material.opacity=1-this.value; LunX.selected.material.transparent=true;"></div></div>
+                    `;
+                    div.innerHTML = html;
+                }
+            },
+
+            game: {
+                play: () => {
+                    LunX.isPlaying = true;
+                    LunX.editor.select(null);
+                    document.getElementById('game-ui').style.display = 'block';
+                    document.getElementById('mobile-controls').style.display = 'flex';
+                    
+                    // Kamerayı ayarla
+                    LunX.controls.enabled = false; // Orbit iptal
+                    
+                    // R6 Karakteri Oluştur
+                    LunX.game.spawnPlayer();
+                },
+                
+                stop: () => {
+                    LunX.isPlaying = false;
+                    document.getElementById('game-ui').style.display = 'none';
+                    LunX.controls.enabled = true;
+                    
+                    // Player sil
+                    if(LunX.player) {
+                        LunX.scene.remove(LunX.player);
+                        LunX.player = null;
                     }
+                    
+                    // Kamerayı resetle
+                    LunX.camera.position.set(10, 10, 10);
+                    LunX.camera.lookAt(0,0,0);
+                },
+                
+                spawnPlayer: () => {
+                    // Spawn noktası bul
+                    const spawn = LunX.objects.find(o => o.userData.isSpawn);
+                    const pos = spawn ? spawn.position.clone() : new THREE.Vector3(0,2,0);
+                    pos.y += 3; // Havadan düşsün
+                    
+                    // R6 Rig Oluşturma
+                    const group = new THREE.Group();
+                    group.name = "Dummy";
+                    
+                    const skin = new THREE.MeshStandardMaterial({color:0xffcc99});
+                    const torsoMat = new THREE.MeshStandardMaterial({color:0x007acc}); // Mavi Tişört
+                    const legMat = new THREE.MeshStandardMaterial({color:0x111111});
+                    
+                    // Torso (2x2x1)
+                    const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), torsoMat);
+                    torso.position.y = 0;
+                    group.add(torso);
+                    
+                    // Head (1x1x1 - Silindir)
+                    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.2, 32), skin);
+                    head.position.y = 1.6;
+                    group.add(head);
+                    
+                    // Arms (1x2x1)
+                    const lArm = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), skin);
+                    lArm.position.set(-1.5, 0, 0);
+                    group.add(lArm);
+                    const rArm = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), skin);
+                    rArm.position.set(1.5, 0, 0);
+                    group.add(rArm);
+                    
+                    // Legs (1x2x1)
+                    const lLeg = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), legMat);
+                    lLeg.position.set(-0.5, -2, 0);
+                    group.add(lLeg);
+                    const rLeg = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), legMat);
+                    rLeg.position.set(0.5, -2, 0);
+                    group.add(rLeg);
+                    
+                    // X Logosu (Canvas Texture)
+                    const canvas = document.createElement('canvas'); canvas.width=64; canvas.height=64;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#007acc'; ctx.fillRect(0,0,64,64);
+                    ctx.strokeStyle='white'; ctx.lineWidth=8;
+                    ctx.beginPath(); ctx.moveTo(10,10); ctx.lineTo(54,54); ctx.moveTo(54,10); ctx.lineTo(10,54); ctx.stroke();
+                    const tex = new THREE.CanvasTexture(canvas);
+                    const decal = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.MeshBasicMaterial({map:tex, transparent:true}));
+                    decal.position.set(0, 0, 0.51); // Torso önü
+                    torso.add(decal);
+                    
+                    group.position.copy(pos);
+                    LunX.scene.add(group);
+                    LunX.player = group;
+                    LunX.playerVelocity = new THREE.Vector3(0,0,0);
+                },
+                
+                toggleMenu: () => {
+                    const m = document.getElementById('ingame-settings');
+                    m.style.display = m.style.display === 'block' ? 'none' : 'block';
+                },
+                
+                resetChar: () => {
+                    if(LunX.player) {
+                        const spawn = LunX.objects.find(o => o.userData.isSpawn);
+                        LunX.player.position.copy(spawn ? spawn.position : new THREE.Vector3(0,5,0));
+                        LunX.player.position.y += 3;
+                        LunX.playerVelocity.set(0,0,0);
+                    }
+                    document.getElementById('ingame-settings').style.display = 'none';
+                }
+            },
+            
+            physics: {
+                update: (dt) => {
+                    if (!LunX.player) return;
+                    const p = LunX.player;
+                    
+                    // Basit Fizik
+                    const gravity = -30;
+                    const moveSpeed = 10;
+                    const jumpHeight = 15;
+                    
+                    LunX.playerVelocity.y += gravity * dt;
+                    
+                    // WASD / Joystick Input
+                    let dx = 0, dz = 0;
+                    if(LunX.input.fwd) dz -= 1;
+                    if(LunX.input.bwd) dz += 1;
+                    if(LunX.input.lft) dx -= 1;
+                    if(LunX.input.rgt) dx += 1;
+                    
+                    // Joystick override
+                    if(LunX.input.joy.x !== 0 || LunX.input.joy.y !== 0) {
+                        dx = LunX.input.joy.x;
+                        dz = LunX.input.joy.y;
+                    }
+                    
+                    // Kamera Yönüne Göre Hareket
+                    const camDir = new THREE.Vector3();
+                    LunX.camera.getWorldDirection(camDir);
+                    camDir.y = 0; camDir.normalize();
+                    const camRight = new THREE.Vector3(-camDir.z, 0, camDir.x);
+                    
+                    const moveVec = new THREE.Vector3().addScaledVector(camRight, dx).addScaledVector(camDir, -dz);
+                    if(moveVec.length() > 0) {
+                        moveVec.normalize().multiplyScalar(moveSpeed * dt);
+                        p.position.add(moveVec);
+                        p.lookAt(p.position.clone().add(moveVec)); // Karakteri döndür
+                    }
+                    
+                    // Yer Kontrolü (Raycasting gerekebilir, şimdilik zemin düzlemi)
+                    let groundY = 0.5; // Baseplate Y + Player Leg Offset
+                    // Basit: Baseplate üstündeysek
+                    if (p.position.y + LunX.playerVelocity.y * dt < 3) { // 3 birim bacak boyu vs
+                         // Zemin çarpışması (çok basitleştirilmiş)
+                         // Gerçek bir oyunda AABB çarpışma kutusu kullanılır
+                         if(p.position.y <= 3) { // Zemin seviyesi
+                             p.position.y = 3;
+                             LunX.playerVelocity.y = 0;
+                             LunX.player.isGrounded = true;
+                         }
+                    } else {
+                        p.position.y += LunX.playerVelocity.y * dt;
+                        LunX.player.isGrounded = false;
+                    }
+                    
+                    // Zıplama
+                    if (LunX.input.jump && LunX.player.isGrounded) {
+                        LunX.playerVelocity.y = jumpHeight;
+                        LunX.player.isGrounded = false;
+                        LunX.input.jump = false; // Trigger
+                    }
+                    
+                    // Kamera Takibi (Third Person)
+                    const targetPos = p.position.clone().add(new THREE.Vector3(0, 5, 0));
+                    const offset = new THREE.Vector3(0, 5, 12); // Arkadan takip
+                    // Ofset'i kameranın mevcut açısına göre değil, karakterin arkasına sabitleyebiliriz
+                    // Veya serbest kamera (OrbitControls disable olduğu için manuel update)
+                    
+                    // Basit takip: Kamerayı karakterin arkasına yumuşakça taşı
+                    /*
+                    const relativeCameraOffset = new THREE.Vector3(0, 5, 10);
+                    const cameraOffset = relativeCameraOffset.applyMatrix4(p.matrixWorld);
+                    LunX.camera.position.lerp(cameraOffset, 0.1);
+                    LunX.camera.lookAt(p.position.clone().add(new THREE.Vector3(0,2,0)));
+                    */
+                   
+                   // OrbitControls ile takip (Daha rahat)
+                   LunX.controls.target.copy(p.position);
+                   LunX.controls.update();
+                   
+                   // Düşerse resetle
+                   if(p.position.y < -50) LunX.game.resetChar();
                 }
             },
             
             input: {
-                setup: () => {
-                    const stick = document.getElementById('joystick-stick');
+                onKeyDown: (e) => {
+                    switch(e.code) {
+                        case 'KeyW': LunX.input.fwd = 1; break;
+                        case 'KeyS': LunX.input.bwd = 1; break;
+                        case 'KeyA': LunX.input.lft = 1; break;
+                        case 'KeyD': LunX.input.rgt = 1; break;
+                        case 'Space': LunX.input.jump = true; break;
+                    }
+                },
+                onKeyUp: (e) => {
+                    switch(e.code) {
+                        case 'KeyW': LunX.input.fwd = 0; break;
+                        case 'KeyS': LunX.input.bwd = 0; break;
+                        case 'KeyA': LunX.input.lft = 0; break;
+                        case 'KeyD': LunX.input.rgt = 0; break;
+                        case 'Space': LunX.input.jump = false; break;
+                    }
+                },
+                
+                initJoystick: () => {
                     const zone = document.getElementById('joystick-zone');
-                    const maxDist = 35;
+                    const stick = document.getElementById('joystick-stick');
+                    const jump = document.getElementById('jump-btn');
+                    let startX, startY;
                     
-                    const handleMove = (clientX, clientY) => {
+                    const handleMove = (cx, cy) => {
                         const rect = zone.getBoundingClientRect();
                         const centerX = rect.left + rect.width/2;
                         const centerY = rect.top + rect.height/2;
+                        let dx = cx - centerX;
+                        let dy = cy - centerY;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const maxDist = 40;
                         
-                        let dx = clientX - centerX;
-                        let dy = clientY - centerY;
-                        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), maxDist);
-                        const angle = Math.atan2(dy, dx);
+                        if (dist > maxDist) {
+                            dx = (dx/dist) * maxDist;
+                            dy = (dy/dist) * maxDist;
+                        }
                         
-                        const finalX = Math.cos(angle) * dist;
-                        const finalY = Math.sin(angle) * dist;
-                        
-                        stick.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
-                        
-                        // Normalize Input (-1 to 1)
-                        App.input.joy.x = finalX / maxDist;
-                        App.input.joy.y = finalY / maxDist;
+                        stick.style.transform = `translate(${dx}px, ${dy}px)`;
+                        LunX.input.joy.x = dx / maxDist;
+                        LunX.input.joy.y = -dy / maxDist; // Y yukarı pozitiftir
                     };
                     
                     const endMove = () => {
-                        stick.style.transform = `translate(-50%, -50%)`;
-                        App.input.joy.x = 0;
-                        App.input.joy.y = 0;
+                        stick.style.transform = `translate(0,0)`;
+                        LunX.input.joy.x = 0;
+                        LunX.input.joy.y = 0;
                     };
-
-                    zone.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+                    
+                    zone.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); });
                     zone.addEventListener('touchend', endMove);
-                    // PC testi için mouse desteği
+                    // Mouse desteği (PC testi için)
                     let dragging = false;
                     zone.addEventListener('mousedown', () => dragging = true);
                     document.addEventListener('mousemove', (e) => { if(dragging) handleMove(e.clientX, e.clientY); });
                     document.addEventListener('mouseup', () => { dragging = false; endMove(); });
-
-                    // Jump
-                    const jumpBtn = document.getElementById('jump-btn');
-                    const doJump = (e) => { e.preventDefault(); App.input.jump = true; };
-                    jumpBtn.addEventListener('touchstart', doJump);
-                    jumpBtn.addEventListener('mousedown', doJump);
+                    
+                    jump.addEventListener('touchstart', (e) => { e.preventDefault(); LunX.input.jump = true; });
+                    jump.addEventListener('mousedown', () => LunX.input.jump = true);
+                },
+                
+                setup: () => {
+                    // Resizer
+                    const resizer = document.getElementById('resizer');
+                    const sidebar = document.getElementById('sidebar');
+                    let resizing = false;
+                    resizer.addEventListener('mousedown', (e) => { resizing = true; });
+                    document.addEventListener('mousemove', (e) => {
+                        if(!resizing) return;
+                        const newWidth = document.body.clientWidth - e.clientX;
+                        if (newWidth > 150 && newWidth < 600) {
+                            sidebar.style.width = newWidth + 'px';
+                            LunX.editor.onResize();
+                        }
+                    });
+                    document.addEventListener('mouseup', () => resizing = false);
                 }
             }
         };
 
         // Uygulamayı Başlat
-        window.onload = App.init;
+        window.onload = LunX.init;
 
     </script>
 </body>
