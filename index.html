@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio Beta (V9.5) - Core Engine</title>
+    <title>LunX Studio V10.0 - Joystick & Keylock Fix</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -23,9 +23,17 @@
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; overflow: hidden; background: var(--bg-main); color: var(--text-main); height: 100vh; width: 100vw; display: flex; flex-direction: column; }
+        body { margin: 0; overflow: hidden; background: var(--bg-main); color: var(--text-main); height: 100vh; width: 100vw; }
 
-        /* --- X MENÜSÜ (Şeffaf & Animasyonlu) --- */
+        /* --- STÜDYO KAPSAYICISI (ÖLÇEK İÇİN) --- */
+        #studio-container {
+            height: 100vh; width: 100vw; 
+            display: flex; flex-direction: column;
+            transform-origin: top left;
+            transition: transform 0.2s;
+        }
+
+        /* --- X MENÜSÜ --- */
         #menu-btn {
             position: absolute; top: 10px; left: 10px; width: 45px; height: 45px;
             background: rgba(255, 51, 51, 0.9); color: white; border-radius: 12px;
@@ -60,12 +68,14 @@
         .x-btn:hover { background: var(--accent-hover); border-color: var(--accent-red); }
         
         .setting-slider { width: 100%; margin: 10px 0; }
+        .setting-check { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
 
         /* --- BAŞLANGIÇ EKRANI --- */
         #start-screen { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f8f8; z-index: 1500; }
         #start-sidebar { width: 280px; background: white; border-right: 1px solid #ddd; padding: 30px; display: flex; flex-direction: column; }
         .template-card { width: 140px; height: 160px; background: white; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; transition: 0.2s; margin: 10px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; }
         .template-card:hover { border-color: var(--accent-red); transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .start-btn-side { padding: 10px; margin: 5px 0; border: none; background: var(--accent-red); color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         /* --- STÜDYO ARAYÜZÜ --- */
         #studio-ui { display: none; flex-direction: column; height: 100%; }
@@ -123,136 +133,148 @@
         .prop-row { display: flex; align-items: center; margin-bottom: 4px; }
         .prop-row label { width: 40%; font-size: 11px; color: #666; }
         .prop-row input, .prop-row select { width: 60%; border: 1px solid #ccc; padding: 2px; font-size: 11px; }
+        .tree-node { padding: 3px; cursor: pointer; border-radius: 3px; }
+        .tree-node:hover { background: #f0f0f0; }
+        .tree-node.selected { background: #cce5ff; border: 1px solid #a3d2ff; }
     </style>
 </head>
 <body onload="App.init()">
 
-    <div id="menu-btn" onclick="UI.toggleMenu()">☰</div>
-    
-    <div id="x-menu-overlay">
-        <div id="x-menu-panel">
-            <div class="x-header">
-                <span>LunX Menü</span>
-                <span style="cursor:pointer" onclick="UI.toggleMenu()">✕</span>
-            </div>
-            <div class="x-tabs">
-                <div class="x-tab active" onclick="UI.tab('main')">Ana</div>
-                <div class="x-tab" onclick="UI.tab('settings')">Ayarlar</div>
-                <div class="x-tab" onclick="UI.tab('help')">Nasıl?</div>
-            </div>
-            <div class="x-content">
-                <div id="page-main" class="x-page active">
-                    <div class="x-btn" onclick="App.reset()">🔁 Projeyi Sıfırla</div>
-                    <div class="x-btn" onclick="App.exit()">🏠 Ana Menüye Dön</div>
+    <div id="studio-container">
+        <div id="menu-btn" onclick="UI.toggleMenu()">☰</div>
+        
+        <div id="x-menu-overlay" onclick="if(event.target==this) UI.toggleMenu()">
+            <div id="x-menu-panel">
+                <div class="x-header">
+                    <span>LunX Menü</span>
+                    <span style="cursor:pointer" onclick="UI.toggleMenu()">✕</span>
                 </div>
-                <div id="page-settings" class="x-page">
-                    <label>Arayüz Boyutu (Küçük - Normal)</label>
-                    <input type="range" min="0.6" max="1.2" step="0.1" value="1" class="setting-slider" oninput="UI.setScale(this.value)">
-                    <label>Grafik Kalitesi (1 - 15)</label>
-                    <input type="range" min="0.1" max="1.5" step="0.1" value="1" class="setting-slider" onchange="App.setQuality(this.value)">
-                    <div class="x-btn" onclick="location.reload()">⚙️ Yeniden Başlat</div>
+                <div class="x-tabs">
+                    <div class="x-tab active" onclick="UI.tab('main', event.currentTarget)">Ana</div>
+                    <div class="x-tab" onclick="UI.tab('settings', event.currentTarget)">Ayarlar</div>
+                    <div class="x-tab" onclick="UI.tab('help', event.currentTarget)">Nasıl?</div>
                 </div>
-                <div id="page-help" class="x-page">
-                    <p>• <b>Texture:</b> Sağ panelden 'Dosya Seç' ile cihazınızdan resim yükleyin.</p>
-                    <p>• <b>Sculpt:</b> Araziyi yükseltmek/alçaltmak için Terrain sekmesine gidin.</p>
-                    <p>• <b>Hasar:</b> Bloğun 'Damage' değerini artırın.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="start-screen">
-        <div id="start-sidebar">
-            <h1 style="color:var(--accent-red); margin-top:0;">LunX Studio</h1>
-            <p>Versiyon: V9.5 (Beta)</p>
-            <button class="start-btn-side" onclick="App.start('baseplate')">Yeni Proje</button>
-            <button class="start-btn-side" style="background:#666">Projelerim</button>
-        </div>
-        <div style="flex:1; padding:40px;">
-            <h3>Şablon Seç</h3>
-            <div style="display:flex; gap:20px;">
-                <div class="template-card" onclick="App.start('baseplate')">
-                    <div style="font-size:40px;">⬜</div><div>Baseplate</div>
-                </div>
-                <div class="template-card" onclick="App.start('flat')">
-                    <div style="font-size:40px;">🟩</div><div>Flat Terrain</div>
-                </div>
-                <div class="template-card" onclick="App.start('village')">
-                    <div style="font-size:40px;">🏡</div><div>Village</div>
+                <div class="x-content">
+                    <div id="page-main" class="x-page active">
+                        <div class="x-btn" onclick="App.reset()">🔁 Projeyi Sıfırla</div>
+                        <div class="x-btn" onclick="App.exit()">🏠 Ana Menüye Dön</div>
+                    </div>
+                    <div id="page-settings" class="x-page">
+                        <label>Arayüz Boyutu (0.6x - 1.2x)</label>
+                        <input type="range" min="0.6" max="1.2" step="0.1" value="1" class="setting-slider" oninput="UI.setScale(this.value)">
+                        
+                        <label>Grafik Kalitesi (0.1 - 1.5)</label>
+                        <input type="range" min="0.1" max="1.5" step="0.1" value="1" class="setting-slider" onchange="App.setQuality(this.value)">
+                        
+                        <div class="setting-check">
+                            <label for="keylock-check">Kontrol Tuş Kilidi (Hareket/Döndürme)</label>
+                            <input type="checkbox" id="keylock-check" onchange="App.setControlLock(this.checked)">
+                        </div>
+                        
+                        <div class="x-btn" onclick="location.reload()">⚙️ Yeniden Başlat</div>
+                    </div>
+                    <div id="page-help" class="x-page">
+                        <p>• <b>Texture:</b> Sağ panelden 'Dosya Seç' ile cihazınızdan resim yükleyin.</p>
+                        <p>• <b>Sculpt:</b> Terrain sekmesinde "Sculpt" aracını seçin ve "Add" veya "Sub" ile araziyi şekillendirin.</p>
+                        <p>• <b>Hasar:</b> Bloğun 'Damage' değerini artırın (Özellikler panelinde).</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="studio-ui">
-        <div id="ribbon-container">
-            <div id="ribbon-tabs">
-                <div class="r-tab active" onclick="UI.ribbon('home')"><i>🏠</i>Home</div>
-                <div class="r-tab" onclick="UI.ribbon('model')"><i>🧊</i>Model</div>
-                <div class="r-tab" onclick="UI.ribbon('terrain')"><i>⛰️</i>Terrain</div>
-                <div class="r-tab" onclick="UI.ribbon('view')"><i>👁️</i>View</div>
+        <div id="start-screen">
+            <div id="start-sidebar">
+                <h1 style="color:var(--accent-red); margin-top:0;">LunX Studio</h1>
+                <p>Versiyon: V10.0 (Joystick Fix)</p>
+                <button class="start-btn-side" onclick="App.start('baseplate')">Yeni Proje Başlat</button>
+                <button class="start-btn-side" style="background:#666">Projelerim (Yakında)</button>
             </div>
-            
-            <div id="ribbon-tools">
-                <div id="list-home" class="tool-list active">
-                    <div class="tool-btn active" id="t-sel" onclick="Tools.setMode('select')"><span>👆</span><label>Seç</label></div>
-                    <div class="tool-btn" id="t-mov" onclick="Tools.setMode('translate')"><span>↔️</span><label>Taşı</label></div>
-                    <div class="tool-btn" id="t-sca" onclick="Tools.setMode('scale')"><span>⤢</span><label>Boyut</label></div>
-                    <div class="tool-btn" id="t-rot" onclick="Tools.setMode('rotate')"><span>🔄</span><label>Döndür</label></div>
-                    <div style="width:1px; background:#ccc; height:80%;"></div>
-                    <div class="tool-btn" onclick="Tools.toggleAnchor()"><span>⚓</span><label>Anchor</label></div>
-                    <div class="tool-btn" onclick="Tools.delete()"><span>🗑️</span><label>Sil</label></div>
-                    <div style="width:1px; background:#ccc; height:80%;"></div>
-                    <div class="tool-btn" onclick="Game.play()"><span style="color:green">▶️</span><label>Oyna</label></div>
+            <div style="flex:1; padding:40px;">
+                <h3>Şablon Seç</h3>
+                <div style="display:flex; gap:20px;">
+                    <div class="template-card" onclick="App.start('baseplate')">
+                        <div style="font-size:40px;">⬜</div><div>Baseplate</div>
+                    </div>
+                    <div class="template-card" onclick="App.start('flat')">
+                        <div style="font-size:40px;">🟩</div><div>Flat Terrain</div>
+                    </div>
+                    <div class="template-card" onclick="App.start('village')">
+                        <div style="font-size:40px;">🏡</div><div>Village (Demo)</div>
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <div id="list-model" class="tool-list">
-                    <div class="tool-btn" onclick="World.add('box')"><span>📦</span><label>Part</label></div>
-                    <div class="tool-btn" onclick="World.add('sphere')"><span>⚪</span><label>Sphere</label></div>
-                    <div class="tool-btn" onclick="World.add('cylinder')"><span>🛢️</span><label>Cyl</label></div>
-                    <div class="tool-btn" onclick="World.add('wedge')"><span>📐</span><label>Wedge</label></div>
-                    <div class="tool-btn" onclick="World.add('cone')"><span>⚠️</span><label>Cone</label></div>
-                    <div class="tool-btn" onclick="World.add('torus')"><span>🍩</span><label>Torus</label></div>
-                    <div style="width:1px; background:#ccc; height:80%;"></div>
-                    <div class="tool-btn" onclick="World.addSpecial('neon')"><span>💡</span><label>Neon</label></div>
-                    <div class="tool-btn" onclick="World.addSpecial('glass')"><span>🪟</span><label>Glass</label></div>
-                    <div class="tool-btn" onclick="World.addSpecial('fire')"><span>🔥</span><label>Fire</label></div>
-                    <div class="tool-btn" onclick="World.addSpecial('damage')"><span>💀</span><label>Kill</label></div>
-                    <div class="tool-btn" onclick="World.addSpecial('light')"><span>🔦</span><label>Light</label></div>
-                </div>
-
-                <div id="list-terrain" class="tool-list">
-                    <div class="tool-btn" id="t-sculpt" onclick="Tools.setSculpt(true)"><span>🖌️</span><label>Sculpt</label></div>
-                    <div class="tool-btn" onclick="Tools.sculptMode='add'"><span>➕</span><label>Add</label></div>
-                    <div class="tool-btn" onclick="Tools.sculptMode='sub'"><span>➖</span><label>Sub</label></div>
-                    <div class="tool-btn" onclick="Tools.sculptRadius+=1"><span>⭕</span><label>Size+</label></div>
+        <div id="studio-ui">
+            <div id="ribbon-container">
+                <div id="ribbon-tabs">
+                    <div class="r-tab active" onclick="UI.ribbon('home', event.currentTarget)"><i>🏠</i>Home</div>
+                    <div class="r-tab" onclick="UI.ribbon('model', event.currentTarget)"><i>🧊</i>Model</div>
+                    <div class="r-tab" onclick="UI.ribbon('terrain', event.currentTarget)"><i>⛰️</i>Terrain</div>
+                    <div class="r-tab" onclick="UI.ribbon('view', event.currentTarget)"><i>👁️</i>View</div>
                 </div>
                 
-                <div id="list-view" class="tool-list">
-                    <div class="tool-btn" onclick="UI.toggleExplorer()"><span>🗂️</span><label>Explorer</label></div>
-                    <div class="tool-btn" onclick="UI.toggleProps()"><span>📝</span><label>Props</label></div>
+                <div id="ribbon-tools">
+                    <div id="list-home" class="tool-list active">
+                        <div class="tool-btn active" id="t-sel" onclick="Tools.setMode('select')"><span>👆</span><label>Seç</label></div>
+                        <div class="tool-btn" id="t-mov" onclick="Tools.setMode('translate')"><span>↔️</span><label>Taşı</label></div>
+                        <div class="tool-btn" id="t-sca" onclick="Tools.setMode('scale')"><span>⤢</span><label>Boyut</label></div>
+                        <div class="tool-btn" id="t-rot" onclick="Tools.setMode('rotate')"><span>🔄</span><label>Döndür</label></div>
+                        <div style="width:1px; background:#ccc; height:80%;"></div>
+                        <div class="tool-btn" onclick="Tools.toggleAnchor()"><span>⚓</span><label>Anchor</label></div>
+                        <div class="tool-btn" onclick="Tools.delete()"><span>🗑️</span><label>Sil</label></div>
+                        <div style="width:1px; background:#ccc; height:80%;"></div>
+                        <div class="tool-btn" onclick="Game.play()"><span style="color:green">▶️</span><label>Oyna</label></div>
+                    </div>
+
+                    <div id="list-model" class="tool-list">
+                        <div class="tool-btn" onclick="World.add('box')"><span>📦</span><label>Part</label></div>
+                        <div class="tool-btn" onclick="World.add('sphere')"><span>⚪</span><label>Sphere</label></div>
+                        <div class="tool-btn" onclick="World.add('cylinder')"><span>🛢️</span><label>Cyl</label></div>
+                        <div class="tool-btn" onclick="World.add('wedge')"><span>📐</span><label>Wedge</label></div>
+                        <div class="tool-btn" onclick="World.add('cone')"><span>⚠️</span><label>Cone</label></div>
+                        <div class="tool-btn" onclick="World.add('torus')"><span>🍩</span><label>Torus</label></div>
+                        <div style="width:1px; background:#ccc; height:80%;"></div>
+                        <div class="tool-btn" onclick="World.addSpecial('neon')"><span>💡</span><label>Neon</label></div>
+                        <div class="tool-btn" onclick="World.addSpecial('glass')"><span>🪟</span><label>Glass</label></div>
+                        <div class="tool-btn" onclick="World.addSpecial('fire')"><span>🔥</span><label>Fire (Demo)</label></div>
+                        <div class="tool-btn" onclick="World.addSpecial('damage')"><span>💀</span><label>Kill Block</label></div>
+                        <div class="tool-btn" onclick="World.addSpecial('light')"><span>🔦</span><label>Light</label></div>
+                    </div>
+
+                    <div id="list-terrain" class="tool-list">
+                        <div class="tool-btn" id="t-sculpt" onclick="Tools.setSculpt(true)"><span>🖌️</span><label>Sculpt Aktif</label></div>
+                        <div class="tool-btn" onclick="Tools.sculptMode='add'"><span>➕</span><label>Yükselt</label></div>
+                        <div class="tool-btn" onclick="Tools.sculptMode='sub'"><span>➖</span><label>Alçalt</label></div>
+                        <div class="tool-btn" onclick="Tools.sculptRadius+=1"><span>⭕</span><label>Boyut: ${Tools.sculptRadius}</label></div>
+                    </div>
+                    
+                    <div id="list-view" class="tool-list">
+                        <div class="tool-btn" onclick="UI.toggleExplorer()"><span>🗂️</span><label>Explorer</label></div>
+                        <div class="tool-btn" onclick="UI.toggleProps()"><span>📝</span><label>Props</label></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="main-layout">
-            <div id="viewport"></div>
+            <div id="main-layout">
+                <div id="viewport"></div>
 
-            <div id="game-hud">
-                <div id="hp-container"><div id="hp-bar"></div></div>
-                <div id="joystick-zone"><div id="joystick-stick"></div></div>
-                <div id="jump-btn">⬆</div>
-                <button style="position:absolute; top:10px; left:50%; transform:translateX(-50%); padding:10px 20px; background:red; color:white; border:none; font-weight:bold; border-radius:20px; pointer-events:auto;" onclick="Game.stop()">DURDUR</button>
-            </div>
-
-            <div id="right-panel">
-                <div id="explorer-sec" class="panel-section">
-                    <div class="panel-head">Explorer</div>
-                    <div id="explorer" class="panel-content"></div>
+                <div id="game-hud">
+                    <div id="hp-container"><div id="hp-bar"></div></div>
+                    <div id="joystick-zone"><div id="joystick-stick"></div></div>
+                    <div id="jump-btn" onclick="Game.jump()">⬆</div>
+                    <button style="position:absolute; top:10px; left:50%; transform:translateX(-50%); padding:10px 20px; background:red; color:white; border:none; font-weight:bold; border-radius:20px; pointer-events:auto;" onclick="Game.stop()">DURDUR</button>
                 </div>
-                <div id="props-sec" class="panel-section">
-                    <div class="panel-head">Properties</div>
-                    <div id="properties" class="panel-content"></div>
+
+                <div id="right-panel">
+                    <div id="explorer-sec" class="panel-section">
+                        <div class="panel-head">Explorer</div>
+                        <div id="explorer" class="panel-content"></div>
+                    </div>
+                    <div id="props-sec" class="panel-section">
+                        <div class="panel-head">Properties</div>
+                        <div id="properties" class="panel-content"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -266,8 +288,14 @@
             objects: [], selected: null,
             raycaster: new THREE.Raycaster(), mouse: new THREE.Vector2(),
             
+            lockControls: false, // YENİ: Tuş Kilidi Durumu
+            
             init: () => {
-                // Initial Setup
+                // Joystick input'ları body'e atanacak
+                const joy = document.getElementById('joystick-zone');
+                joy.addEventListener('touchstart', Game.joyStart, {passive:false});
+                joy.addEventListener('touchmove', Game.joyMove, {passive:false});
+                joy.addEventListener('touchend', Game.joyEnd);
             },
             
             start: (template) => {
@@ -281,13 +309,20 @@
             reset: () => {
                 App.objects.forEach(o => App.scene.remove(o));
                 App.objects = [];
-                World.createBaseplate();
+                World.createBaseplate('baseplate'); // Baseplate yeniden oluşturuldu
                 UI.toggleMenu();
             },
             
             setQuality: (val) => {
                 const q = parseFloat(val);
-                ThreeEngine.renderer.setPixelRatio(window.devicePixelRatio * q);
+                App.renderer.setPixelRatio(window.devicePixelRatio * q);
+            },
+
+            // YENİ: Kontrol Tuş Kilidi Fonksiyonu
+            setControlLock: (locked) => {
+                App.lockControls = locked;
+                App.controls.enabled = !locked;
+                App.transform.enabled = !locked; // Transform kontrolleri de kilitlenir
             }
         };
 
@@ -296,7 +331,6 @@
                 const cont = document.getElementById('viewport');
                 App.scene = new THREE.Scene();
                 
-                // Gerçekçi Gökyüzü
                 App.scene.background = new THREE.Color(0x87CEEB);
                 App.scene.fog = new THREE.Fog(0x87CEEB, 30, 200);
 
@@ -318,18 +352,11 @@
                 sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
                 App.scene.add(sun);
                 
-                // Sun Sphere (Görsel Güneş)
-                const sunGeo = new THREE.SphereGeometry(10, 32, 32);
-                const sunMat = new THREE.MeshBasicMaterial({color: 0xffffaa});
-                const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-                sunMesh.position.copy(sun.position).multiplyScalar(0.8);
-                App.scene.add(sunMesh);
-
                 // Kontroller
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
-                App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value);
-                App.transform.addEventListener('change', UI.updateProps); // Canlı prop güncellemesi
+                App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value && !App.lockControls);
+                App.transform.addEventListener('change', UI.updateProps);
                 App.scene.add(App.transform);
 
                 // Eventler
@@ -360,34 +387,39 @@
             
             load: (type) => {
                 World.createBaseplate(type);
-                // Demo objects
                 if(type === 'village') {
-                    // Basit köy objeleri eklenebilir
+                    World.add('box', 'Plastic', 0x994444).position.set(10, 4, 10);
+                    World.add('box', 'Plastic', 0x994444).position.set(-10, 4, -10);
                 }
             },
 
             createBaseplate: (type) => {
-                // Devasa Baseplate
+                // Baseplate'i temizle
+                if(World.terrain) App.scene.remove(World.terrain);
+                
                 const geo = new THREE.PlaneGeometry(1000, 1000, 100, 100);
-                const mat = new THREE.MeshStandardMaterial({ color: type==='flat'?0x55aa55:0x555555 });
+                const mat = new THREE.MeshStandardMaterial({ color: type==='flat'?0x55aa55:0x555555, side:THREE.DoubleSide });
                 const plane = new THREE.Mesh(geo, mat);
                 plane.rotation.x = -Math.PI/2;
                 plane.receiveShadow = true;
                 plane.name = "Terrain";
-                plane.userData = { anchored: true, locked: true };
+                plane.userData = { anchored: true, locked: true, type: 'terrain' };
                 App.scene.add(plane);
                 App.objects.push(plane);
                 World.terrain = plane;
                 
-                // Spawn
-                const sGeo = new THREE.BoxGeometry(6,1,6);
-                const sMat = new THREE.MeshLambertMaterial({color:0xaaaaaa});
-                const spawn = new THREE.Mesh(sGeo, sMat);
-                spawn.position.set(0,0.5,0);
-                spawn.name = "SpawnLocation";
-                spawn.userData = { anchored: true };
-                App.scene.add(spawn);
-                App.objects.push(spawn);
+                // Spawn (Sadece 1 tane olmalı, varsa konumu günceller)
+                let spawn = App.objects.find(o => o.name === "SpawnLocation");
+                if (!spawn) {
+                    const sGeo = new THREE.BoxGeometry(6,1,6);
+                    const sMat = new THREE.MeshLambertMaterial({color:0xaaaaaa});
+                    spawn = new THREE.Mesh(sGeo, sMat);
+                    spawn.name = "SpawnLocation";
+                    spawn.userData = { anchored: true, locked:true };
+                    App.scene.add(spawn);
+                    App.objects.push(spawn);
+                }
+                spawn.position.set(0, 0.5, 0); // Konum sıfırlandı
                 
                 UI.updateExplorer();
             },
@@ -398,7 +430,16 @@
                 else if(type==='cylinder') geo = new THREE.CylinderGeometry(2,2,4,32);
                 else if(type==='cone') geo = new THREE.ConeGeometry(2,4,32);
                 else if(type==='torus') geo = new THREE.TorusGeometry(2,0.5,16,100);
-                else if(type==='wedge') geo = new THREE.ConeGeometry(2,4,4); // Basit wedge
+                else if(type==='wedge') {
+                    // Basit Wedge geometrisi (Yatay Prizma)
+                    const shape = new THREE.Shape();
+                    shape.moveTo(0, 0);
+                    shape.lineTo(4, 0);
+                    shape.lineTo(0, 4);
+                    shape.lineTo(0, 0);
+                    const extrudeSettings = { depth: 4, bevelEnabled: false };
+                    geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                }
                 else geo = new THREE.BoxGeometry(4,4,4);
 
                 const mat = new THREE.MeshStandardMaterial({color: color});
@@ -407,8 +448,7 @@
                 mesh.castShadow = true; mesh.receiveShadow = true;
                 mesh.name = "Part";
                 
-                // Varsayılan Anchor: TRUE
-                mesh.userData = { anchored: true, canCollide: true, velocity: new THREE.Vector3() };
+                mesh.userData = { anchored: true, canCollide: true, velocity: new THREE.Vector3(), type:type };
                 
                 App.scene.add(mesh);
                 App.objects.push(mesh);
@@ -419,13 +459,13 @@
             
             addSpecial: (type) => {
                 let p;
-                if(type==='neon') { p = World.add('box', 'Neon', 0x00ffff); p.material = new THREE.MeshBasicMaterial({color:0x00ffff}); }
-                if(type==='glass') { p = World.add('box', 'Glass', 0xaaccff); p.material.transparent = true; p.material.opacity = 0.5; }
-                if(type==='damage') { p = World.add('box', 'Plastic', 0xff0000); p.userData.damage = 10; p.name="KillBrick"; }
-                if(type==='light') { p = World.add('sphere', 'Neon', 0xffffaa); const l = new THREE.PointLight(0xffffaa, 1, 20); p.add(l); }
+                if(type==='neon') { p = World.add('box', 'Neon', 0x00ffff); p.material = new THREE.MeshBasicMaterial({color:0x00ffff, emissive:0x00ffff}); }
+                if(type==='glass') { p = World.add('box', 'Glass', 0xaaccff); p.material = new THREE.MeshPhysicalMaterial({color: 0xaaccff, transparent: true, opacity: 0.5, metalness: 0.1, roughness: 0.2}); }
+                if(type==='damage') { p = World.add('box', 'Plastic', 0xff0000); p.userData.damage = 10; p.name="KillBrick"; p.userData.anchored = true; }
+                if(type==='light') { p = World.add('sphere', 'Neon', 0xffffaa); const l = new THREE.PointLight(0xffffaa, 1, 20); p.add(l); p.material = new THREE.MeshBasicMaterial({color: 0xffffaa, emissive: 0xffffaa}); p.userData.anchored = true; }
+                if(type==='fire') { alert("Fire (Ateş) efekti bu sürümde sadece görsel bir demo objesidir."); }
             },
 
-            // Doku Yükleme
             uploadTexture: () => document.getElementById('file-input').click(),
             applyTexture: (input) => {
                 if(input.files && input.files[0] && App.selected) {
@@ -446,28 +486,31 @@
             sculptRadius: 5,
 
             setMode: (m) => {
+                // Sculpt modunu kapat
+                document.getElementById('t-sculpt').classList.remove('active');
+                
                 Tools.mode = m;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('t-'+m.charAt(0)).classList.add('active');
+
                 if(m==='select') App.transform.detach();
                 else {
                     App.transform.setMode(m);
                     if(App.selected) App.transform.attach(App.selected);
                 }
-                // UI Update logic here
             },
             
             setSculpt: (active) => {
-                if(active) {
-                    Tools.setMode('select');
-                    document.getElementById('t-sculpt').classList.add('active');
-                } else {
-                    document.getElementById('t-sculpt').classList.remove('active');
-                }
+                Tools.setMode('select'); // Diğer araçları kapat
+                document.getElementById('t-sculpt').classList.toggle('active', active);
             },
 
             onSelect: (e) => {
                 if(Game.active) return;
+                if(App.lockControls) return; // Kontrol Tuş Kilidi kontrolü
+
+                e.preventDefault();
                 
-                // Raycaster logic
                 const rect = App.renderer.domElement.getBoundingClientRect();
                 const x = ((e.clientX || e.touches[0].clientX) - rect.left) / rect.width * 2 - 1;
                 const y = -((e.clientY || e.touches[0].clientY) - rect.top) / rect.height * 2 + 1;
@@ -498,7 +541,7 @@
             },
             
             toggleAnchor: () => {
-                if(App.selected) {
+                if(App.selected && !App.selected.userData.locked) {
                     App.selected.userData.anchored = !App.selected.userData.anchored;
                     UI.updateProps();
                 }
@@ -516,47 +559,57 @@
             },
 
             doSculpt: (point) => {
-                const pos = World.terrain.geometry.attributes.position;
+                const geometry = World.terrain.geometry;
+                const pos = geometry.attributes.position;
                 const r = Tools.sculptRadius;
-                
+                const amount = Tools.sculptMode === 'add' ? 0.3 : -0.3; // Yükseklik değişim miktarı
+
                 for (let i = 0; i < pos.count; i++) {
-                    // Basit sculpt mantığı (Vertex yükseltme)
-                    // Gerçek dünyada Z yukarıdır ama Plane'de rotasyon var. Local Z manipüle edilir.
-                    const vx = pos.getX(i);
-                    const vy = pos.getY(i);
-                    const vz = pos.getZ(i);
+                    const localVector = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
                     
-                    // Mesafe hesabı (Basitleştirilmiş)
-                    const dist = Math.sqrt((vx - point.x)**2 + (vy - (-point.z))**2); // Koordinat dönüşümü
+                    // Vertex'in global pozisyonu
+                    World.terrain.localToWorld(localVector); 
+                    
+                    // Düzlem üzerinde (X-Z) mesafe
+                    const dist = Math.sqrt((localVector.x - point.x)**2 + (localVector.z - point.z)**2);
                     
                     if(dist < r) {
-                        const factor = (r - dist) / r; // Merkezde daha güçlü
-                        const change = Tools.sculptMode === 'add' ? 1 : -1;
-                        pos.setZ(i, vz + change * factor);
+                        const factor = (r - dist) / r; // Merkezde daha güçlü (0'dan 1'e)
+                        const change = amount * factor;
+                        
+                        // Yüksekliği değiştir (Y ekseni)
+                        const newY = pos.getZ(i) + change; // Plane Geometry'de Z, yükseklik (Y) olarak kullanılır
+                        pos.setZ(i, newY);
                     }
                 }
                 pos.needsUpdate = true;
-                World.terrain.geometry.computeVertexNormals();
+                geometry.computeVertexNormals();
             }
         };
 
         const UI = {
-            ribbon: (tab) => {
-                document.querySelectorAll('.r-tab').forEach(t => t.classList.remove('active'));
+            ribbon: (tab, target) => {
+                document.querySelectorAll('#ribbon-tabs .r-tab').forEach(t => t.classList.remove('active'));
+                target.classList.add('active');
                 document.querySelectorAll('.tool-list').forEach(l => l.classList.remove('active'));
-                
-                // Butonu aktif yap
-                event.currentTarget.classList.add('active');
-                // Listeyi göster
                 document.getElementById('list-'+tab).classList.add('active');
             },
             
-            toggleMenu: () => document.getElementById('x-menu-overlay').classList.toggle('active'),
+            toggleMenu: () => {
+                const overlay = document.getElementById('x-menu-overlay');
+                overlay.classList.toggle('active');
+                if(!overlay.classList.contains('active')) {
+                    // Kapatılırken display:none yap
+                    setTimeout(() => overlay.style.display = 'none', 300);
+                } else {
+                    overlay.style.display = 'flex';
+                }
+            },
             
-            tab: (page) => {
+            tab: (page, target) => {
                 document.querySelectorAll('.x-tab').forEach(t => t.classList.remove('active'));
+                target.classList.add('active');
                 document.querySelectorAll('.x-page').forEach(p => p.classList.remove('active'));
-                event.currentTarget.classList.add('active');
                 document.getElementById('page-'+page).classList.add('active');
             },
 
@@ -566,7 +619,7 @@
                 App.objects.forEach(obj => {
                     const el = document.createElement('div');
                     el.className = 'tree-node ' + (App.selected === obj ? 'selected' : '');
-                    el.innerText = "📦 " + obj.name;
+                    el.innerText = (obj.userData.locked ? "🔒 " : "📦 ") + obj.name;
                     el.onclick = () => Tools.select(obj);
                     list.appendChild(el);
                 });
@@ -590,30 +643,38 @@
                         const inp = document.createElement('input');
                         inp.type = type;
                         if(type==='checkbox') inp.checked = val; else inp.value = val;
-                        inp.onchange = (e) => cb(type==='checkbox' ? e.target.checked : e.target.value);
+                        inp.onchange = (e) => cb(type==='checkbox' ? e.target.checked : Number(e.target.value));
                         div.appendChild(inp);
                     }
                     p.appendChild(div);
                 };
 
                 addRow("Name", obj.name, 'text', v => {obj.name=v; UI.updateExplorer()});
+                
                 if(!obj.userData.locked) {
                     addRow("Anchored", obj.userData.anchored, 'checkbox', v => obj.userData.anchored=v);
-                    addRow("Color", "#"+obj.material.color.getHexString(), 'color', v => obj.material.color.set(v));
+                    
+                    // Position, Rotation, Scale (Sadece 1. değerler gösteriliyor)
+                    addRow("X", obj.position.x.toFixed(2), 'number', v => {obj.position.x=v; App.transform.update();});
+                    addRow("Y", obj.position.y.toFixed(2), 'number', v => {obj.position.y=v; App.transform.update();});
+                    addRow("Z", obj.position.z.toFixed(2), 'number', v => {obj.position.z=v; App.transform.update();});
+                    
+                    // Material
+                    if(obj.material.color) addRow("Color", "#"+obj.material.color.getHexString(), 'color', v => obj.material.color.set(v));
                     addRow("Texture", "Dosya Seç", 'btn', () => World.uploadTexture());
-                    if(obj.userData.damage !== undefined) addRow("Damage", obj.userData.damage, 'number', v=>obj.userData.damage=Number(v));
+                    
+                    // Custom Props
+                    if(obj.userData.damage !== undefined) addRow("Damage", obj.userData.damage, 'number', v=>obj.userData.damage=v);
                 }
-                // Pos
-                addRow("X", obj.position.x, 'number', v=>obj.position.x=Number(v));
-                addRow("Y", obj.position.y, 'number', v=>obj.position.y=Number(v));
-                addRow("Z", obj.position.z, 'number', v=>obj.position.z=Number(v));
             },
 
             setScale: (s) => {
-                document.documentElement.style.setProperty('--toolbar-height', (120 * s) + 'px');
-                document.documentElement.style.setProperty('--panel-width', (260 * s) + 'px');
-                App.editor.onResize(); // Viewport'u güncelle
-            }
+                document.getElementById('studio-container').style.transform = `scale(${s})`;
+                ThreeEngine.resize(); // Ölçekleme sonrası viewport'u güncelle
+            },
+            
+            toggleExplorer: () => document.getElementById('right-panel').style.width === '0px' ? document.getElementById('right-panel').style.width = 'var(--panel-width)' : document.getElementById('right-panel').style.width = '0px',
+            toggleProps: () => UI.toggleExplorer() // Basitçe aynı paneli kullanıyoruz
         };
 
         const Game = {
@@ -625,24 +686,25 @@
             play: () => {
                 Game.active = true;
                 App.transform.detach();
+                App.controls.enabled = false; // Kontrolleri kapat
+                document.getElementById('ribbon-container').style.display = 'none';
+                document.getElementById('right-panel').style.display = 'none';
+                document.getElementById('menu-btn').style.display = 'none';
                 document.getElementById('game-hud').style.display = 'block';
                 
-                // R6 Dummy Oluştur
-                const p = new THREE.Group();
+                // Oyuncu modelini oluştur ve Spawn'a yerleştir
+                const p = new THREE.Group(); p.name = "Player";
                 const skin = new THREE.MeshPhongMaterial({color:0xffcc00});
                 const blue = new THREE.MeshPhongMaterial({color:0x0099ff});
                 const green = new THREE.MeshPhongMaterial({color:0x22aa22});
-
                 const head = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), skin); head.position.y=4.5;
                 const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), blue); torso.position.y=3;
                 const la = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), skin); la.position.set(-1.5,3,0);
                 const ra = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), skin); ra.position.set(1.5,3,0);
                 const ll = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), green); ll.position.set(-0.5,1,0);
                 const rl = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), green); rl.position.set(0.5,1,0);
-                
                 p.add(head, torso, la, ra, ll, rl);
                 
-                // Spawn
                 const spawn = App.objects.find(o=>o.name==='SpawnLocation');
                 if(spawn) p.position.copy(spawn.position).add(new THREE.Vector3(0,2,0));
                 else p.position.set(0,5,0);
@@ -651,22 +713,27 @@
                 App.scene.add(p);
                 Game.player = p;
 
-                // Camera
-                App.controls.enablePan = false;
-                App.controls.maxPolarAngle = Math.PI/2 - 0.1; // Yere girmesin
-                App.controls.minDistance = 5;
-                App.controls.maxDistance = 25;
+                // Kamera ayarları
+                App.controls.maxPolarAngle = Math.PI/2 - 0.1;
+                App.controls.target.copy(p.position);
             },
 
             stop: () => {
                 Game.active = false;
+                document.getElementById('ribbon-container').style.display = 'flex';
+                document.getElementById('right-panel').style.display = 'flex';
+                document.getElementById('menu-btn').style.display = 'flex';
                 document.getElementById('game-hud').style.display = 'none';
-                if(Game.player) App.scene.remove(Game.player);
                 
+                if(Game.player) App.scene.remove(Game.player);
+                Game.player = null;
+                Game.health = 100;
+                document.getElementById('hp-bar').style.width = '100%';
+
                 // Reset Camera
+                App.controls.enabled = true; // Kontrolleri aç
                 App.camera.position.set(20,20,20);
                 App.controls.target.set(0,0,0);
-                App.controls.enablePan = true;
                 App.controls.maxPolarAngle = Math.PI;
             },
 
@@ -675,34 +742,28 @@
                 const p = Game.player;
                 const v = p.userData.velocity;
 
-                // 1. Gravity
+                // 1. Gravity & Collision
                 v.y -= 0.02;
                 p.position.y += v.y;
 
-                // 2. Collision (Ground & Blocks)
                 let groundY = -100;
-                // Basit AABB Collision
-                const px = p.position.x; const pz = p.position.z;
+                const pBox = new THREE.Box3().setFromObject(p);
                 
                 App.objects.forEach(obj => {
-                    if(obj.userData.anchored) {
-                        // Çok basit kutu çarpışması (Genelleştirilmiş)
-                        if(Math.abs(px - obj.position.x) < 3 && Math.abs(pz - obj.position.z) < 3) {
-                            if(obj.position.y < p.position.y && obj.position.y > groundY) {
-                                groundY = obj.position.y + 2; // Block top
-                                
-                                // Damage
-                                if(obj.userData.damage) {
-                                    Game.health -= 1;
-                                    document.getElementById('hp-bar').style.width = Game.health + '%';
-                                    if(Game.health <= 0) Game.respawn();
-                                }
+                    if(obj.userData.anchored && obj !== p) {
+                        const oBox = new THREE.Box3().setFromObject(obj);
+                        if(oBox.intersectsBox(pBox)) {
+                            // Basit Platform çarpışması
+                            if(obj.position.y < p.position.y && obj.position.y + 2 > groundY) {
+                                groundY = obj.position.y + 2; 
+                            }
+                            // Damage
+                            if(obj.userData.damage && obj.userData.damage > 0) {
+                                Game.health -= obj.userData.damage / 10;
+                                document.getElementById('hp-bar').style.width = Game.health + '%';
+                                if(Game.health <= 0) Game.respawn();
                             }
                         }
-                    } else {
-                        // Düşen bloklar
-                        obj.position.y -= 0.1;
-                        if(obj.position.y < 0) obj.position.y = 0;
                     }
                 });
 
@@ -714,16 +775,27 @@
                     p.userData.onGround = false;
                 }
 
-                // 3. Movement & Anim
+                // 2. Movement & Anim (Joystick)
                 if(Game.joyInput.active) {
+                    const speed = 0.2;
                     const camAngle = App.controls.getAzimuthalAngle();
-                    const fwd = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), camAngle);
-                    const right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), camAngle);
                     
-                    const move = fwd.multiplyScalar(-Game.joyInput.y).add(right.multiplyScalar(Game.joyInput.x)).normalize().multiplyScalar(0.3);
+                    // Kamera yönüne göre hareket vektörünü hesapla
+                    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
+                    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
+                    
+                    // Joystick input'larını uygula (Y=-ileri, X=sağ)
+                    let move = forward.multiplyScalar(-Game.joyInput.y).add(right.multiplyScalar(Game.joyInput.x));
+                    move.y = 0; // Yatay hareketi koru
+                    move.normalize().multiplyScalar(speed);
                     
                     p.position.add(move);
-                    p.lookAt(p.position.clone().add(move));
+                    
+                    // Oyuncuyu hareket yönüne döndür
+                    if(move.length() > 0.01) {
+                         // Mevcut pozisyondan hedef pozisyona bak
+                        p.lookAt(p.position.clone().add(move));
+                    }
 
                     // Anim
                     const t = Date.now() * 0.015;
@@ -736,14 +808,15 @@
                     for(let k in p.userData.limbs) p.userData.limbs[k].rotation.x = 0;
                 }
 
-                // Camera Follow
+                // Camera Follow (Hafif yumuşak takip)
                 App.controls.target.lerp(p.position, 0.1);
             },
 
             respawn: () => {
                 Game.health = 100;
                 document.getElementById('hp-bar').style.width = '100%';
-                p.position.set(0,20,0);
+                const spawn = App.objects.find(o=>o.name==='SpawnLocation');
+                Game.player.position.copy(spawn ? spawn.position : new THREE.Vector3(0,5,0)).add(new THREE.Vector3(0,2,0));
             },
 
             // Input Handlers
@@ -762,20 +835,21 @@
                 let dy = touch.clientY - center.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 
-                if(dist > 40) {
+                const maxDist = 40;
+                if(dist > maxDist) {
                     const angle = Math.atan2(dy, dx);
-                    dx = Math.cos(angle) * 40;
-                    dy = Math.sin(angle) * 40;
+                    dx = Math.cos(angle) * maxDist;
+                    dy = Math.sin(angle) * maxDist;
                 }
                 
-                document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`;
-                Game.joyInput.x = dx / 40;
-                Game.joyInput.y = dy / 40;
+                document.getElementById('joystick-stick').style.transform = `translate(${dx}px, ${dy}px)`;
+                Game.joyInput.x = dx / maxDist;
+                Game.joyInput.y = -dy / maxDist; // Y Ekseni ters çevrildi (Yukarı pozitif)
             },
             joyEnd: () => {
                 Game.joyInput.active = false;
                 Game.joyInput.x = 0; Game.joyInput.y = 0;
-                document.getElementById('joystick-knob').style.transform = `translate(0,0)`;
+                document.getElementById('joystick-stick').style.transform = `translate(0,0)`;
             },
             jump: () => {
                 if(Game.player && Game.player.userData.onGround) {
