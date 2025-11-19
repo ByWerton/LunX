@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V10.0 - Joystick & Keylock Fix</title>
+    <title>LunX Studio V10.1 - Dynamic UI & Camera Follow</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -18,6 +18,8 @@
             --accent-red: #ff3333;
             --accent-hover: #ffe6e6;
             --border: #e0e0e0;
+            
+            /* DİNAMİK DEĞERLER */
             --toolbar-height: 120px;
             --panel-width: 260px;
         }
@@ -25,12 +27,10 @@
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; overflow: hidden; background: var(--bg-main); color: var(--text-main); height: 100vh; width: 100vw; }
 
-        /* --- STÜDYO KAPSAYICISI (ÖLÇEK İÇİN) --- */
+        /* --- STÜDYO KAPSAYICISI (ÖLÇEK İÇİN KULLANILMIYOR, DİREKT FLEX) --- */
         #studio-container {
             height: 100vh; width: 100vw; 
             display: flex; flex-direction: column;
-            transform-origin: top left;
-            transition: transform 0.2s;
         }
 
         /* --- X MENÜSÜ --- */
@@ -80,8 +80,8 @@
         /* --- STÜDYO ARAYÜZÜ --- */
         #studio-ui { display: none; flex-direction: column; height: 100%; }
 
-        /* RIBBON BAR (GELİŞMİŞ SEKMELİ) */
-        #ribbon-container { height: var(--toolbar-height); background: white; border-bottom: 1px solid var(--border); display: flex; }
+        /* RIBBON BAR (YENİ YÜKSEKLİK İÇİN VAR KULLANILDI) */
+        #ribbon-container { height: var(--toolbar-height); background: white; border-bottom: 1px solid var(--border); display: flex; transition: height 0.2s; }
         #ribbon-tabs { width: 70px; background: #f0f0f0; display: flex; flex-direction: column; border-right: 1px solid #ddd; }
         .r-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; color: #666; border-left: 3px solid transparent; }
         .r-tab.active { background: white; border-left-color: var(--accent-red); color: var(--accent-red); font-weight: bold; }
@@ -105,10 +105,11 @@
         
         #viewport { flex: 1; position: relative; background: #87CEEB; overflow: hidden; }
         
-        /* SAĞ PANEL (RESIZABLE & SCROLLABLE) */
+        /* SAĞ PANEL (YENİ GENİŞLİK İÇİN VAR KULLANILDI) */
         #right-panel {
             width: var(--panel-width); background: white; border-left: 1px solid var(--border);
             display: flex; flex-direction: column; z-index: 50;
+            transition: width 0.2s; /* Genişlik geçişi eklendi */
         }
         .panel-section { display: flex; flex-direction: column; overflow: hidden; }
         #explorer-sec { flex: 1; min-height: 100px; }
@@ -160,7 +161,7 @@
                         <div class="x-btn" onclick="App.exit()">🏠 Ana Menüye Dön</div>
                     </div>
                     <div id="page-settings" class="x-page">
-                        <label>Arayüz Boyutu (0.6x - 1.2x)</label>
+                        <label>Arayüz Yoğunluğu (Küçük UI - Büyük UI)</label>
                         <input type="range" min="0.6" max="1.2" step="0.1" value="1" class="setting-slider" oninput="UI.setScale(this.value)">
                         
                         <label>Grafik Kalitesi (0.1 - 1.5)</label>
@@ -185,7 +186,7 @@
         <div id="start-screen">
             <div id="start-sidebar">
                 <h1 style="color:var(--accent-red); margin-top:0;">LunX Studio</h1>
-                <p>Versiyon: V10.0 (Joystick Fix)</p>
+                <p>Versiyon: V10.1 (Dynamic UI & Camera Follow)</p>
                 <button class="start-btn-side" onclick="App.start('baseplate')">Yeni Proje Başlat</button>
                 <button class="start-btn-side" style="background:#666">Projelerim (Yakında)</button>
             </div>
@@ -288,10 +289,9 @@
             objects: [], selected: null,
             raycaster: new THREE.Raycaster(), mouse: new THREE.Vector2(),
             
-            lockControls: false, // YENİ: Tuş Kilidi Durumu
+            lockControls: false,
             
             init: () => {
-                // Joystick input'ları body'e atanacak
                 const joy = document.getElementById('joystick-zone');
                 joy.addEventListener('touchstart', Game.joyStart, {passive:false});
                 joy.addEventListener('touchmove', Game.joyMove, {passive:false});
@@ -309,7 +309,7 @@
             reset: () => {
                 App.objects.forEach(o => App.scene.remove(o));
                 App.objects = [];
-                World.createBaseplate('baseplate'); // Baseplate yeniden oluşturuldu
+                World.createBaseplate('baseplate');
                 UI.toggleMenu();
             },
             
@@ -318,11 +318,10 @@
                 App.renderer.setPixelRatio(window.devicePixelRatio * q);
             },
 
-            // YENİ: Kontrol Tuş Kilidi Fonksiyonu
             setControlLock: (locked) => {
                 App.lockControls = locked;
                 App.controls.enabled = !locked;
-                App.transform.enabled = !locked; // Transform kontrolleri de kilitlenir
+                App.transform.enabled = !locked;
             }
         };
 
@@ -342,7 +341,6 @@
                 App.renderer.shadowMap.enabled = true;
                 cont.appendChild(App.renderer.domElement);
 
-                // Işıklar
                 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
                 App.scene.add(hemi);
                 
@@ -352,14 +350,12 @@
                 sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
                 App.scene.add(sun);
                 
-                // Kontroller
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
                 App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value && !App.lockControls);
                 App.transform.addEventListener('change', UI.updateProps);
                 App.scene.add(App.transform);
 
-                // Eventler
                 window.addEventListener('resize', ThreeEngine.resize);
                 cont.addEventListener('mousedown', Tools.onSelect);
                 cont.addEventListener('touchstart', Tools.onSelect, {passive:false});
@@ -394,7 +390,6 @@
             },
 
             createBaseplate: (type) => {
-                // Baseplate'i temizle
                 if(World.terrain) App.scene.remove(World.terrain);
                 
                 const geo = new THREE.PlaneGeometry(1000, 1000, 100, 100);
@@ -405,10 +400,13 @@
                 plane.name = "Terrain";
                 plane.userData = { anchored: true, locked: true, type: 'terrain' };
                 App.scene.add(plane);
+                
+                // Eski Terrain'i temizle
+                App.objects = App.objects.filter(o => o.name !== "Terrain");
+                
                 App.objects.push(plane);
                 World.terrain = plane;
                 
-                // Spawn (Sadece 1 tane olmalı, varsa konumu günceller)
                 let spawn = App.objects.find(o => o.name === "SpawnLocation");
                 if (!spawn) {
                     const sGeo = new THREE.BoxGeometry(6,1,6);
@@ -419,7 +417,7 @@
                     App.scene.add(spawn);
                     App.objects.push(spawn);
                 }
-                spawn.position.set(0, 0.5, 0); // Konum sıfırlandı
+                spawn.position.set(0, 0.5, 0); 
                 
                 UI.updateExplorer();
             },
@@ -431,12 +429,8 @@
                 else if(type==='cone') geo = new THREE.ConeGeometry(2,4,32);
                 else if(type==='torus') geo = new THREE.TorusGeometry(2,0.5,16,100);
                 else if(type==='wedge') {
-                    // Basit Wedge geometrisi (Yatay Prizma)
                     const shape = new THREE.Shape();
-                    shape.moveTo(0, 0);
-                    shape.lineTo(4, 0);
-                    shape.lineTo(0, 4);
-                    shape.lineTo(0, 0);
+                    shape.moveTo(0, 0); shape.lineTo(4, 0); shape.lineTo(0, 4); shape.lineTo(0, 0);
                     const extrudeSettings = { depth: 4, bevelEnabled: false };
                     geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 }
@@ -486,7 +480,6 @@
             sculptRadius: 5,
 
             setMode: (m) => {
-                // Sculpt modunu kapat
                 document.getElementById('t-sculpt').classList.remove('active');
                 
                 Tools.mode = m;
@@ -501,13 +494,12 @@
             },
             
             setSculpt: (active) => {
-                Tools.setMode('select'); // Diğer araçları kapat
+                Tools.setMode('select');
                 document.getElementById('t-sculpt').classList.toggle('active', active);
             },
 
             onSelect: (e) => {
-                if(Game.active) return;
-                if(App.lockControls) return; // Kontrol Tuş Kilidi kontrolü
+                if(Game.active || App.lockControls) return;
 
                 e.preventDefault();
                 
@@ -517,7 +509,6 @@
                 
                 App.raycaster.setFromCamera({x,y}, App.camera);
 
-                // Sculpt Logic
                 if(document.getElementById('t-sculpt').classList.contains('active')) {
                     const intersects = App.raycaster.intersectObject(World.terrain);
                     if(intersects.length > 0) {
@@ -526,7 +517,6 @@
                     return;
                 }
 
-                // Select Logic
                 const intersects = App.raycaster.intersectObjects(App.objects);
                 if(intersects.length > 0) Tools.select(intersects[0].object);
                 else Tools.select(null);
@@ -562,24 +552,21 @@
                 const geometry = World.terrain.geometry;
                 const pos = geometry.attributes.position;
                 const r = Tools.sculptRadius;
-                const amount = Tools.sculptMode === 'add' ? 0.3 : -0.3; // Yükseklik değişim miktarı
+                const amount = Tools.sculptMode === 'add' ? 0.3 : -0.3;
 
                 for (let i = 0; i < pos.count; i++) {
                     const localVector = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
                     
-                    // Vertex'in global pozisyonu
                     World.terrain.localToWorld(localVector); 
                     
-                    // Düzlem üzerinde (X-Z) mesafe
                     const dist = Math.sqrt((localVector.x - point.x)**2 + (localVector.z - point.z)**2);
                     
                     if(dist < r) {
-                        const factor = (r - dist) / r; // Merkezde daha güçlü (0'dan 1'e)
+                        const factor = (r - dist) / r;
                         const change = amount * factor;
                         
-                        // Yüksekliği değiştir (Y ekseni)
-                        const newY = pos.getZ(i) + change; // Plane Geometry'de Z, yükseklik (Y) olarak kullanılır
-                        pos.setZ(i, newY);
+                        const newZ = pos.getZ(i) + change;
+                        pos.setZ(i, newZ);
                     }
                 }
                 pos.needsUpdate = true;
@@ -599,7 +586,6 @@
                 const overlay = document.getElementById('x-menu-overlay');
                 overlay.classList.toggle('active');
                 if(!overlay.classList.contains('active')) {
-                    // Kapatılırken display:none yap
                     setTimeout(() => overlay.style.display = 'none', 300);
                 } else {
                     overlay.style.display = 'flex';
@@ -654,27 +640,24 @@
                 if(!obj.userData.locked) {
                     addRow("Anchored", obj.userData.anchored, 'checkbox', v => obj.userData.anchored=v);
                     
-                    // Position, Rotation, Scale (Sadece 1. değerler gösteriliyor)
                     addRow("X", obj.position.x.toFixed(2), 'number', v => {obj.position.x=v; App.transform.update();});
                     addRow("Y", obj.position.y.toFixed(2), 'number', v => {obj.position.y=v; App.transform.update();});
                     addRow("Z", obj.position.z.toFixed(2), 'number', v => {obj.position.z=v; App.transform.update();});
                     
-                    // Material
                     if(obj.material.color) addRow("Color", "#"+obj.material.color.getHexString(), 'color', v => obj.material.color.set(v));
                     addRow("Texture", "Dosya Seç", 'btn', () => World.uploadTexture());
                     
-                    // Custom Props
                     if(obj.userData.damage !== undefined) addRow("Damage", obj.userData.damage, 'number', v=>obj.userData.damage=v);
                 }
             },
 
+            // YENİ/DÜZELTİLMİŞ: UI ölçeklemesini sadece panel ve araç çubuğu üzerinde uygular.
             setScale: (s) => {
-                document.getElementById('studio-container').style.transform = `scale(${s})`;
-                ThreeEngine.resize(); // Ölçekleme sonrası viewport'u güncelle
-            },
-            
-            toggleExplorer: () => document.getElementById('right-panel').style.width === '0px' ? document.getElementById('right-panel').style.width = 'var(--panel-width)' : document.getElementById('right-panel').style.width = '0px',
-            toggleProps: () => UI.toggleExplorer() // Basitçe aynı paneli kullanıyoruz
+                const scale = parseFloat(s);
+                document.documentElement.style.setProperty('--toolbar-height', (120 * scale) + 'px');
+                document.documentElement.style.setProperty('--panel-width', (260 * scale) + 'px');
+                ThreeEngine.resize(); // Viewport'u yenile
+            }
         };
 
         const Game = {
@@ -682,17 +665,21 @@
             player: null,
             health: 100,
             joyInput: { x:0, y:0, active: false },
+            
+            // Kamera takip parametreleri
+            cameraDistance: 15,
+            cameraHeight: 8,
 
             play: () => {
                 Game.active = true;
                 App.transform.detach();
-                App.controls.enabled = false; // Kontrolleri kapat
+                App.controls.enabled = false;
                 document.getElementById('ribbon-container').style.display = 'none';
                 document.getElementById('right-panel').style.display = 'none';
                 document.getElementById('menu-btn').style.display = 'none';
                 document.getElementById('game-hud').style.display = 'block';
                 
-                // Oyuncu modelini oluştur ve Spawn'a yerleştir
+                // Oyuncu modeli oluşturma (Önceki koddan)
                 const p = new THREE.Group(); p.name = "Player";
                 const skin = new THREE.MeshPhongMaterial({color:0xffcc00});
                 const blue = new THREE.MeshPhongMaterial({color:0x0099ff});
@@ -713,9 +700,17 @@
                 App.scene.add(p);
                 Game.player = p;
 
-                // Kamera ayarları
-                App.controls.maxPolarAngle = Math.PI/2 - 0.1;
+                // YENİ: Kamera başlangıç pozisyonu oyuncuya göre ayarlanır
                 App.controls.target.copy(p.position);
+                App.camera.position.set(
+                    p.position.x + Game.cameraDistance,
+                    p.position.y + Game.cameraHeight,
+                    p.position.z + Game.cameraDistance
+                );
+                
+                // Kamera kısıtlamaları
+                App.controls.minDistance = 5;
+                App.controls.maxDistance = 25;
             },
 
             stop: () => {
@@ -730,11 +725,11 @@
                 Game.health = 100;
                 document.getElementById('hp-bar').style.width = '100%';
 
-                // Reset Camera
-                App.controls.enabled = true; // Kontrolleri aç
+                App.controls.enabled = true;
                 App.camera.position.set(20,20,20);
                 App.controls.target.set(0,0,0);
-                App.controls.maxPolarAngle = Math.PI;
+                App.controls.minDistance = 0.1; // Kısıtlamaları kaldır
+                App.controls.maxDistance = Infinity;
             },
 
             update: () => {
@@ -753,11 +748,9 @@
                     if(obj.userData.anchored && obj !== p) {
                         const oBox = new THREE.Box3().setFromObject(obj);
                         if(oBox.intersectsBox(pBox)) {
-                            // Basit Platform çarpışması
                             if(obj.position.y < p.position.y && obj.position.y + 2 > groundY) {
                                 groundY = obj.position.y + 2; 
                             }
-                            // Damage
                             if(obj.userData.damage && obj.userData.damage > 0) {
                                 Game.health -= obj.userData.damage / 10;
                                 document.getElementById('hp-bar').style.width = Game.health + '%';
@@ -780,20 +773,16 @@
                     const speed = 0.2;
                     const camAngle = App.controls.getAzimuthalAngle();
                     
-                    // Kamera yönüne göre hareket vektörünü hesapla
                     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
                     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
                     
-                    // Joystick input'larını uygula (Y=-ileri, X=sağ)
                     let move = forward.multiplyScalar(-Game.joyInput.y).add(right.multiplyScalar(Game.joyInput.x));
-                    move.y = 0; // Yatay hareketi koru
+                    move.y = 0;
                     move.normalize().multiplyScalar(speed);
                     
                     p.position.add(move);
                     
-                    // Oyuncuyu hareket yönüne döndür
                     if(move.length() > 0.01) {
-                         // Mevcut pozisyondan hedef pozisyona bak
                         p.lookAt(p.position.clone().add(move));
                     }
 
@@ -808,8 +797,24 @@
                     for(let k in p.userData.limbs) p.userData.limbs[k].rotation.x = 0;
                 }
 
-                // Camera Follow (Hafif yumuşak takip)
-                App.controls.target.lerp(p.position, 0.1);
+                // YENİ: Kamera Takibi (Kamera pozisyonunu güncelle)
+                
+                // 1. Kamera hedefi oyuncuyu takip etsin (yumuşak geçiş)
+                App.controls.target.lerp(p.position, 0.1); 
+
+                // 2. Kamera pozisyonunu oyuncuya göre ayarla
+                const tempPos = new THREE.Vector3();
+                App.camera.getWorldPosition(tempPos);
+
+                const currentAzimuth = App.controls.getAzimuthalAngle(); // Kamera yatay açısı
+                
+                const targetX = p.position.x - Game.cameraDistance * Math.sin(currentAzimuth);
+                const targetZ = p.position.z - Game.cameraDistance * Math.cos(currentAzimuth);
+                const targetY = p.position.y + Game.cameraHeight;
+                
+                // Yumuşak takip (lerp)
+                App.camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.1);
+
             },
 
             respawn: () => {
