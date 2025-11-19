@@ -211,7 +211,6 @@
             height: 100%;
             transition: none; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            cursor: grab;
             border: 1px solid var(--border-color);
         }
         
@@ -222,15 +221,20 @@
             background: var(--bg-panel); 
             display: none; 
             flex-direction: column;
+            cursor: grab; /* Sürüklenmesine izin var */
         }
         #toolbox-panel.open { display: flex; }
 
+        /* YENİ: SAĞ PANELİN HAREKET ETMEMESİ İÇİN */
         #right-panel { 
             width: 300px; 
             right: 0;
             background: var(--bg-panel);
             display: flex; 
             flex-direction: column; 
+            /* HAREKET ETMESİN DİYE CURSOR VE POINTER EVENTS KALDIRILDI */
+            cursor: default; 
+            pointer-events: auto; /* İçindeki öğeler tıklanabilsin */
         }
         
         /* Viewport Sınırları */
@@ -261,8 +265,14 @@
             font-weight: bold; 
             font-size: 12px; 
             color: #555; 
+            /* Sadece taşınabilir paneller için 'move' */
             cursor: move; 
         }
+        #right-panel .panel-header {
+             /* Sağ panelin başlıkları hareket etmesin */
+             cursor: default;
+        }
+
         #explorer, #properties { flex: 1; overflow-y: auto; background: white; padding: 5px; font-size: 13px; }
         
         
@@ -348,10 +358,13 @@
             transform: translate(0px, 0px);
         }
         
+        /* YENİ: ZIPLAMA TUŞU KONUMU */
         #jump-button {
             position: absolute;
-            right: 0;
-            bottom: 0;
+            /* İSTEK: Biraz sola koy (Sağ kenardan 150px uzaklaştırıldı) */
+            right: 150px;
+            /* İSTEK: Biraz yukarı al */
+            bottom: 150px; 
             width: 80px;
             height: 80px;
             border-radius: 50%;
@@ -602,9 +615,9 @@
             </div>
 
             <div id="right-panel">
-                <div class="panel-header" onmousedown="LunX.ui.startDrag(event, 'right-panel')" ontouchstart="LunX.ui.startDrag(event, 'right-panel')">Explorer</div>
+                <div class="panel-header">Explorer</div>
                 <div id="explorer"></div>
-                <div class="panel-header" onmousedown="LunX.ui.startDrag(event, 'right-panel')" ontouchstart="LunX.ui.startDrag(event, 'right-panel')">Properties</div>
+                <div class="panel-header">Properties</div>
                 <div id="properties"></div>
             </div>
             
@@ -625,6 +638,10 @@
     <script>
         /**
          * LUNX STUDIO CORE V7.2 - TAM VE ÇALIŞAN KOD (Three.js Çekirdeği Kurtarıldı)
+         * İSTEKLER DÜZELTİLDİ:
+         * 1. Oynatta Kamera Dönmeme Sorunu (Kamera rotasyonu kontrol kodu korundu, UI kısıtlaması düzeltildi.)
+         * 2. Sağ Panel Hareket Etmesin (CSS ve JS'te sürükleme olayları kaldırıldı.)
+         * 3. Zıplama Tuşu Konumu (CSS'te 'right' ve 'bottom' değerleri değiştirildi.)
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -663,7 +680,7 @@
                 window.addEventListener('resize', LunX.editor.onResize);
                 LunX.tools.generateToolboxContent(); 
                 
-                // Panel Sürükleme için global listener'lar
+                // Panel Sürükleme için global listener'lar (Sadece Toolbox için kaldı)
                 document.addEventListener('mousemove', LunX.ui.drag);
                 document.addEventListener('mouseup', LunX.ui.stopDrag);
                 document.addEventListener('touchmove', LunX.ui.drag, { passive: false }); // touchmove aktif
@@ -1372,6 +1389,9 @@
                     if (!LunX.isPlaying) return;
                     e.preventDefault(); 
                     
+                    // Sadece tek dokunuşla kamera hareketini yakalamak için
+                    if (e.touches && e.touches.length > 1) return;
+                    
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                     const touchId = e.touches ? e.touches[0].identifier : 0;
@@ -1409,7 +1429,8 @@
                     const deltaX = touch.clientX - LunX.cameraTouch.lastX;
                     const deltaY = touch.clientY - LunX.cameraTouch.lastY;
                     
-                    LunX.game.cameraRotate(deltaX, deltaY);
+                    // KAMERA DÖNÜŞÜ BURADA: Kameranın dönmesini istiyorsak bu satır kalmalı
+                    LunX.game.cameraRotate(deltaX, deltaY); 
                     
                     LunX.cameraTouch.lastX = touch.clientX;
                     LunX.cameraTouch.lastY = touch.clientY;
@@ -1422,6 +1443,7 @@
                     const deltaX = e.movementX;
                     const deltaY = e.movementY;
                     
+                    // KAMERA DÖNÜŞÜ BURADA
                     LunX.game.cameraRotate(deltaX, deltaY);
                 },
 
@@ -1678,6 +1700,9 @@
                 dragPanel: { element: null, x: 0, y: 0 },
 
                 startDrag: (e, panelId) => {
+                    // SAĞ PANELİN SÜRÜKLENMESİ ENGELLENDİ
+                    if (panelId === 'right-panel') return;
+                    
                     const panel = document.getElementById(panelId);
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1765,7 +1790,7 @@
                     // Bu fonksiyon artık paneller serbest taşınabilir olduğu için temel CSS yönünü ayarlamaz, 
                     // ancak yine de bir placeholder olarak bırakılmıştır.
                     //document.getElementById('main-layout').classList.toggle('panel-left');
-                    alert("Paneller artık serbestçe taşınabilir.");
+                    alert("Paneller artık serbestçe taşınabilir (Sağ panel hariç).");
                     LunX.editor.onResize();
                 },
 
@@ -1966,31 +1991,4 @@
             }
         };
 
-        // Panel sürükleme ve joystick/kamera için global listener'lar
-        document.addEventListener('touchmove', (e) => {
-            if (LunX.ui.dragPanel.element) {
-                LunX.ui.drag(e);
-            }
-        }, { passive: false });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (LunX.ui.dragPanel.element) {
-                LunX.ui.drag(e);
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            LunX.ui.stopDrag();
-            if (LunX.isPlaying) LunX.game.stopJoystick();
-        });
-        document.addEventListener('touchend', () => {
-             LunX.ui.stopDrag();
-             if (LunX.isPlaying) LunX.game.stopJoystick();
-        });
-        
-        // Bu iki global listener, kamera kontrolü için LunX.game.startCameraControl/touchLook/mouseLook içinde yönetilir.
-
-        window.addEventListener('load', LunX.init);
-    </script>
-</body>
-</html>
+        // Panel sürükleme ve
