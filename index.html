@@ -2171,3 +2171,104 @@
                         input.value = value;
                         input.readOnly = type === 'readonly';
                         if (type !== 'readonly' && onChange) {
+                            input.onchange = (e) => onChange(e.target.value);
+                        }
+                    } else if (type === 'checkbox') {
+                        input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.checked = value;
+                        if (onChange) {
+                            input.onchange = (e) => onChange(e.target.checked);
+                        }
+                    } else if (type === 'button') {
+                        input = document.createElement('button');
+                        input.textContent = value;
+                        input.style.width = '100%';
+                        input.onclick = onChange;
+                    }
+                    
+                    if (input) {
+                        valueDiv.appendChild(input);
+                    }
+                    
+                    row.appendChild(valueDiv);
+                    parent.appendChild(row);
+                },
+                
+                addVector3Property: (parent, name, vector, onChange) => {
+                    LunX.ui.addSectionHeader(parent, name);
+                    const axes = ['x', 'y', 'z'];
+                    
+                    axes.forEach(axis => {
+                        const row = document.createElement('div');
+                        row.className = 'prop-row';
+                        
+                        const nameDiv = document.createElement('div');
+                        nameDiv.className = 'prop-name';
+                        nameDiv.textContent = '  ' + axis.toUpperCase(); 
+                        row.appendChild(nameDiv);
+                        
+                        const valueDiv = document.createElement('div');
+                        valueDiv.className = 'prop-value';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = axis === 'y' ? 0.5 : 0.1;
+                        input.value = vector[axis].toFixed(2);
+                        
+                        input.onchange = (e) => onChange(axis, e.target.value);
+                        
+                        valueDiv.appendChild(input);
+                        row.appendChild(valueDiv);
+                        parent.appendChild(row);
+                    });
+                },
+
+                addSectionHeader: (parent, title) => {
+                    const header = document.createElement('div');
+                    header.style.cssText = 'font-weight:bold; padding:5px 0; margin-top:10px; border-bottom:1px solid var(--border-color); color:var(--accent-blue); font-size:13px;';
+                    header.textContent = title;
+                    parent.appendChild(header);
+                },
+                
+                addMaterialProperty: (parent, name, currentValue, onChange) => {
+                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
+                    const row = document.createElement('div');
+                    row.className = 'prop-row';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'prop-name';
+                    nameDiv.textContent = name;
+                    row.appendChild(nameDiv);
+
+                    const valueDiv = document.createElement('div');
+                    valueDiv.className = 'prop-value';
+                    
+                    const select = document.createElement('select');
+                    materials.forEach(mat => {
+                        const option = document.createElement('option');
+                        option.value = mat;
+                        option.textContent = mat;
+                        if(mat === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    });
+                    
+                    select.onchange = (e) => onChange(e.target.value);
+                    
+                    valueDiv.appendChild(select);
+                    row.appendChild(valueDiv);
+                    parent.appendChild(row);
+                }
+            }
+        };
+        
+        // BAŞLANGIÇTA JOYSTICK VE JUMP BUTTON SÜRÜKLEME OLAYLARI EKLENDİ (Bu kısım LunX.game.toggleControlLock ile yönetiliyor)
+        document.addEventListener('mouseup', LunX.game.endControlDrag);
+        document.addEventListener('touchend', LunX.game.endControlDrag);
+        document.addEventListener('mousemove', LunX.game.doControlDrag);
+        document.addEventListener('touchmove', LunX.game.doControlDrag);
+
+    </script>
+
+</body>
+</html>
