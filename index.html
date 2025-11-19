@@ -1652,4 +1652,345 @@
                 },
 
                 setMaterial: (materialType, hexColor) => {
-                    const obj = Lun
+                    const obj = LunX.selected;
+                    if (!obj || !obj.isMesh) return;
+                    
+                    LunX.tools.saveState();
+
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) {
+                            obj.material.forEach(m => m.dispose());
+                        } else if(obj.material.dispose) {
+                            obj.material.dispose();
+                        }
+                    }
+                    
+                    obj.material = LunX.ui.createMaterial(materialType, hexColor);
+                    
+                    obj.userData.material = materialType;
+                    obj.userData.color = hexColor;
+                    
+                    LunX.tools.saveState();
+                    LunX.ui.updateProperties();
+                },
+                
+                // Panel Sürükleme Mantığı
+                dragPanel: { element: null, x: 0, y: 0 },
+
+                startDrag: (e, panelId) => {
+                    const panel = document.getElementById(panelId);
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    LunX.ui.dragPanel.element = panel;
+                    LunX.ui.dragPanel.x = clientX - panel.offsetLeft;
+                    LunX.ui.dragPanel.y = clientY - panel.offsetTop;
+                    panel.style.cursor = 'grabbing';
+                },
+
+                drag: (e) => {
+                    if (!LunX.ui.dragPanel.element) return;
+                    e.preventDefault(); 
+                    
+                    const panel = LunX.ui.dragPanel.element;
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    let newX = clientX - LunX.ui.dragPanel.x;
+                    let newY = clientY - LunX.ui.dragPanel.y;
+
+                    const maxX = window.innerWidth - panel.offsetWidth;
+                    const maxY = window.innerHeight - panel.offsetHeight;
+                    
+                    newX = Math.max(0, Math.min(newX, maxX));
+                    newY = Math.max(75, Math.min(newY, maxY)); // Ribbon altından başla
+                    
+                    panel.style.left = newX + 'px';
+                    panel.style.top = newY + 'px';
+                    panel.style.right = 'auto'; 
+                    panel.style.bottom = 'auto'; 
+                },
+
+                stopDrag: () => {
+                    if (LunX.ui.dragPanel.element) {
+                        LunX.ui.dragPanel.element.style.cursor = 'grab';
+                        LunX.ui.dragPanel.element = null;
+                    }
+                },
+                
+                toggleSettingsMenu: () => {
+                    const menu = document.getElementById('settings-menu');
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                },
+                
+                changeQuality: (level) => {
+                    const antialias = level === 'high';
+                    const shadowMapType = level === 'high' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+                    const shadowMapEnabled = level !== 'low';
+
+                    if (LunX.renderer) {
+                        const currentCanvas = LunX.renderer.domElement;
+                        currentCanvas.parentNode.removeChild(currentCanvas);
+                        LunX.renderer.dispose(); 
+                        
+                        const container = document.getElementById('viewport');
+                        LunX.renderer = new THREE.WebGLRenderer({ antialias: antialias });
+                        LunX.renderer.setSize(container.clientWidth, container.clientHeight);
+                        LunX.renderer.shadowMap.enabled = shadowMapEnabled;
+                        LunX.renderer.shadowMap.type = shadowMapType;
+                        container.appendChild(LunX.renderer.domElement);
+                        
+                        LunX.controls.domElement = LunX.renderer.domElement;
+                        LunX.transform.domElement = LunX.renderer.domElement;
+
+                        LunX.editor.onResize();
+                    }
+                },
+
+                changeUISize: (size) => {
+                    const root = document.documentElement;
+                    if (size === 'large') {
+                        root.style.setProperty('--toolbar-height', '120px');
+                        root.style.setProperty('--ribbon-icon-size', '24px');
+                        root.style.setProperty('--ribbon-text-size', '13px');
+                    } else {
+                        root.style.setProperty('--toolbar-height', '100px');
+                        root.style.setProperty('--ribbon-icon-size', '20px');
+                        root.style.setProperty('--ribbon-text-size', '11px');
+                    }
+                    LunX.editor.onResize();
+                },
+                
+                togglePanelSide: () => {
+                    // Bu fonksiyon artık paneller serbest taşınabilir olduğu için temel CSS yönünü ayarlamaz, 
+                    // ancak yine de bir placeholder olarak bırakılmıştır.
+                    //document.getElementById('main-layout').classList.toggle('panel-left');
+                    alert("Paneller artık serbestçe taşınabilir.");
+                    LunX.editor.onResize();
+                },
+
+                updateProperties: () => {
+                    const div = document.getElementById('properties');
+                    div.innerHTML = '';
+                    const obj = LunX.selected;
+                    
+                    if (!obj) {
+                        div.innerHTML = '<div style="padding:10px; color:#777;">Özellikleri görmek için bir nesne seçin.</div>';
+                        return;
+                    }
+                    
+                    if (obj.userData.isScript) {
+                        LunX.ui.addPropertyRow(div, 'Name', 'text', obj.name, (val) => { 
+                            obj.name = val; LunX.ui.refreshExplorer(); LunX.tools.saveState(); 
+                        });
+                        LunX.ui.addPropertyRow(div, 'Type', 'readonly', 'Script');
+                        LunX.ui.addPropertyRow(div, 'Code', 'button', 'Open Editor', () => LunX.editor.openScript(obj));
+                        return;
+                    }
+                    
+                    LunX.ui.addPropertyRow(div, 'Name', 'text', obj.name, (val) => { 
+                        obj.name = val; LunX.ui.refreshExplorer(); LunX.tools.saveState(); 
+                    });
+                    LunX.ui.addPropertyRow(div, 'Anchored', 'checkbox', obj.userData.anchored, (val) => { 
+                        obj.userData.anchored = val; LunX.tools.saveState(); 
+                    });
+                    
+                    LunX.ui.addSectionHeader(div, 'Transform');
+                    LunX.ui.addVector3Property(div, 'Position', obj.position, (axis, val) => {
+                        obj.position[axis] = parseFloat(val) || 0; 
+                        if (obj.userData.isBase) { obj.position.y = -0.5; } 
+                        LunX.tools.saveState(); 
+                    });
+                    
+                    LunX.ui.addVector3Property(div, 'Rotation (deg)', {
+                        x: THREE.MathUtils.radToDeg(obj.rotation.x), 
+                        y: THREE.MathUtils.radToDeg(obj.rotation.y), 
+                        z: THREE.MathUtils.radToDeg(obj.rotation.z)
+                    }, (axis, val) => {
+                        obj.rotation[axis] = THREE.MathUtils.degToRad(parseFloat(val) || 0); 
+                        LunX.selected.userData.rot[axis] = obj.rotation[axis];
+                        LunX.tools.saveState(); 
+                    });
+                    
+                    if (obj.isMesh) {
+                         LunX.ui.addVector3Property(div, 'Size', {
+                            x: obj.geometry.parameters.width * obj.scale.x, 
+                            y: obj.geometry.parameters.height * obj.scale.y, 
+                            z: obj.geometry.parameters.depth * obj.scale.z
+                        }, (axis, val) => {
+                            const newSize = parseFloat(val) || 0.01;
+
+                            if (obj.userData.isSpawn) return; 
+
+                            if (axis === 'x') {
+                                obj.geometry = new THREE.BoxGeometry(newSize, obj.geometry.parameters.height, obj.geometry.parameters.depth);
+                            } else if (axis === 'y') {
+                                obj.geometry = new THREE.BoxGeometry(obj.geometry.parameters.width, newSize, obj.geometry.parameters.depth);
+                            } else if (axis === 'z') {
+                                obj.geometry = new THREE.BoxGeometry(obj.geometry.parameters.width, obj.geometry.parameters.height, newSize);
+                            }
+                            
+                            obj.userData.scale[axis] = newSize; 
+                            obj.geometry.attributes.position.needsUpdate = true;
+                            
+                            LunX.tools.saveState(); 
+                        });
+                        
+                        LunX.ui.addSectionHeader(div, 'Part');
+                        LunX.ui.addMaterialProperty(div, 'Material', obj.userData.material, (val) => { 
+                            LunX.ui.setMaterial(val, obj.userData.color); 
+                        });
+                        LunX.ui.addPropertyRow(div, 'Color', 'color', `#${obj.userData.color.toString(16).padStart(6, '0')}`, (val) => { 
+                             LunX.ui.setMaterial(obj.userData.material, parseInt(val.replace('#',''), 16));
+                        });
+                        LunX.ui.addPropertyRow(div, 'CanCollide', 'checkbox', obj.userData.canCollide, (val) => { 
+                            obj.userData.canCollide = val; LunX.tools.saveState(); 
+                        });
+                    }
+                },
+                
+                // PROPERTIES PANELİ YARDIMCI FONKSİYONLARI
+                addPropertyRow: (parent, name, type, value, onChange=null) => {
+                    const row = document.createElement('div');
+                    row.className = 'prop-row';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'prop-name';
+                    nameDiv.textContent = name;
+                    row.appendChild(nameDiv);
+
+                    const valueDiv = document.createElement('div');
+                    valueDiv.className = 'prop-value';
+                    
+                    let input;
+                    
+                    if (type === 'text' || type === 'readonly' || type === 'color' || type === 'number') {
+                        input = document.createElement('input');
+                        input.type = type === 'color' ? 'color' : (type === 'number' ? 'number' : 'text');
+                        input.value = value;
+                        input.readOnly = type === 'readonly';
+                        if (type !== 'readonly' && onChange) {
+                            input.onchange = (e) => onChange(e.target.value);
+                        }
+                    } else if (type === 'checkbox') {
+                        input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.checked = value;
+                        if (onChange) {
+                            input.onchange = (e) => onChange(e.target.checked);
+                        }
+                    } else if (type === 'button') {
+                        input = document.createElement('button');
+                        input.textContent = value;
+                        input.style.width = '100%';
+                        input.onclick = onChange;
+                    }
+                    
+                    if (input) {
+                        valueDiv.appendChild(input);
+                    }
+                    
+                    row.appendChild(valueDiv);
+                    parent.appendChild(row);
+                },
+                
+                addVector3Property: (parent, name, vector, onChange) => {
+                    LunX.ui.addSectionHeader(parent, name);
+                    const axes = ['x', 'y', 'z'];
+                    
+                    axes.forEach(axis => {
+                        const row = document.createElement('div');
+                        row.className = 'prop-row';
+                        
+                        const nameDiv = document.createElement('div');
+                        nameDiv.className = 'prop-name';
+                        nameDiv.textContent = '  ' + axis.toUpperCase(); 
+                        row.appendChild(nameDiv);
+                        
+                        const valueDiv = document.createElement('div');
+                        valueDiv.className = 'prop-value';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = axis === 'y' ? 0.5 : 0.1;
+                        input.value = vector[axis].toFixed(2);
+                        
+                        input.onchange = (e) => {
+                            onChange(axis, e.target.value);
+                            e.target.value = parseFloat(e.target.value).toFixed(2);
+                        };
+                        
+                        valueDiv.appendChild(input);
+                        row.appendChild(valueDiv);
+                        parent.appendChild(row);
+                    });
+                },
+                
+                addSectionHeader: (parent, title) => {
+                    const header = document.createElement('div');
+                    header.className = 'panel-header';
+                    header.textContent = title;
+                    header.style.marginTop = '10px';
+                    parent.appendChild(header);
+                },
+
+                addMaterialProperty: (parent, name, currentValue, onChange) => {
+                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Rock', 'Concrete', 'ForceField'];
+                    
+                    const row = document.createElement('div');
+                    row.className = 'prop-row';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'prop-name';
+                    nameDiv.textContent = name;
+                    row.appendChild(nameDiv);
+                    
+                    const valueDiv = document.createElement('div');
+                    valueDiv.className = 'prop-value';
+                    
+                    const select = document.createElement('select');
+                    materials.forEach(mat => {
+                        const option = document.createElement('option');
+                        option.value = mat;
+                        option.textContent = mat;
+                        if (mat === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    });
+                    
+                    select.onchange = (e) => onChange(e.target.value);
+                    
+                    valueDiv.appendChild(select);
+                    row.appendChild(valueDiv);
+                    parent.appendChild(row);
+                }
+            }
+        };
+
+        // Panel sürükleme ve joystick/kamera için global listener'lar
+        document.addEventListener('touchmove', (e) => {
+            if (LunX.ui.dragPanel.element) {
+                LunX.ui.drag(e);
+            }
+        }, { passive: false });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (LunX.ui.dragPanel.element) {
+                LunX.ui.drag(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            LunX.ui.stopDrag();
+            if (LunX.isPlaying) LunX.game.stopJoystick();
+        });
+        document.addEventListener('touchend', () => {
+             LunX.ui.stopDrag();
+             if (LunX.isPlaying) LunX.game.stopJoystick();
+        });
+        
+        // Bu iki global listener, kamera kontrolü için LunX.game.startCameraControl/touchLook/mouseLook içinde yönetilir.
+
+        window.addEventListener('load', LunX.init);
+    </script>
+</body>
+</html>
