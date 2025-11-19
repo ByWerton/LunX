@@ -2,272 +2,281 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedWhite Studio - AI & 3D Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LunX Studio - Physics Engine</title>
     <style>
         :root {
-            --primary-red: #D32F2F;
-            --secondary-red: #FFEBEE;
-            --dark-red: #B71C1C;
-            --white: #ffffff;
-            --gray: #f0f0f0;
-            --border: #ccc;
-            --text: #333;
+            --bg-dark: #2D2D30; /* Classic VS/Roblox Dark */
+            --bg-light: #3E3E42;
+            --accent-blue: #007ACC;
+            --text-white: #f1f1f1;
+            --border: #555;
+            --header-height: 45px;
         }
 
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: var(--white);
-            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            user-select: none;
         }
 
-        /* --- HEADER --- */
+        /* --- START MENU (TEMPLATES) --- */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #1e1e1e;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .template-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .template-card {
+            width: 150px;
+            height: 180px;
+            background: #333;
+            border: 2px solid #444;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        
+        .template-card:hover { border-color: var(--accent-blue); transform: translateY(-5px); }
+        .template-icon { font-size: 40px; margin-bottom: 10px; }
+
+        /* --- HEADER & TOOLBAR --- */
         #header {
-            height: 50px;
-            background-color: var(--primary-red);
-            color: var(--white);
+            height: var(--header-height);
+            background-color: #252526;
             display: flex;
             align-items: center;
-            padding: 0 20px;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 0 15px;
+            border-bottom: 1px solid #007ACC;
             justify-content: space-between;
         }
 
-        /* --- MAIN LAYOUT --- */
-        #main-container {
+        #logo { font-weight: bold; color: var(--accent-blue); font-size: 18px; margin-right: 20px; }
+        
+        .top-btn {
+            background: #3E3E42;
+            border: none;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 14px;
             display: flex;
-            flex: 1;
-            height: calc(100% - 50px);
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .top-btn:hover { background: #505055; }
+        .play-btn { background: #2e7d32; } /* Green for Play */
+        .stop-btn { background: #c62828; display: none; } /* Red for Stop */
+
+        /* --- MAIN LAYOUT --- */
+        #workspace {
+            display: flex;
+            height: calc(100vh - var(--header-height));
         }
 
         /* --- LEFT TOOLBOX --- */
         #toolbox {
-            width: 220px;
-            background-color: var(--secondary-red);
-            border-right: 2px solid var(--primary-red);
+            width: 200px;
+            background: #252526;
+            border-right: 1px solid var(--border);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
         }
 
-        .tool-category {
-            padding: 10px;
-            background: var(--dark-red);
-            color: white;
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        .tool-btn {
-            padding: 8px 15px;
-            border: none;
-            background: transparent;
-            text-align: left;
+        .tool-cat { padding: 8px; background: #333; font-size: 11px; font-weight: bold; color: #aaa; }
+        .tool-item {
+            padding: 6px 15px;
             cursor: pointer;
-            border-bottom: 1px solid #e0e0e0;
-            transition: 0.2s;
             font-size: 13px;
-            display: flex;
-            align-items: center;
+            border-bottom: 1px solid #333;
+            display: flex; align-items: center; gap: 8px;
         }
+        .tool-item:hover { background: var(--accent-blue); }
 
-        .tool-btn:hover {
-            background-color: var(--primary-red);
-            color: white;
-        }
-        
-        .tool-btn i { margin-right: 8px; }
-
-        /* --- CENTER CANVAS --- */
+        /* --- CENTER VIEWPORT --- */
         #viewport {
             flex: 1;
             position: relative;
-            background: #e0e0e0;
+            background: #111;
             overflow: hidden;
-        }
-        
-        #ai-overlay {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            gap: 10px;
-            border: 2px solid var(--primary-red);
-        }
-
-        #ai-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            outline: none;
-        }
-
-        #ai-btn {
-            background: var(--primary-red);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
         }
 
         /* --- RIGHT PROPERTIES --- */
         #properties {
-            width: 250px;
-            background-color: var(--white);
-            border-left: 2px solid var(--primary-red);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-
-        .prop-group {
-            border: 1px solid var(--border);
-            border-radius: 5px;
+            width: 240px;
+            background: #252526;
+            border-left: 1px solid var(--border);
             padding: 10px;
-            background: var(--secondary-red);
+            font-size: 12px;
+            display: flex; flex-direction: column; gap: 10px;
         }
-
-        .prop-header {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--dark-red);
-            border-bottom: 1px solid var(--primary-red);
-            padding-bottom: 5px;
-        }
-
-        .prop-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        input[type="color"] { border: none; width: 40px; height: 25px; cursor: pointer; }
-        input[type="text"], select { width: 100px; padding: 4px; }
         
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: var(--primary-red); border-radius: 4px; }
+        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        input[type="text"], select { background: #333; border: 1px solid #555; color: white; padding: 3px; width: 100px; }
+        input[type="color"] { border: none; height: 20px; width: 40px; cursor: pointer; }
+
+        /* --- AI BAR --- */
+        #ai-bar {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: 500px; display: flex; gap: 5px;
+            background: rgba(30,30,30,0.8); padding: 8px; border-radius: 5px; border: 1px solid var(--accent-blue);
+        }
+        #ai-input { flex: 1; background: transparent; border: none; color: white; outline: none; }
+
+        /* --- JOYSTICK & GAME UI --- */
+        #game-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Click through to canvas */
+            display: none; /* Hidden in Edit Mode */
+        }
+        
+        #joystick-zone {
+            position: absolute; bottom: 50px; left: 50px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            pointer-events: auto; /* Enable touch */
+            touch-action: none;
+        }
+        
+        #joystick-knob {
+            width: 50px; height: 50px; background: rgba(255,255,255,0.5);
+            border-radius: 50%; position: absolute; top: 35px; left: 35px;
+        }
 
     </style>
+    
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
             }
         }
     </script>
 </head>
 <body>
 
-    <div id="header">
-        <div><span style="color: white;">RED</span>WHITE STUDIO</div>
-        <div style="font-size: 12px;">Proje: İsimsiz | Mode: Edit</div>
+    <div id="start-screen">
+        <h1 style="font-size: 40px; margin-bottom: 10px;">LunX <span style="color:var(--accent-blue)">STUDIO</span></h1>
+        <p>Bir şablon seçerek başla</p>
+        <div class="template-container">
+            <div class="template-card" onclick="loadTemplate('baseplate')">
+                <div class="template-icon">🟩</div>
+                <div>Baseplate</div>
+                <small style="color:#888">Boş çim zemin</small>
+            </div>
+            <div class="template-card" onclick="loadTemplate('village')">
+                <div class="template-icon">🏘️</div>
+                <div>Village</div>
+                <small style="color:#888">Köy Şablonu</small>
+            </div>
+            <div class="template-card" onclick="loadTemplate('classic')">
+                <div class="template-icon">🌑</div>
+                <div>Classic</div>
+                <small style="color:#888">Eski gri zemin</small>
+            </div>
+        </div>
     </div>
 
-    <div id="main-container">
-        
-        <div id="toolbox">
-            <div class="tool-category">Temel Araçlar</div>
-            <button class="tool-btn" onclick="setTransformMode('translate')">Select / Move</button>
-            <button class="tool-btn" onclick="setTransformMode('scale')">Scale</button>
-            <button class="tool-btn" onclick="setTransformMode('rotate')">Rotate</button>
-            
-            <div class="tool-category">Parçalar (Parts)</div>
-            <button class="tool-btn" onclick="createPart('cube')">Part (Küp)</button>
-            <button class="tool-btn" onclick="createPart('sphere')">Sphere (Küre)</button>
-            <button class="tool-btn" onclick="createPart('cylinder')">Cylinder (Silindir)</button>
-            <button class="tool-btn" onclick="createPart('plane')">Plane (Zemin)</button>
-            <button class="tool-btn" onclick="create3DText()">3D Text (Yazı)</button>
+    <div id="header">
+        <div style="display: flex; align-items: center;">
+            <div id="logo">LunX</div>
+            <button class="top-btn">💾 Save</button>
+            <button class="top-btn">⚙️ Settings</button>
+        </div>
+        <div>
+            <button class="top-btn play-btn" id="btn-play" onclick="togglePlayMode()">▶ Oyna (F5)</button>
+            <button class="top-btn stop-btn" id="btn-stop" onclick="togglePlayMode()">🟥 Durdur</button>
+        </div>
+    </div>
 
-            <div class="tool-category">Gelişmiş Araçlar (40+)</div>
-            <div id="extra-tools"></div>
+    <div id="workspace">
+        <div id="toolbox">
+            <div class="tool-cat">Temel</div>
+            <div class="tool-item" onclick="setMode('translate')">↖ Select / Move</div>
+            <div class="tool-item" onclick="setMode('scale')">↔ Scale</div>
+            <div class="tool-item" onclick="setMode('rotate')">🔄 Rotate</div>
+            
+            <div class="tool-cat">Parçalar</div>
+            <div class="tool-item" onclick="addPart('box')">📦 Part (Kutu)</div>
+            <div class="tool-item" onclick="addPart('sphere')">⚪ Sphere (Küre)</div>
+            <div class="tool-item" onclick="addPart('cylinder')">🛢 Cylinder</div>
+            <div class="tool-item" onclick="add3DText()">🅰 3D Text</div>
+
+            <div class="tool-cat">LunX Tools (40+)</div>
+            <div id="extra-tools-list"></div>
         </div>
 
         <div id="viewport">
-            <div id="ai-overlay">
-                <input type="text" id="ai-input" placeholder="AI'ya yaz: 'Kırmızı büyük kutu oluştur'...">
-                <button id="ai-btn" onclick="processAI()">AI Gönder</button>
+            <div id="game-ui">
+                <div id="joystick-zone">
+                    <div id="joystick-knob"></div>
+                </div>
+            </div>
+            
+            <div id="ai-bar">
+                <span style="font-size: 20px;">✨</span>
+                <input type="text" id="ai-input" placeholder="AI: 'Kırmızı bir duvar oluştur' veya 'Texture değiştir'...">
+                <button class="top-btn" style="background: var(--accent-blue);" onclick="runAI()">Gönder</button>
             </div>
         </div>
 
         <div id="properties">
-            <div class="prop-header">Özellikler (Properties)</div>
-            
-            <div id="no-selection-msg" style="color: #888; font-style: italic;">Bir obje seçin...</div>
-
-            <div id="prop-content" style="display: none;">
-                <div class="prop-group">
-                    <div class="prop-header">Görünüm</div>
-                    <div class="prop-row">
-                        <span>Color:</span>
-                        <input type="color" id="prop-color">
-                    </div>
-                    <div class="prop-row">
-                        <span>Material:</span>
-                        <select id="prop-material">
-                            <option value="Standard">Standard</option>
-                            <option value="Phong">Parlak (Phong)</option>
-                            <option value="Wireframe">Tel Örgü</option>
-                            <option value="Toon">Çizgi Film</option>
-                        </select>
-                    </div>
-                    <div class="prop-row">
-                        <span>Opacity:</span>
-                        <input type="range" id="prop-opacity" min="0" max="1" step="0.1" value="1">
-                    </div>
+            <div class="tool-cat">PROPERTIES</div>
+            <div id="prop-empty" style="color:#777; padding:10px;">Obje seçilmedi.</div>
+            <div id="prop-content" style="display:none;">
+                <div class="prop-row">
+                    <span>Name</span> <input type="text" id="p-name">
                 </div>
-
-                <div class="prop-group">
-                    <div class="prop-header">Fizik & Davranış</div>
-                    <div class="prop-row">
-                        <span>Anchored:</span>
-                        <input type="checkbox" id="prop-anchored" checked>
-                    </div>
-                    <div class="prop-row">
-                        <span>CanCollide:</span>
-                        <input type="checkbox" id="prop-collide" checked>
-                    </div>
-                    <div class="prop-row">
-                        <span>Name:</span>
-                        <input type="text" id="prop-name" value="Part">
-                    </div>
+                <div class="prop-row">
+                    <span>Color</span> <input type="color" id="p-color">
                 </div>
-
-                <div class="prop-group">
-                    <div class="prop-header">Transform</div>
-                    <div class="prop-row">
-                        <span>Pos X:</span> <span id="val-x">0</span>
-                    </div>
-                    <div class="prop-row">
-                        <span>Pos Y:</span> <span id="val-y">0</span>
-                    </div>
-                    <div class="prop-row">
-                        <span>Pos Z:</span> <span id="val-z">0</span>
-                    </div>
+                <div class="prop-row">
+                    <span>Material</span>
+                    <select id="p-mat">
+                        <option value="Standard">Plastic</option>
+                        <option value="Phong">Metal</option>
+                        <option value="Wire">Wireframe</option>
+                        <option value="Neon">Neon</option>
+                    </select>
                 </div>
+                <hr style="border:0; border-top:1px solid #444; width:100%;">
+                <div class="prop-row">
+                    <span>Anchored</span> <input type="checkbox" id="p-anchor">
+                </div>
+                <div class="prop-row">
+                    <span>CanCollide</span> <input type="checkbox" id="p-collide">
+                </div>
+                <div class="prop-row">
+                    <span>Transparency</span> <input type="number" id="p-trans" min="0" max="1" step="0.1" style="width:40px;">
+                </div>
+                <hr style="border:0; border-top:1px solid #444; width:100%;">
+                <div style="color:#888; margin-bottom:5px;">Transform</div>
+                <div class="prop-row">Pos: <span id="p-pos">0, 0, 0</span></div>
             </div>
         </div>
     </div>
@@ -278,127 +287,430 @@
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
         import { FontLoader } from 'three/addons/loaders/FontLoader.js';
         import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+        import * as CANNON from 'cannon-es';
 
-        // --- VARIABLES ---
-        let scene, camera, renderer, controls, transformControl;
+        // --- GLOBAL VARIABLES ---
+        let scene, camera, renderer, orbitControls, transformControls;
+        let physicsWorld;
+        let objects = []; // ThreeJS objects linked to game logic
+        let physicsBodies = []; // CannonJS bodies
+        let selectedObj = null;
+        let isPlayMode = false;
+        let requestID;
+        
+        // Character
+        let playerBody, playerMesh;
+        let input = { f: 0, r: 0, up: false }; // f: forward/back, r: right/left
+
+        // Init
+        const container = document.getElementById('viewport');
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        let selectedObject = null;
-        const objects = []; // Sahnede seçilebilir objeler
 
-        // --- INIT ---
-        function init() {
-            const container = document.getElementById('viewport');
-
-            // Scene
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xeeeeee);
+        // ------------------------------------------
+        // 1. INITIALIZATION & TEMPLATES
+        // ------------------------------------------
+        window.loadTemplate = function(type) {
+            document.getElementById('start-screen').style.display = 'none';
+            initEngine();
             
-            // Grid
-            const gridHelper = new THREE.GridHelper(50, 50);
-            scene.add(gridHelper);
+            // Temel zemin (Physics + Visual)
+            if(type === 'baseplate' || type === 'village') {
+                createFloor(0x4CAF50); // Yeşil çim
+                // Basit gökyüzü rengi
+                scene.background = new THREE.Color(0x87CEEB);
+            } else {
+                createFloor(0x666666); // Klasik gri
+            }
 
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(10, 20, 10);
-            scene.add(dirLight);
-
-            // Camera
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(5, 5, 10);
-            camera.lookAt(0, 0, 0);
-
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
-
-            // Orbit Controls (Camera)
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-
-            // Transform Controls (Move/Rotate/Scale)
-            transformControl = new TransformControls(camera, renderer.domElement);
-            transformControl.addEventListener('dragging-changed', function (event) {
-                controls.enabled = !event.value; // Gizmo kullanırken kamerayı kilitle
-            });
-            transformControl.addEventListener('change', updatePropValuesUI); // Hareket edince UI güncelle
-            scene.add(transformControl);
-
-            // Events
-            window.addEventListener('resize', onWindowResize);
-            container.addEventListener('pointerdown', onPointerDown);
+            if(type === 'village') {
+                generateVillage();
+            }
             
-            // UI Generate
-            generateExtraTools();
-
-            // Animation Loop
             animate();
         }
 
-        // --- CORE FUNCTIONS ---
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        function onWindowResize() {
-            const container = document.getElementById('viewport');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        function createPart(type, color = 0xD32F2F, size = 1) {
-            let geometry;
-            if (type === 'cube') geometry = new THREE.BoxGeometry(size, size, size);
-            else if (type === 'sphere') geometry = new THREE.SphereGeometry(size/2, 32, 32);
-            else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(size/2, size/2, size, 32);
-            else if (type === 'plane') geometry = new THREE.PlaneGeometry(size*2, size*2);
-
-            const material = new THREE.MeshStandardMaterial({ color: color });
-            const mesh = new THREE.Mesh(geometry, material);
+        function initEngine() {
+            // THREE SCENE
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x202020);
             
-            mesh.position.y = size/2;
-            if(type === 'plane') {
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.position.y = 0;
+            // CAMERA
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 10, 20);
+            
+            // RENDERER
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // LIGHTS
+            const ambi = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambi);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 30, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            // CONTROLS (EDIT MODE)
+            orbitControls = new OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
+
+            transformControls = new TransformControls(camera, renderer.domElement);
+            transformControls.addEventListener('dragging-changed', (event) => {
+                orbitControls.enabled = !event.value;
+            });
+            transformControls.addEventListener('change', updatePropDisplay);
+            scene.add(transformControls);
+
+            // PHYSICS WORLD (CANNON)
+            physicsWorld = new CANNON.World({
+                gravity: new CANNON.Vec3(0, -9.82, 0),
+            });
+
+            // EVENTS
+            window.addEventListener('resize', onResize);
+            container.addEventListener('pointerdown', onMouseClick);
+            
+            // Generate Sidebar Tools
+            generateToolsList();
+            
+            // Keyboard Input for Character
+            window.addEventListener('keydown', (e) => {
+                if(!isPlayMode) return;
+                switch(e.key.toLowerCase()) {
+                    case 'w': input.f = 1; break;
+                    case 's': input.f = -1; break;
+                    case 'a': input.r = 1; break;
+                    case 'd': input.r = -1; break;
+                    case ' ': input.up = true; break;
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if(!isPlayMode) return;
+                switch(e.key.toLowerCase()) {
+                    case 'w': case 's': input.f = 0; break;
+                    case 'a': case 'd': input.r = 0; break;
+                    case ' ': input.up = false; break;
+                }
+            });
+
+            setupJoystick();
+        }
+
+        // ------------------------------------------
+        // 2. OBJECT CREATION (DUAL SYSTEM: VISUAL + PHYSICS)
+        // ------------------------------------------
+        function createFloor(colorHex) {
+            // Visual
+            const geo = new THREE.PlaneGeometry(200, 200);
+            const mat = new THREE.MeshStandardMaterial({ color: colorHex });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            
+            // Grid
+            const grid = new THREE.GridHelper(200, 100);
+            scene.add(grid);
+
+            // Physics (Ground)
+            const groundBody = new CANNON.Body({
+                type: CANNON.Body.STATIC,
+                shape: new CANNON.Plane()
+            });
+            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+            physicsWorld.addBody(groundBody);
+        }
+
+        window.addPart = function(type, pos = {x:0, y:5, z:0}, size = 2, color = 0xcccccc) {
+            // Default settings
+            let geo, shape;
+            
+            if(type === 'box') {
+                geo = new THREE.BoxGeometry(size, size, size);
+                shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
+            } else if (type === 'sphere') {
+                geo = new THREE.SphereGeometry(size/2, 32, 32);
+                shape = new CANNON.Sphere(size/2);
+            } else if (type === 'cylinder') {
+                geo = new THREE.CylinderGeometry(size/2, size/2, size, 32);
+                shape = new CANNON.Cylinder(size/2, size/2, size, 12); // Cannon Cylinder axis is diff
+                // Basitlik için silindiri kutu gibi davranan bir shape yapıyorum rotasyon sorunu olmasın diye
+                shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
             }
 
-            // Custom Data for Roblox Logic
+            // Material
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.position.set(pos.x, pos.y, pos.z);
+            
+            // UserData for LunX logic
             mesh.userData = {
-                anchored: true,
+                type: type,
+                anchored: true, // Varsayılan: Sabit
                 canCollide: true,
-                name: "Part",
-                type: type
+                name: "Part"
             };
 
             scene.add(mesh);
             objects.push(mesh);
+
+            // Create Physics Body (But don't add to world yet, only on Play)
+            const body = new CANNON.Body({
+                mass: 0, // Start as static/anchored
+                position: new CANNON.Vec3(pos.x, pos.y, pos.z),
+                shape: shape
+            });
+            
+            mesh.userData.physicsBody = body; // Link them
+            physicsBodies.push(body);
+
             selectObject(mesh);
             return mesh;
         }
 
-        // Text Creation
-        function create3DText(textStr = "Hello") {
-            const loader = new FontLoader();
-            loader.load('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json', function (font) {
-                const geometry = new TextGeometry(textStr, {
-                    font: font,
-                    size: 1,
-                    height: 0.2,
+        // ------------------------------------------
+        // 3. GAME LOGIC & PHYSICS
+        // ------------------------------------------
+        window.togglePlayMode = function() {
+            isPlayMode = !isPlayMode;
+            const playBtn = document.getElementById('btn-play');
+            const stopBtn = document.getElementById('btn-stop');
+            const joystick = document.getElementById('game-ui');
+
+            if(isPlayMode) {
+                // --- PLAY START ---
+                playBtn.style.display = 'none';
+                stopBtn.style.display = 'flex';
+                joystick.style.display = 'block';
+                transformControls.detach(); // Edit gizmo kaldır
+
+                // 1. Objeleri Fiziğe Ekle
+                objects.forEach(mesh => {
+                    const body = mesh.userData.physicsBody;
+                    if(body) {
+                        // Güncel pozisyonu senkronize et
+                        body.position.copy(mesh.position);
+                        body.quaternion.copy(mesh.quaternion);
+                        
+                        // Anchor ayarı
+                        if(mesh.userData.anchored) {
+                            body.type = CANNON.Body.STATIC;
+                            body.mass = 0;
+                        } else {
+                            body.type = CANNON.Body.DYNAMIC;
+                            body.mass = 10;
+                        }
+                        body.updateMassProperties();
+                        
+                        // Collide ayarı
+                        if(!mesh.userData.canCollide) {
+                            body.collisionFilterGroup = 0; // Çarpışma yok
+                        } else {
+                            body.collisionFilterGroup = 1;
+                        }
+
+                        physicsWorld.addBody(body);
+                    }
                 });
-                geometry.center();
-                const material = new THREE.MeshStandardMaterial({ color: 0xD32F2F });
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.y = 1;
+
+                // 2. Karakteri Yarat
+                createPlayer();
+
+            } else {
+                // --- STOP (EDIT MODE) ---
+                playBtn.style.display = 'flex';
+                stopBtn.style.display = 'none';
+                joystick.style.display = 'none';
+
+                // Karakteri sil
+                if(playerBody) physicsWorld.removeBody(playerBody);
+                if(playerMesh) scene.remove(playerMesh);
                 
-                mesh.userData = { anchored: true, canCollide: true, name: "TextPart" };
+                // Objeleri fizikten temizle
+                objects.forEach(mesh => {
+                    if(mesh.userData.physicsBody) physicsWorld.removeBody(mesh.userData.physicsBody);
+                    // Objelerin pozisyonlarını resetlemiyorum, simülasyon sonucu kalsın.
+                    // "Roblox" mantığında aslında eski hale dönmeli ama bu prototip için böyle kalsın.
+                });
+                
+                // Kamerayı resetle
+                camera.position.set(0, 20, 30);
+                camera.lookAt(0,0,0);
+                orbitControls.enabled = true;
+            }
+        }
+
+        function createPlayer() {
+            // Physics Body
+            const radius = 1;
+            playerBody = new CANNON.Body({
+                mass: 60, // Karakter ağırlığı
+                shape: new CANNON.Sphere(radius),
+                position: new CANNON.Vec3(0, 5, 0),
+                fixedRotation: true // Yuvarlanmasın
+            });
+            playerBody.linearDamping = 0.9; // Kaymayı önle
+            physicsWorld.addBody(playerBody);
+
+            // Visual Mesh
+            const geo = new THREE.CapsuleGeometry(radius, 2, 4, 8);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x007ACC });
+            playerMesh = new THREE.Mesh(geo, mat);
+            playerMesh.castShadow = true;
+            scene.add(playerMesh);
+        }
+
+        function updatePhysics() {
+            if(!isPlayMode || !playerBody) return;
+
+            physicsWorld.step(1/60);
+
+            // Sync Visuals
+            objects.forEach(mesh => {
+                const body = mesh.userData.physicsBody;
+                if(body && !mesh.userData.anchored) {
+                    mesh.position.copy(body.position);
+                    mesh.quaternion.copy(body.quaternion);
+                }
+            });
+
+            // Player Movement
+            const speed = 15;
+            // Kamera yönüne göre hareket
+            // Basitlik için sadece Z/X ekseni
+            const forwardVel = input.f * speed;
+            const rightVel = input.r * speed * 0.5;
+            
+            playerBody.velocity.x = rightVel;
+            playerBody.velocity.z = -forwardVel; 
+            
+            if(input.up && Math.abs(playerBody.velocity.y) < 0.1) {
+                playerBody.velocity.y = 10; // Jump
+            }
+
+            // Sync Player Visual
+            playerMesh.position.copy(playerBody.position);
+            
+            // Camera Follow
+            const offset = new THREE.Vector3(0, 10, 15);
+            camera.position.lerp(playerMesh.position.clone().add(offset), 0.1);
+            camera.lookAt(playerMesh.position);
+        }
+
+        // ------------------------------------------
+        // 4. EDITOR INTERACTION
+        // ------------------------------------------
+        function onMouseClick(event) {
+            if(isPlayMode) return; // Oyun modunda seçim yapma
+
+            // UI elementlerine tıklamayı yoksay (Joystick vs)
+            if(event.target.id !== 'viewport' && event.target.id !== 'ai-input') return;
+
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects);
+
+            if(intersects.length > 0) {
+                selectObject(intersects[0].object);
+            } else {
+                // Gizmo'ya tıklanmadıysa seçimi kaldır
+                // Basit implementasyon: her boş tıkta kaldırır
+                selectObject(null);
+            }
+        }
+
+        function selectObject(obj) {
+            selectedObj = obj;
+            if(obj) {
+                transformControls.attach(obj);
+                document.getElementById('prop-empty').style.display = 'none';
+                document.getElementById('prop-content').style.display = 'block';
+                
+                // Update Prop UI
+                document.getElementById('p-name').value = obj.userData.name || "Part";
+                document.getElementById('p-color').value = '#' + obj.material.color.getHexString();
+                document.getElementById('p-anchor').checked = obj.userData.anchored;
+                document.getElementById('p-collide').checked = obj.userData.canCollide;
+            } else {
+                transformControls.detach();
+                document.getElementById('prop-empty').style.display = 'block';
+                document.getElementById('prop-content').style.display = 'none';
+            }
+        }
+
+        window.setMode = (mode) => transformControls.setMode(mode);
+
+        // --- PROPERTY LISTENERS ---
+        document.getElementById('p-color').addEventListener('input', (e) => {
+            if(selectedObj) selectedObj.material.color.set(e.target.value);
+        });
+        document.getElementById('p-anchor').addEventListener('change', (e) => {
+            if(selectedObj) selectedObj.userData.anchored = e.target.checked;
+        });
+        document.getElementById('p-collide').addEventListener('change', (e) => {
+            if(selectedObj) selectedObj.userData.canCollide = e.target.checked;
+        });
+        document.getElementById('p-mat').addEventListener('change', (e) => {
+            if(!selectedObj) return;
+            const col = selectedObj.material.color;
+            let newMat;
+            switch(e.target.value) {
+                case 'Wire': newMat = new THREE.MeshBasicMaterial({color:col, wireframe:true}); break;
+                case 'Neon': newMat = new THREE.MeshBasicMaterial({color:col}); break; // Glow effect simulation
+                case 'Phong': newMat = new THREE.MeshPhongMaterial({color:col, shininess:100}); break;
+                default: newMat = new THREE.MeshStandardMaterial({color:col});
+            }
+            selectedObj.material = newMat;
+        });
+
+        function updatePropDisplay() {
+            if(selectedObj) {
+                const p = selectedObj.position;
+                document.getElementById('p-pos').innerText = `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`;
+            }
+        }
+
+        // ------------------------------------------
+        // 5. AI & TOOLS
+        // ------------------------------------------
+        window.runAI = () => {
+            const txt = document.getElementById('ai-input').value.toLowerCase();
+            if(!txt) return;
+            
+            let color = 0xcccccc;
+            if(txt.includes("kırmızı")) color = 0xff0000;
+            else if(txt.includes("mavi")) color = 0x0000ff;
+            else if(txt.includes("yeşil")) color = 0x00ff00;
+            
+            if(txt.includes("kutu") || txt.includes("duvar")) {
+                const p = addPart('box', {x:0, y:5, z:0}, 4, color);
+                if(txt.includes("duvar")) p.scale.set(5, 2, 0.5);
+            } else if(txt.includes("küre")) {
+                addPart('sphere', {x:0, y:5, z:0}, 3, color);
+            }
+            document.getElementById('ai-input').value = "";
+        }
+
+        window.add3DText = () => {
+            const loader = new FontLoader();
+            loader.load('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+                const geo = new TextGeometry('LunX', { font: font, size: 2, height: 0.5 });
+                const mat = new THREE.MeshStandardMaterial({color: 0xff0000});
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(0,5,0);
+                mesh.userData = { anchored: true, canCollide: false, name: "Text" };
+                // Text için basitleştirilmiş physics (Box)
+                mesh.userData.physicsBody = new CANNON.Body({ mass:0, shape: new CANNON.Box(new CANNON.Vec3(2,1,0.5)), position: new CANNON.Vec3(0,5,0) });
                 
                 scene.add(mesh);
                 objects.push(mesh);
@@ -406,185 +718,93 @@
             });
         }
 
-        // Selection Logic
-        function onPointerDown(event) {
-            // Sadece sol tık
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects);
-
-            if (intersects.length > 0) {
-                // Eğer zaten seçili olana tıkladıysak ve transform modundaysak bir şey yapma
-                if(selectedObject !== intersects[0].object) {
-                    selectObject(intersects[0].object);
-                }
-            } else {
-                // Boşluğa tıklayınca seçimi kaldır (Gizmo'ya tıklanmadıysa)
-                // Basitlik için şimdilik gizmo kontrolü yapmıyoruz ama gizmo üstteyse raycast ona çarpmaz
-                // selectObject(null); 
+        function generateVillage() {
+            // Basit evler oluştur
+            for(let i=0; i<5; i++) {
+                const x = (Math.random()-0.5)*40;
+                const z = (Math.random()-0.5)*40;
+                const house = addPart('box', {x:x, y:2.5, z:z}, 5, 0xA52A2A); // Duvar
+                house.userData.anchored = true;
+                const roof = addPart('cylinder', {x:x, y:6, z:z}, 4, 0x5D4037); // Çatı (Silindir prizma gibi)
+                roof.rotation.z = Math.PI / 2; // Yan yatır
+                roof.userData.anchored = true;
             }
         }
 
-        function selectObject(obj) {
-            selectedObject = obj;
+        function generateToolsList() {
+            const list = document.getElementById('extra-tools-list');
+            const tools = ["Script", "LocalScript", "Module", "Folder", "Model", "Tool", "Handle", "MeshPart", "Union", "Negate", "Separate", "Motor6D", "Weld", "Hinge", "Prismatic", "Rope", "Rod", "Spring", "BodyForce", "BodyGyro", "BodyVel", "Spawn", "Checkpoint", "Seat", "VehicleSeat", "Skateboard", "Lamp", "SunRays", "Bloom", "Blur", "ColorCorrection", "Sky", "Atmosphere", "Clouds", "Sound", "Music", "Speaker", "Chat", "Team", "Player"];
             
-            if (obj) {
-                transformControl.attach(obj);
-                document.getElementById('no-selection-msg').style.display = 'none';
-                document.getElementById('prop-content').style.display = 'block';
-                updateUIFromObject(obj);
-            } else {
-                transformControl.detach();
-                document.getElementById('no-selection-msg').style.display = 'block';
-                document.getElementById('prop-content').style.display = 'none';
-            }
-        }
-
-        // --- UI & LOGIC CONNECTION ---
-
-        // Global function exposures for HTML onclick
-        window.setTransformMode = (mode) => {
-            if(transformControl) transformControl.setMode(mode);
-        };
-
-        window.createPart = createPart;
-        window.create3DText = () => create3DText("Text");
-
-        // --- PROPERTIES PANEL LOGIC ---
-        const propColor = document.getElementById('prop-color');
-        const propMaterial = document.getElementById('prop-material');
-        const propAnchored = document.getElementById('prop-anchored');
-        const propCollide = document.getElementById('prop-collide');
-        const propOpacity = document.getElementById('prop-opacity');
-
-        function updateUIFromObject(obj) {
-            propColor.value = '#' + obj.material.color.getHexString();
-            propAnchored.checked = obj.userData.anchored;
-            propCollide.checked = obj.userData.canCollide;
-            
-            // Materyal tipi tespiti (basit)
-            if(obj.material.wireframe) propMaterial.value = "Wireframe";
-            else propMaterial.value = "Standard"; 
-        }
-
-        function updatePropValuesUI() {
-            if(!selectedObject) return;
-            document.getElementById('val-x').innerText = selectedObject.position.x.toFixed(2);
-            document.getElementById('val-y').innerText = selectedObject.position.y.toFixed(2);
-            document.getElementById('val-z').innerText = selectedObject.position.z.toFixed(2);
-        }
-
-        // Listeners for Property Changes
-        propColor.addEventListener('input', (e) => {
-            if(selectedObject) selectedObject.material.color.set(e.target.value);
-        });
-
-        propAnchored.addEventListener('change', (e) => {
-            if(selectedObject) selectedObject.userData.anchored = e.target.checked;
-        });
-
-        propCollide.addEventListener('change', (e) => {
-            if(selectedObject) selectedObject.userData.canCollide = e.target.checked;
-        });
-
-        propOpacity.addEventListener('input', (e) => {
-            if(selectedObject) {
-                selectedObject.material.transparent = true;
-                selectedObject.material.opacity = e.target.value;
-            }
-        });
-
-        propMaterial.addEventListener('change', (e) => {
-            if(!selectedObject) return;
-            const val = e.target.value;
-            const oldColor = selectedObject.material.color;
-            
-            let newMat;
-            if(val === 'Wireframe') {
-                newMat = new THREE.MeshBasicMaterial({ color: oldColor, wireframe: true });
-            } else if (val === 'Phong') {
-                newMat = new THREE.MeshPhongMaterial({ color: oldColor, shininess: 100 });
-            } else if (val === 'Toon') {
-                newMat = new THREE.MeshToonMaterial({ color: oldColor });
-            } else {
-                newMat = new THREE.MeshStandardMaterial({ color: oldColor });
-            }
-            
-            selectedObject.material = newMat;
-        });
-
-        // --- SIMULATED AI LOGIC ---
-        window.processAI = () => {
-            const input = document.getElementById('ai-input').value.toLowerCase();
-            if(!input) return;
-
-            // Basit NLP (Doğal Dil İşleme) Simülasyonu
-            let color = 0xD32F2F;
-            if(input.includes('mavi')) color = 0x2196F3;
-            if(input.includes('yeşil')) color = 0x4CAF50;
-            if(input.includes('sarı')) color = 0xFFEB3B;
-            if(input.includes('siyah')) color = 0x212121;
-            if(input.includes('beyaz')) color = 0xffffff;
-
-            let size = 1;
-            if(input.includes('büyük')) size = 3;
-            if(input.includes('küçük')) size = 0.5;
-
-            if(input.includes('kutu') || input.includes('küp')) {
-                createPart('cube', color, size);
-            } else if (input.includes('küre') || input.includes('top')) {
-                createPart('sphere', color, size);
-            } else if (input.includes('yazı') || input.includes('text')) {
-                // Yazı içeriğini ayıkla
-                const textParts = input.split(' ');
-                const content = textParts.length > 1 ? textParts[textParts.length-1] : "AI";
-                create3DText(content);
-            } else {
-                alert("AI: Tam anlayamadım ama bir kutu oluşturayım.");
-                createPart('cube', color, size);
-            }
-            
-            document.getElementById('ai-input').value = "";
-        }
-
-        // --- GENERATE FAKE 40+ TOOLS ---
-        function generateExtraTools() {
-            const list = document.getElementById('extra-tools');
-            const tools = [
-                "MaterialManager", "ColorAction", "Group", "Ungroup", "Lock", "Unlock", 
-                "AnchorToggle", "CollisionToggle", "Join", "Separate", "Union", "Negate",
-                "Script", "LocalScript", "ModuleScript", "Folder", "Model", "Tool", 
-                "Accessory", "Texture", "Decal", "MeshPart", "VehicleSeat", "Seat",
-                "SpawnLocation", "PointLight", "SpotLight", "SurfaceLight", "ParticleEmitter",
-                "Trail", "Beam", "Fire", "Smoke", "Sparkles", "Explosion", "ForceField",
-                "Sky", "Atmosphere", "Clouds", "Blur", "Bloom", "DepthOfField"
-            ];
-
-            tools.forEach(tool => {
-                const btn = document.createElement('button');
-                btn.className = 'tool-btn';
-                btn.innerHTML = `<i>🔧</i> ${tool}`;
-                btn.onclick = () => {
-                    // Bazı araçlara fake aksiyon ekleyelim
-                    if(tool === "Fire" && selectedObject) {
-                         // Basit ateş efekti simülasyonu (renk değiştirme)
-                         selectedObject.material.color.setHex(0xffaa00);
-                         alert("Obje ateşe verildi (Simülasyon)");
-                    } else if (tool === "Script") {
-                        alert("Script editörü bu versiyonda aktif değil.");
-                    } else {
-                        console.log(tool + " seçildi.");
-                    }
-                };
-                list.appendChild(btn);
+            tools.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'tool-item';
+                div.innerHTML = `<i>🔹</i> ${t}`;
+                div.onclick = () => alert(`'${t}' aracı henüz bu prototipte kodlanmadı.`);
+                list.appendChild(div);
             });
         }
 
-        // Start
-        init();
+        // ------------------------------------------
+        // 6. JOYSTICK LOGIC
+        // ------------------------------------------
+        function setupJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+            let startX, startY;
+            
+            zone.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            zone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                let dx = touch.clientX - startX;
+                let dy = touch.clientY - startY;
+                
+                // Limit distance
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const maxDist = 35;
+                if(dist > maxDist) {
+                    dx = (dx/dist) * maxDist;
+                    dy = (dy/dist) * maxDist;
+                }
+
+                knob.style.transform = `translate(${dx}px, ${dy}px)`;
+                
+                // Normalize inputs for character
+                input.r = -(dx / maxDist); // Left/Right
+                input.f = (dy / maxDist);  // Forward/Back (inverted logic often needed)
+            });
+
+            zone.addEventListener('touchend', () => {
+                knob.style.transform = `translate(0px, 0px)`;
+                input.f = 0;
+                input.r = 0;
+            });
+        }
+
+        // ------------------------------------------
+        // MAIN LOOP
+        // ------------------------------------------
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if(isPlayMode) {
+                updatePhysics();
+            } else {
+                orbitControls.update();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function onResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
 
     </script>
 </body>
