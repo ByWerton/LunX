@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio - Pro Edition</title>
+    <title>LunX Studio - Pro Edition (Physics Enabled)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 
     <style>
@@ -25,10 +25,8 @@
         * { box-sizing: border-box; user-select: none; font-family: 'Segoe UI', sans-serif; outline: none; touch-action: none; }
         body { margin: 0; overflow: hidden; background: var(--bg-light); height: 100vh; display: flex; flex-direction: column; }
         
-        /* UI SCALE WRAPPER */
         .ui-scaled { zoom: var(--ui-scale); }
 
-        /* --- START SCREEN --- */
         #start-screen {
             position: fixed; inset: 0; background: linear-gradient(135deg, #d32f2f, #ffCDD2);
             z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -43,7 +41,6 @@
         .template-card:hover { transform: translateY(-10px); }
         .t-icon { font-size: 40px; margin-bottom: 10px; }
 
-        /* --- TOP BAR (RIBBON TAB SELECTOR) --- */
         #top-bar {
             height: var(--header-h); background: var(--primary); color: white; display: flex; align-items: center; padding: 0 10px;
             font-size: 14px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -56,7 +53,6 @@
         .menu-item:hover { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.1); }
         .menu-item.active { background: rgba(0,0,0,0.2); font-weight: bold; }
 
-        /* --- RIBBON CONTENT --- */
         #ribbon {
             height: var(--ribbon-h); background: var(--bg-panel); border-bottom: 1px solid var(--border);
             padding: 5px; flex-shrink: 0; position: relative; overflow: hidden;
@@ -72,13 +68,10 @@
         .r-btn.active { background: #ffcdd2; color: var(--primary-dark); border: 1px solid var(--primary); }
         .r-btn span { font-size: 24px; margin-bottom: 5px; }
         
-        /* Always show Play/Stop buttons */
         #game-controls { position: absolute; right: 10px; top: 5px; height: 90px; display: flex; gap: 5px; align-items: center; }
 
-        /* --- MAIN LAYOUT --- */
         #layout { flex: 1; display: flex; position: relative; overflow: hidden; }
 
-        /* TOOLBOX (LEFT) */
         #toolbox {
             width: 250px; background: var(--bg-panel); border-right: 1px solid var(--border);
             display: flex; flex-direction: column; z-index: 20; transition: width 0.3s ease; position: relative;
@@ -95,10 +88,8 @@
         .tool-item:hover { border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .t-preview { width: 30px; height: 30px; margin-bottom: 4px; border-radius: 3px; }
 
-        /* VIEWPORT (CENTER) */
         #viewport { flex: 1; position: relative; background: #87CEEB; overflow: hidden; }
         
-        /* PROPERTIES (RIGHT) */
         #properties {
             width: 280px; background: var(--bg-panel); border-left: 1px solid var(--border);
             display: flex; flex-direction: column; z-index: 20;
@@ -132,35 +123,25 @@
         .btn-reset { background: #ff9800; color: white; }
         .btn-close { background: #eee; color: #333; }
 
-
-        /* --- DEĞİŞİKLİK BAŞLANGICI: AI CHAT CSS --- */
-
-        /* AI CHAT MODAL (Eski #lun-aix.open stili kaldırıldı) */
+        /* AI CHAT MODAL */
         #ai-modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2900; /* Script modalının hemen altında */
-            display: none; /* JS ile 'flex' olarak değiştirilecek */
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2900;
+            display: none;
             align-items: center; justify-content: center;
         }
-
         #lun-aix {
-            /* position: absolute ve transform kaldırıldı */
-            position: relative; /* Modal içindeki konumlandırma için */
+            position: relative;
             width: 400px; height: 300px; background: white;
-            border-radius: 10px; /* Her köşe yuvarlatıldı */
+            border-radius: 10px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             display: flex; flex-direction: column;
             border: 1px solid #ccc;
-            /* transition kaldırıldı, modal aniden belirir */
         }
-        
         .ai-head { background: var(--primary); color: white; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; cursor: pointer; }
         .ai-body { flex: 1; padding: 10px; overflow-y: auto; background: #f5f5f5; font-size: 12px; }
         .ai-in-area { padding: 10px; border-top: 1px solid #ddd; display: flex; }
         .ai-msg { padding: 8px; border-radius: 8px; margin-bottom: 5px; max-width: 80%; }
         .ai-msg.bot { background: white; border: 1px solid #ddd; } .ai-msg.user { background: #ffcdd2; margin-left: auto; }
-
-        /* --- DEĞİŞİKLİK SONU: AI CHAT CSS --- */
-
 
         /* SCRIPT EDITOR MODAL */
         #script-modal {
@@ -233,22 +214,21 @@
                 <div class="r-btn" onclick="Editor.setMode('rotate')" id="btn-rotate"><span>🔄</span>Rotate</div>
             </div>
             <div class="tool-group">
-                <div class="r-btn" onclick="World.add({name:'Part', shape:'box', color:0xd32f2f})"><span>🧱</span>Part</div>
-                <div class="r-btn" onclick="UI.toggleToolbox()" id="btn-toolbox"><span>🧰</span>Toolbox</div>
+                <div class="r-btn" onclick="World.add({name:'Part', shape:'box', color:0xd32f2f, anchored:false})"><span>🧱</span>Part</div> <div class="r-btn" onclick="UI.toggleToolbox()" id="btn-toolbox"><span>🧰</span>Toolbox</div>
                 <div class="r-btn" onclick="UI.toggleAI()"><span>🤖</span>LunAIX</div>
             </div>
         </div>
 
         <div id="ribbon-content-model" class="ribbon-tab-content hidden">
             <div class="tool-group">
-                <div class="r-btn" onclick="World.add({name:'Cylinder', shape:'cylinder', color:0x1565C0})"><span>⭕</span>Cylinder</div>
-                <div class="r-btn" onclick="World.add({name:'Wedge', shape:'wedge', color:0xFBC02D})"><span>📐</span>Wedge</div>
-                <div class="r-btn" onclick="World.add({name:'Neon', shape:'box', color:0x00E5FF, mat:'neon'})"><span>💡</span>Neon</div>
+                <div class="r-btn" onclick="World.add({name:'Cylinder', shape:'cylinder', color:0x1565C0, anchored:false})"><span>⭕</span>Cylinder</div>
+                <div class="r-btn" onclick="World.add({name:'Wedge', shape:'wedge', color:0xFBC02D, anchored:false})"><span>📐</span>Wedge</div>
+                <div class="r-btn" onclick="World.add({name:'Neon', shape:'box', color:0x00E5FF, mat:'neon', anchored:false})"><span>💡</span>Neon</div>
                 <div class="r-btn" onclick="World.add('sculpt')"><span>🗿</span>Sculpt Block</div>
             </div>
             <div class="tool-group">
-                <div class="r-btn" onclick="Editor.deselect()"><span>🗑️</span>Delete Selected</div>
-                <div class="r-btn" onclick="World.add({name:'Spawn', shape:'cylinder', color:0x888888, a:true})"><span>🎯</span>Spawn Point</div>
+                <div class="r-btn" onclick="Editor.deleteSelected()"><span>🗑️</span>Delete Selected</div>
+                <div class="r-btn" onclick="World.add({name:'Spawn', shape:'cylinder', color:0x888888, anchored:true})"><span>🎯</span>Spawn Point</div>
             </div>
         </div>
 
@@ -289,8 +269,7 @@
                 <div id="joystick-zone"><div id="stick"></div></div>
                 <div id="jump-btn">⬆</div>
             </div>
-
-            </div>
+        </div>
 
         <div id="properties">
             <div class="panel-h">Explorer</div>
@@ -310,7 +289,7 @@
                 <span style="cursor:pointer;" onclick="UI.toggleAI()">✕</span>
             </div>
             <div class="ai-body" id="ai-chat">
-                <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a house".</div>
+                <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a house". (Physics engine is now active!)</div>
             </div>
             <div class="ai-in-area">
                 <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command..." onkeydown="if(event.key==='Enter') AI.send()">
@@ -331,13 +310,18 @@
     </div>
 
     <script>
-        /* --- CORE ENGINE --- */
+        /* --- CORE ENGINE (FİZİK MOTORU İLE YENİDEN YAZILDI) --- */
         const App = {
             scene: null, camera: null, renderer: null, controls: null, transform: null,
             clock: new THREE.Clock(),
             
+            physicsWorld: null, // YENİ: Cannon.js dünyası
+            physicsObjects: [], // YENİ: Görsel ve fiziksel nesneleri senkronize etmek için
+            
             init: () => {
                 const vp = document.getElementById('viewport');
+                
+                // 1. Three.js (Görsel) Sahne
                 App.scene = new THREE.Scene();
                 App.scene.background = new THREE.Color(0x87CEEB);
                 App.scene.fog = new THREE.Fog(0x87CEEB, 40, 300);
@@ -359,8 +343,36 @@
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
                 App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value);
-                App.transform.addEventListener('change', () => UI.updateProps(Editor.selected));
+                
+                // YENİ: Editör bir nesneyi hareket ettirdiğinde, fizik bedenini de güncelle
+                App.transform.addEventListener('objectChange', () => {
+                    if(Editor.selected && Editor.selected.userData.body) {
+                        const body = Editor.selected.userData.body;
+                        body.position.copy(Editor.selected.position);
+                        body.quaternion.copy(Editor.selected.quaternion);
+                        body.velocity.set(0,0,0); // Sürüklerken hızı sıfırla
+                        body.angularVelocity.set(0,0,0);
+                    }
+                    UI.updateProps(Editor.selected);
+                });
+                
                 App.scene.add(App.transform);
+
+                // 2. Cannon.js (Fizik) Sahne
+                App.physicsWorld = new CANNON.World();
+                App.physicsWorld.gravity.set(0, -30, 0); // Daha güçlü yerçekimi
+                App.physicsWorld.broadphase = new CANNON.NaiveBroadphase();
+                App.physicsWorld.solver.iterations = 10;
+
+                // YENİ: Varsayılan temas materyali (sürtünme, esneklik)
+                const defaultMaterial = new CANNON.Material("default");
+                const defaultContactMaterial = new CANNON.ContactMaterial(
+                    defaultMaterial, defaultMaterial,
+                    { friction: 0.4, restitution: 0.2 }
+                );
+                App.physicsWorld.addContactMaterial(defaultContactMaterial);
+                App.physicsWorld.defaultMaterial = defaultMaterial;
+
 
                 window.addEventListener('resize', App.resize);
                 UI.initToolbox();
@@ -383,20 +395,36 @@
             loop: () => {
                 requestAnimationFrame(App.loop);
                 const dt = App.clock.getDelta();
-                if(Game.active) Game.update(dt);
-                else App.controls.update();
+
+                if(Game.active) {
+                    Game.update(dt);
+                } else {
+                    App.controls.update();
+                }
+
+                // YENİ: Fizik dünyasını güncelle
+                if (App.physicsWorld) {
+                    App.physicsWorld.step(1/60, dt, 3); // Sabit adımda fizik hesapla
+                }
+
+                // YENİ: Görsel nesneleri fiziksel nesnelerin pozisyonuna güncelle
+                for (const mesh of App.physicsObjects) {
+                    if (mesh.userData.body) {
+                        mesh.position.copy(mesh.userData.body.position);
+                        mesh.quaternion.copy(mesh.userData.body.quaternion);
+                    }
+                }
+                
                 App.renderer.render(App.scene, App.camera);
             }
         };
 
-        /* --- WORLD & OBJECTS --- */
+        /* --- WORLD & OBJECTS (FİZİK MOTORU İLE YENİDEN YAZILDI) --- */
         const World = {
-            objects: [],
             
             loadTemplate: (type) => {
                 document.getElementById('start-screen').style.display = 'none';
                 
-                // Baseplate Texture (Dense Studs)
                 const cvs = document.createElement('canvas'); cvs.width=64; cvs.height=64;
                 const ctx = cvs.getContext('2d');
                 const color = type==='grass' || type==='village' ? '#4CAF50' : '#9E9E9E';
@@ -406,32 +434,61 @@
                 tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.RepeatWrapping;
                 tex.repeat.set(100, 100);
 
+                // 1. Görsel Zemin
                 const geo = new THREE.BoxGeometry(400, 4, 400);
                 const mat = new THREE.MeshStandardMaterial({map:tex});
-                const base = new THREE.Mesh(geo, mat);
-                base.position.y = -2;
-                base.name = "Baseplate";
-                base.userData = { anchored: true, canCollide: true, locked: true };
-                base.receiveShadow = true;
-                App.scene.add(base);
-                World.objects.push(base);
-                UI.addExplorer(base);
+                const baseMesh = new THREE.Mesh(geo, mat);
+                baseMesh.position.y = -2;
+                baseMesh.name = "Baseplate";
+                baseMesh.userData = { locked: true }; // Editörde seçilemez/taşınamaz
+                baseMesh.receiveShadow = true;
+                App.scene.add(baseMesh);
+                UI.addExplorer(baseMesh);
 
+                // 2. Fiziksel Zemin (Görünmez düzlem)
+                const baseShape = new CANNON.Plane();
+                const baseBody = new CANNON.Body({ mass: 0, shape: baseShape }); // mass: 0 = static (sabit)
+                baseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2); // Düzlemi yatay yap
+                baseBody.position.y = 0; // Zemin tam 0 koordinatında
+                App.physicsWorld.addBody(baseBody);
+                
+                baseMesh.position.y = 0; // Görsel zemini de fiziksel zeminle hizala
+                
                 if(type==='village') AI.build('house');
             },
 
             add: (config) => {
-                let geo;
+                let geo, shape;
                 let scale = config.scale || [4,4,4];
-
+                
+                // 1. Fiziksel Şekli ve Kütleyi Belirle
                 switch(config.shape) {
-                    case 'sphere': geo=new THREE.SphereGeometry(scale[0]/2, 32, 32); break;
-                    case 'cylinder': geo=new THREE.CylinderGeometry(scale[0]/2, scale[0]/2, scale[1], 32); break;
-                    case 'wedge': geo=new THREE.ConeGeometry(scale[0]/2, scale[1], 4); break;
-                    case 'sculpt': geo=new THREE.BoxGeometry(10,5,10); scale=[1,1,1]; config.color=0x8D6E63; break;
-                    default: geo=new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
+                    case 'sphere':
+                        geo = new THREE.SphereGeometry(scale[0]/2, 32, 32);
+                        shape = new CANNON.Sphere(scale[0]/2);
+                        break;
+                    case 'cylinder':
+                        geo = new THREE.CylinderGeometry(scale[0]/2, scale[0]/2, scale[1], 32);
+                        shape = new CANNON.Cylinder(scale[0]/2, scale[0]/2, scale[1], 32);
+                        break;
+                    case 'wedge':
+                        geo = new THREE.ConeGeometry(scale[0]/2, scale[1], 4); 
+                        // Not: Cannon.js'de "wedge" (kama) yok, Box kullanıyoruz
+                        shape = new CANNON.Box(new CANNON.Vec3(scale[0] / 2, scale[1] / 2, scale[2] / 2));
+                        break;
+                    case 'sculpt':
+                        geo = new THREE.BoxGeometry(10,5,10); scale=[1,1,1]; config.color=0x8D6E63;
+                        shape = new CANNON.Box(new CANNON.Vec3(5, 2.5, 5));
+                        break;
+                    default: // 'box'
+                        geo = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
+                        shape = new CANNON.Box(new CANNON.Vec3(scale[0] / 2, scale[1] / 2, scale[2] / 2));
                 }
                 
+                const isAnchored = config.anchored ?? false; // Varsayılan olarak nesneler artık dinamik
+                const mass = isAnchored ? 0 : scale[0] * scale[1] * scale[2] * 0.1; // Kütleyi hacme göre ayarla
+
+                // 2. Görsel Nesneyi (Mesh) Oluştur
                 let mat;
                 if(config.mat==='neon') mat = new THREE.MeshBasicMaterial({color:config.color});
                 else mat = new THREE.MeshStandardMaterial({color:config.color, roughness:0.5});
@@ -439,31 +496,69 @@
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.copy(config.pos || new THREE.Vector3(0, 10, 0));
                 
-                // If it's a default shape, apply explicit scale
-                if (config.shape !== 'sculpt') mesh.scale.set(1, 1, 1);
-                
+                if (config.shape === 'wedge') { // Kama'yı doğru döndür
+                    mesh.rotation.y = Math.PI / 4;
+                }
+
                 mesh.name = config.name || "Part";
                 mesh.castShadow = true; mesh.receiveShadow = true;
                 
-                mesh.userData = {
-                    anchored: config.anchored ?? true,
-                    canCollide: config.canCollide ?? true,
-                    script: "",
-                    velocity: new THREE.Vector3(),
-                    size: scale
-                };
+                // 3. Fiziksel Nesneyi (Body) Oluştur
+                const body = new CANNON.Body({ mass, shape, material: App.physicsWorld.defaultMaterial });
+                body.position.copy(mesh.position);
+                body.quaternion.copy(mesh.quaternion);
+                App.physicsWorld.addBody(body);
+
+                // 4. İkisini Birbirine Bağla
+                mesh.userData.body = body; // Mesh, fizik bedenine referans tutar
+                body.userData = { mesh: mesh }; // Body, görsele referans tutar
+                
+                mesh.userData.anchored = isAnchored;
+                mesh.userData.canCollide = config.canCollide ?? true;
+                mesh.userData.script = "";
+                mesh.userData.size = scale; // Bu hala props için yararlı
 
                 App.scene.add(mesh);
-                World.objects.push(mesh);
+                
+                // Sadece hareket edecek nesneleri senkronizasyon listesine ekle
+                if (mass > 0) {
+                    App.physicsObjects.push(mesh);
+                }
+                
                 UI.addExplorer(mesh);
                 if(!Game.active) Editor.select(mesh);
                 return mesh;
+            },
+
+            remove: (mesh) => {
+                if (!mesh) return;
+                
+                // 1. Fizik dünyasından kaldır
+                if (mesh.userData.body) {
+                    App.physicsWorld.removeBody(mesh.userData.body);
+                }
+                
+                // 2. Senkronizasyon listesinden kaldır
+                const index = App.physicsObjects.indexOf(mesh);
+                if (index > -1) {
+                    App.physicsObjects.splice(index, 1);
+                }
+                
+                // 3. Görsel dünyadan (Scene) kaldır
+                App.scene.remove(mesh);
+                
+                // 4. Explorer'dan kaldır
+                UI.removeExplorer(mesh);
             }
         };
 
-        /* --- GAME & PLAYER (R6 + X Logo) --- */
+        /* --- GAME & PLAYER (FİZİK MOTORU İLE YENİDEN YAZILDI) --- */
         const Game = {
-            active: false, player: null, velocity: new THREE.Vector3(), onGround: false, inputs:{x:0,y:0},
+            active: false, 
+            player: null, // Three.js Group
+            playerBody: null, // CANNON.Body
+            onGround: false, 
+            inputs:{x:0,y:0},
 
             play: () => {
                 if(Game.active) return;
@@ -475,6 +570,15 @@
                 document.getElementById('game-overlay').style.display = 'block';
                 UI.toggleXMenu(false);
                 setTimeout(App.resize, 350);
+                
+                // Tüm dinamik nesnelerin editördeki pozisyonunu fiziğe senkronize et
+                App.physicsObjects.forEach(mesh => {
+                    mesh.userData.body.position.copy(mesh.position);
+                    mesh.userData.body.quaternion.copy(mesh.quaternion);
+                    mesh.userData.body.velocity.set(0,0,0);
+                    mesh.userData.body.angularVelocity.set(0,0,0);
+                });
+                
                 Game.spawnPlayer();
             },
 
@@ -483,43 +587,45 @@
                 document.getElementById('ribbon').style.display = 'block';
                 document.getElementById('properties').style.display = 'flex';
                 document.getElementById('game-overlay').style.display = 'none';
-                if(Game.player) App.scene.remove(Game.player);
-                Game.player = null;
+                
+                if(Game.player) {
+                    World.remove(Game.player); // Oyuncuyu dünyadan düzgünce kaldır
+                    Game.player = null;
+                    Game.playerBody = null;
+                }
+                
                 App.camera.position.set(20,20,20); App.controls.target.set(0,0,0); App.controls.enablePan=true;
-                World.objects.forEach(o=>{
-                    if(!o.userData.anchored && o.name!=="Baseplate") {
-                        o.position.y = Math.max(o.position.y, 2);
-                        o.userData.velocity.set(0,0,0);
-                    }
-                });
+                
                 setTimeout(App.resize, 350);
             },
 
             respawn: () => {
-                if(Game.player) App.scene.remove(Game.player);
+                if(Game.player) {
+                    World.remove(Game.player);
+                }
                 Game.spawnPlayer();
             },
 
             spawnPlayer: () => {
+                // 1. Görsel Oyuncu (R6)
                 const g = new THREE.Group(); g.name = "Player";
                 const mat = new THREE.MeshPhongMaterial({color:0xffcc80});
                 const matTorso = new THREE.MeshPhongMaterial({color:0x333});
 
-                const head = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.2), mat); head.position.y=4.6;
-                const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), matTorso); torso.position.y=3;
+                const head = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.2), mat); head.position.y=2.1;
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), matTorso); torso.position.y=0.5;
                 
-                // X Logo (LunX)
                 const xCvs = document.createElement('canvas'); xCvs.width=64; xCvs.height=64;
                 const ctx = xCvs.getContext('2d');
                 ctx.fillStyle = '#333'; ctx.fillRect(0,0,64,64);
                 ctx.strokeStyle = 'white'; ctx.lineWidth=5; 
                 ctx.moveTo(10,10); ctx.lineTo(54,54); ctx.moveTo(54,10); ctx.lineTo(10,54); ctx.stroke();
                 const decal = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(xCvs), transparent:true}));
-                decal.position.set(0, 3, 0.51); g.add(decal);
+                decal.position.set(0, 0.5, 0.51); g.add(decal);
 
                 const lims = [
-                    {n:'LA', x:-1.5, y:3, c:mat}, {n:'RA', x:1.5, y:3, c:mat},
-                    {n:'LL', x:-0.5, y:1, c:0x555}, {n:'RL', x:0.5, y:1, c:0x555}
+                    {n:'LA', x:-1.5, y:0.5, c:mat}, {n:'RA', x:1.5, y:0.5, c:mat},
+                    {n:'LL', x:-0.5, y:-1.5, c:0x555}, {n:'RL', x:0.5, y:-1.5, c:0x555}
                 ];
                 lims.forEach(l => {
                     const m = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), l.c===0x555 ? new THREE.MeshPhongMaterial({color:0x555}) : l.c);
@@ -527,61 +633,98 @@
                 });
                 
                 g.add(head, torso);
-                g.position.set(0, 10, 0);
+                
+                // 2. Fiziksel Oyuncu (Görünmez Kapsül/Küre)
+                // Not: Cannon.js'de Capsule yok, basitlik için Sphere+Box kullanacağız
+                const playerShape = new CANNON.Sphere(1.5); // Kafa ve gövdeyi kapsayan bir küre
+                const body = new CANNON.Body({
+                    mass: 70, 
+                    shape: playerShape, 
+                    fixedRotation: true, // Oyuncunun fiziksel olarak devrilmesini engelle
+                    material: App.physicsWorld.defaultMaterial
+                });
+                body.position.set(0, 10, 0);
+                App.physicsWorld.addBody(body);
+
+                // 3. Bağlantı
+                g.userData.body = body;
+                body.userData.mesh = g;
+                
                 App.scene.add(g);
+                App.physicsObjects.push(g); // Oyuncuyu senkronizasyon listesine ekle
+                
                 Game.player = g;
-                Game.velocity.set(0,0,0);
+                Game.playerBody = body;
                 App.controls.enablePan = false;
             },
 
             update: (dt) => {
-                if(!Game.player) return;
-                const p = Game.player;
-
-                if(!Game.onGround) Game.velocity.y -= 60 * dt;
-                p.position.y += Game.velocity.y * dt;
-
-                if(p.position.y <= 0) { p.position.y=0; Game.velocity.y=0; Game.onGround=true; }
-                else Game.onGround=false;
+                if(!Game.playerBody) return;
                 
-                // Death Zone
-                if(p.position.y < -50) Game.respawn();
+                const pBody = Game.playerBody;
+                const pMesh = Game.player;
 
-                // Movement
+                // Yerde olup olmadığını kontrol et
+                const yVel = pBody.velocity.y;
+                Game.onGround = Math.abs(yVel) < 0.5; // Hızı çok azsa yerdedir (basit kontrol)
+
+                // Death Zone
+                if(pBody.position.y < -50) Game.respawn();
+
+                // Hareket
                 const camD = new THREE.Vector3(); App.camera.getWorldDirection(camD); camD.y=0; camD.normalize();
                 const camR = new THREE.Vector3(-camD.z, 0, camD.x);
                 
+                const moveSpeed = 20;
+                let moveVel = new THREE.Vector3(0, pBody.velocity.y, 0); // Y hızını koru
+
                 if(Math.abs(Game.inputs.x)>0.1 || Math.abs(Game.inputs.y)>0.1) {
-                    const move = camD.multiplyScalar(-Game.inputs.y).add(camR.multiplyScalar(Game.inputs.x));
-                    p.position.add(move.multiplyScalar(20*dt));
-                    p.rotation.y = Math.atan2(move.x, move.z);
+                    const moveDir = camD.multiplyScalar(-Game.inputs.y).add(camR.multiplyScalar(Game.inputs.x));
+                    moveDir.normalize();
                     
+                    moveVel.x = moveDir.x * moveSpeed;
+                    moveVel.z = moveDir.z * moveSpeed;
+
+                    pMesh.rotation.y = Math.atan2(moveDir.x, moveDir.z); // Görsel modeli döndür
+                    
+                    // Yürüme animasyonu (basit)
                     const t = Date.now()*0.02;
-                    p.getObjectByName('LA').rotation.x = Math.sin(t);
-                    p.getObjectByName('RA').rotation.x = -Math.sin(t);
-                    p.getObjectByName('LL').rotation.x = -Math.sin(t);
-                    p.getObjectByName('RL').rotation.x = Math.sin(t);
+                    pMesh.getObjectByName('LA').rotation.x = Math.sin(t);
+                    pMesh.getObjectByName('RA').rotation.x = -Math.sin(t);
+                    pMesh.getObjectByName('LL').rotation.x = -Math.sin(t);
+                    pMesh.getObjectByName('RL').rotation.x = Math.sin(t);
                 } else {
-                    ['LA','RA','LL','RL'].forEach(n=>p.getObjectByName(n).rotation.x=0);
+                    moveVel.x = 0;
+                    moveVel.z = 0;
+                    ['LA','RA','LL','RL'].forEach(n=>pMesh.getObjectByName(n).rotation.x=0);
                 }
 
-                App.controls.target.lerp(p.position.clone().add(new THREE.Vector3(0,4,0)), 0.1);
-                App.controls.update();
+                pBody.velocity.x = moveVel.x;
+                pBody.velocity.z = moveVel.z;
+                pBody.velocity.y = moveVel.y; // Y hızını (zıplama/düşme) koru
 
-                // Simple Physics
-                World.objects.forEach(o=>{
-                    if(!o.userData.anchored && o.name!=="Baseplate") {
-                        if(o.position.y>2) o.position.y-=0.2;
-                    }
-                });
+                // Kamera oyuncunun fiziksel bedenini takip eder
+                // (Senkronizasyon lsitesi mesh'i güncellediği için mesh'i takip etmek yeterli)
+                App.controls.target.lerp(pMesh.position.clone().add(new THREE.Vector3(0,2,0)), 0.2);
+                App.controls.update();
             },
-            jump: () => { if(Game.onGround) Game.velocity.y = 25; }
+            
+            jump: () => { 
+                if(Game.onGround) {
+                    Game.playerBody.velocity.y = 25; // Zıplama hızı
+                }
+            }
         };
 
-        /* --- UI & EDITOR --- */
+        /* --- UI & EDITOR (FİZİK İLE GÜNCELLENDİ) --- */
         const Editor = {
             selected: null,
             setMode: (m) => {
+                // YENİ: Scale modu fizik motoruyla düzgün çalışmaz, şimdilik devre dışı
+                if (m === 'scale') {
+                    alert("Scale modu fizik motoruyla geçici olarak uyumsuzdur.");
+                    return; 
+                }
                 App.transform.setMode(m);
                 document.querySelectorAll('.r-btn').forEach(b=>{
                     if(b.id && b.id.startsWith('btn-')) b.classList.remove('active');
@@ -590,12 +733,23 @@
                 if(btn) btn.classList.add('active');
             },
             select: (obj) => {
+                if (obj.userData.locked) return; // Kilitli nesneleri (Baseplate) seçme
                 Editor.selected = obj;
-                if(obj && !obj.userData.locked) App.transform.attach(obj);
-                else App.transform.detach();
+                App.transform.attach(obj);
                 UI.updateProps(obj);
             },
-            deselect: () => { Editor.selected=null; App.transform.detach(); UI.updateProps(null); }
+            deselect: () => { 
+                Editor.selected=null; 
+                App.transform.detach(); 
+                UI.updateProps(null); 
+            },
+            deleteSelected: () => {
+                if (Editor.selected) {
+                    const toDelete = Editor.selected;
+                    Editor.deselect();
+                    World.remove(toDelete); // Düzgün kaldırma fonksiyonunu kullan
+                }
+            }
         };
 
         const UI = {
@@ -606,17 +760,16 @@
             toggleXMenu: (force) => {
                 const el = document.getElementById('x-menu');
                 if(force===false) el.style.display='none';
-                else el.style.display = el.style.display==='flex'?'none':'flex';
+                else el.style.display = (el.style.display==='flex' || el.style.display==='') ? 'none' : 'flex'; // Hata düzeltildi
             },
             setScale: (v) => document.documentElement.style.setProperty('--ui-scale', v),
             
-            // --- DEĞİŞİKLİK: UI.toggleAI fonksiyonu güncellendi ---
             toggleAI: () => {
-                // Artık .open class'ı yerine modal'ın display stilini değiştiriyoruz
                 const modal = document.getElementById('ai-modal');
-                modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+                // Hata düzeltildi: .style.display inline stili okur, CSS'i değil.
+                // Bunun yerine getComputedStyle kullanmak daha sağlamdır veya basitçe mevcut durumu kontrol edin
+                modal.style.display = (modal.style.display === 'flex' || modal.style.display === '') ? 'none' : 'flex';
             },
-            // --- DEĞİŞİKLİK SONU ---
 
             setRibbonTab: (tabName) => {
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -638,22 +791,23 @@
                 list.innerHTML = '';
                 
                 const items = [];
-                // 40+ Tools için genişletilmiş liste
+                // Not: anchored:true olanlar sabit, olmayanlar dinamik olacak
                 if(cat==='basic') {
-                    ['Part','Sphere','Cylinder','Wedge','Block','Tile','Pillar','Ramp','Cone','Torus'].forEach((n,i) => items.push({n, s:n.toLowerCase(), c:0xeeeeee - i*100}));
+                    items.push({n:'Part', s:'box', c:0xeeeeee, a:false});
+                    items.push({n:'Sphere', s:'sphere', c:0xeeeeee, a:false});
+                    items.push({n:'Cylinder', s:'cylinder', c:0xeeeeee, a:false});
+                    items.push({n:'Wedge', s:'wedge', c:0xeeeeee, a:false});
                     items.push({n:'Spawn', s:'cylinder', c:0x888888, a:true});
                 } else if(cat==='nature') {
-                    items.push({n:'Grass', s:'box', c:0x4CAF50, scale:[5,1,5]});
-                    items.push({n:'Wood', s:'box', c:0x795548, scale:[1,6,1]});
+                    items.push({n:'Grass', s:'box', c:0x4CAF50, scale:[5,1,5], a:true});
+                    items.push({n:'Wood', s:'box', c:0x795548, scale:[1,6,1], a:false});
                     items.push({n:'Water', s:'box', c:0x2196F3, a:true, scale:[10,0.5,10]});
-                    items.push({n:'Rock', s:'sphere', c:0x6D4C41, scale:[2,2,2]});
-                    for(let i=0; i<15; i++) items.push({n:'Leaf '+i, s:'box', c:0x689F38});
+                    items.push({n:'Rock', s:'sphere', c:0x6D4C41, scale:[2,2,2], a:false});
                 } else {
-                    items.push({n:'Wall', s:'box', c:0x9E9E9E, scale:[1,5,8]});
-                    items.push({n:'Window', s:'box', c:0xB3E5FC, op:0.5, scale:[0.1,3,3]});
-                    items.push({n:'Neon', s:'box', c:0x00FFFF, mat:'neon', scale:[4,1,1]});
-                    items.push({n:'Killbrick', s:'box', c:0xFF0000, mat:'neon', scale:[5,1,5], damage:100});
-                    for(let i=0; i<10; i++) items.push({n:'Metal '+i, s:'box', c:0x607D8B});
+                    items.push({n:'Wall', s:'box', c:0x9E9E9E, scale:[1,5,8], a:true});
+                    items.push({n:'Window', s:'box', c:0xB3E5FC, op:0.5, scale:[0.1,3,3], a:true});
+                    items.push({n:'Neon', s:'box', c:0x00FFFF, mat:'neon', scale:[4,1,1], a:false});
+                    items.push({n:'Killbrick', s:'box', c:0xFF0000, mat:'neon', scale:[5,1,5], a:true, damage:100});
                 }
 
                 items.forEach(it => {
@@ -671,10 +825,17 @@
                 d.onclick = () => Editor.select(obj);
                 document.getElementById('explorer').appendChild(d);
             },
+            
+            removeExplorer: (obj) => {
+                const el = document.getElementById('tree-' + obj.uuid);
+                if (el) el.remove();
+            },
 
             updateProps: (obj) => {
                 const p = document.getElementById('prop-content'); p.innerHTML = '';
                 if(!obj) { p.innerHTML='<div style="color:#888">No selection</div>'; return; }
+                if(obj.userData.locked) { p.innerHTML='<div style="color:#888">Baseplate is locked.</div>'; return; }
+
 
                 const add = (lbl, el) => {
                     const r = document.createElement('div'); r.className='prop-row';
@@ -689,8 +850,30 @@
                 iCol.onchange=e=>obj.material.color.set(e.target.value);
                 add('Color', iCol);
 
-                const iAnch = document.createElement('input'); iAnch.type='checkbox'; iAnch.checked=obj.userData.anchored;
-                iAnch.onchange=e=>obj.userData.anchored=e.target.checked;
+                // YENİ: Anchored özelliği artık FİZİĞİ etkiliyor
+                const iAnch = document.createElement('input'); iAnch.type='checkbox'; iAnch.checked = obj.userData.anchored;
+                iAnch.onchange = e => {
+                    const anchored = e.target.checked;
+                    obj.userData.anchored = anchored;
+                    const body = obj.userData.body;
+                    
+                    if (anchored) {
+                        body.mass = 0; // Kütleyi sıfırla (sabitlenir)
+                        body.velocity.set(0,0,0);
+                        body.angularVelocity.set(0,0,0);
+                        // Senkronizasyon listesinden çıkar
+                        const index = App.physicsObjects.indexOf(obj);
+                        if (index > -1) App.physicsObjects.splice(index, 1);
+                    } else {
+                        const scale = obj.userData.size;
+                        body.mass = scale[0] * scale[1] * scale[2] * 0.1; // Kütleyi tekrar hesapla
+                        // Senkronizasyon listesine ekle
+                        if (App.physicsObjects.indexOf(obj) === -1) {
+                            App.physicsObjects.push(obj);
+                        }
+                    }
+                    body.updateMassProperties(); // Kütle değişikliğini uygula
+                };
                 add('Anchored', iAnch);
 
                 const iColl = document.createElement('input'); iColl.type='checkbox'; iColl.checked=obj.userData.canCollide;
@@ -715,7 +898,7 @@
             }
         };
 
-        /* --- AI --- */
+        /* --- AI (FİZİK İLE GÜNCELLENDİ) --- */
         const AI = {
             send: () => {
                 const i = document.getElementById('ai-input');
@@ -729,18 +912,19 @@
             },
             process: (txt) => {
                 const l = txt.toLowerCase();
-                let r = "I can build 'house' or 'tower'. (Drivable cars require a physics engine like Cannon.js to be integrated first.)";
+                let r = "I can build 'house' or 'tower'. (Physics is now active!)";
                 
                 if(l.includes('house') || l.includes('ev')) {
-                    AI.build('house'); r = "Basit bir ev inşa ettim.";
+                    AI.build('house'); r = "Fiziksel bir ev inşa ettim (duvarlar sabitlendi).";
                 } else if(l.includes('tower') || l.includes('kule')) {
-                    AI.build('tower'); r = "Bir kule inşa ettim.";
+                    AI.build('tower'); r = "Dinamik (yıkılabilir) bir kule inşa ettim.";
                 } else if(l.includes('delete') || l.includes('sil') && Editor.selected) {
-                    App.scene.remove(Editor.selected); Editor.deselect(); r = Editor.selected.name + " silindi.";
+                    r = Editor.selected.name + " silindi.";
+                    Editor.deleteSelected();
                 } else if(l.includes('red') || l.includes('kırmızı')) {
-                    World.add({name:'RedBlock', shape:'box', color:0xFF0000, scale:[5,5,5]}); r = "Kırmızı blok eklendi.";
+                    World.add({name:'RedBlock', shape:'box', color:0xFF0000, scale:[5,5,5], anchored: false}); r = "Kırmızı dinamik blok eklendi.";
                 } else if (l.includes('araba') || l.includes('car')) {
-                    r = "Sürülebilir bir araba inşa edebilmem için önce projeye Cannon.js gibi bir fizik motorunun eklenmesi gerekir.";
+                    r = "Fizik motoru artık aktif! Ancak 'sürülebilir bir araba', tekerlekler ve motor için (RaycastVehicle) özel kodlama gerektiren çok karmaşık bir sistemdir. Henüz bunu inşa edemiyorum.";
                 }
                 
                 const d = document.createElement('div'); d.className='ai-msg bot'; d.innerText=r;
@@ -749,12 +933,15 @@
             },
             build: (type) => {
                 if(type==='house') {
-                    World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0xD84315});
-                    World.add({name:"Wall2", scale:[1G,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315});
-                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0x8D6E63});
-                    World.add({name:"Floor", scale:[12,1,12], pos:new THREE.Vector3(0,-0.5,0), color:0xD84315});
+                    // Evi sabit (anchored: true) yapıyoruz
+                    World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0xD84315, anchored:true});
+                    // *** HATA DÜZELTİLDİ: 1G -> 1 ***
+                    World.add({name:"Wall2", scale:[1,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315, anchored:true});
+                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0x8D6E63, anchored:true});
+                    World.add({name:"Floor", scale:[12,1,12], pos:new THREE.Vector3(0,0.5,0), color:0xD84315, anchored:true});
                 } else if (type==='tower') {
-                    for(let i=0; i<5; i++) World.add({name:"Floor"+i, scale:[5,1,5], pos:new THREE.Vector3(10, 0.5 + i*4, 10), color:0x424242});
+                    // Kuleyi dinamik (anchored: false) yapıyoruz, yıkılabilir
+                    for(let i=0; i<5; i++) World.add({name:"Floor"+i, scale:[5,1,5], pos:new THREE.Vector3(10, 2.5 + i*1, 10), color:0x424242, anchored: false});
                 }
             }
         };
@@ -765,16 +952,25 @@
                 const vp = document.getElementById('viewport');
                 vp.addEventListener('pointerdown', e => {
                     if(Game.active) return;
+                    if (e.target.tagName !== 'CANVAS') return; // Sadece viewport'a tıklanırsa
+                    
                     const rect = App.renderer.domElement.getBoundingClientRect();
                     const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
                     const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
                     const ray = new THREE.Raycaster(); ray.setFromCamera({x,y}, App.camera);
-                    const hits = ray.intersectObjects(World.objects);
-                    if(hits.length > 0 && hits[0].object.name!=="Baseplate") Editor.select(hits[0].object);
-                    else if(hits.length===0 && !App.transform.dragging) Editor.deselect();
+                    
+                    // Artık 'App.physicsObjects' yerine sahnedeki tüm nesneleri (Baseplate hariç) kontrol et
+                    const selectableObjects = App.scene.children.filter(o => o.isMesh && !o.userData.locked);
+                    const hits = ray.intersectObjects(selectableObjects);
+                    
+                    if(hits.length > 0 && !App.transform.dragging) {
+                        Editor.select(hits[0].object);
+                    } else if(hits.length===0 && !App.transform.dragging) {
+                        Editor.deselect();
+                    }
                 });
 
-                // Joystick (Touch/Pointer handling for simultaneous input)
+                // Joystick
                 const joy = document.getElementById('joystick-zone');
                 joy.addEventListener('pointerdown', e => {
                     e.stopPropagation(); joy.setPointerCapture(e.pointerId);
