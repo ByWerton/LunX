@@ -110,7 +110,7 @@
         .prop-lbl { width: 40%; color: #666; }
         .prop-inp { width: 60%; padding: 4px; border: 1px solid #ccc; }
 
-        /* HUD & OVERLAYS (Game Controls, X Menu, AI) - Styles kept from previous working version */
+        /* HUD & OVERLAYS */
         #game-overlay { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 50; }
         #stop-btn-hud {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
@@ -132,19 +132,35 @@
         .btn-reset { background: #ff9800; color: white; }
         .btn-close { background: #eee; color: #333; }
 
-        /* AI CHAT */
-        #lun-aix {
-            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
-            width: 400px; height: 300px; background: white; border-radius: 10px 10px 0 0;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); transition: 0.3s; display: flex; flex-direction: column;
-            z-index: 1000; border: 1px solid #ccc;
+
+        /* --- DEĞİŞİKLİK BAŞLANGICI: AI CHAT CSS --- */
+
+        /* AI CHAT MODAL (Eski #lun-aix.open stili kaldırıldı) */
+        #ai-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2900; /* Script modalının hemen altında */
+            display: none; /* JS ile 'flex' olarak değiştirilecek */
+            align-items: center; justify-content: center;
         }
-        #lun-aix.open { transform: translateX(-50%) translateY(0); }
+
+        #lun-aix {
+            /* position: absolute ve transform kaldırıldı */
+            position: relative; /* Modal içindeki konumlandırma için */
+            width: 400px; height: 300px; background: white;
+            border-radius: 10px; /* Her köşe yuvarlatıldı */
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column;
+            border: 1px solid #ccc;
+            /* transition kaldırıldı, modal aniden belirir */
+        }
+        
         .ai-head { background: var(--primary); color: white; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; cursor: pointer; }
         .ai-body { flex: 1; padding: 10px; overflow-y: auto; background: #f5f5f5; font-size: 12px; }
         .ai-in-area { padding: 10px; border-top: 1px solid #ddd; display: flex; }
         .ai-msg { padding: 8px; border-radius: 8px; margin-bottom: 5px; max-width: 80%; }
         .ai-msg.bot { background: white; border: 1px solid #ddd; } .ai-msg.user { background: #ffcdd2; margin-left: auto; }
+
+        /* --- DEĞİŞİKLİK SONU: AI CHAT CSS --- */
+
 
         /* SCRIPT EDITOR MODAL */
         #script-modal {
@@ -274,17 +290,7 @@
                 <div id="jump-btn">⬆</div>
             </div>
 
-            <div id="lun-aix">
-                <div class="ai-head" onclick="UI.toggleAI()">LunAIX Assistant <span>▼</span></div>
-                <div class="ai-body" id="ai-chat">
-                    <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a house".</div>
-                </div>
-                <div class="ai-in-area">
-                    <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command..." onkeydown="if(event.key==='Enter') AI.send()">
-                    <button onclick="AI.send()" style="margin-left:5px;">Send</button>
-                </div>
             </div>
-        </div>
 
         <div id="properties">
             <div class="panel-h">Explorer</div>
@@ -295,6 +301,22 @@
             </div>
         </div>
 
+    </div>
+
+    <div id="ai-modal">
+        <div id="lun-aix">
+            <div class="ai-head">
+                <span>LunAIX Assistant</span>
+                <span style="cursor:pointer;" onclick="UI.toggleAI()">✕</span>
+            </div>
+            <div class="ai-body" id="ai-chat">
+                <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a house".</div>
+            </div>
+            <div class="ai-in-area">
+                <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command..." onkeydown="if(event.key==='Enter') AI.send()">
+                <button onclick="AI.send()" style="margin-left:5px;">Send</button>
+            </div>
+        </div>
     </div>
 
     <div id="script-modal">
@@ -587,8 +609,15 @@
                 else el.style.display = el.style.display==='flex'?'none':'flex';
             },
             setScale: (v) => document.documentElement.style.setProperty('--ui-scale', v),
-            toggleAI: () => document.getElementById('lun-aix').classList.toggle('open'),
             
+            // --- DEĞİŞİKLİK: UI.toggleAI fonksiyonu güncellendi ---
+            toggleAI: () => {
+                // Artık .open class'ı yerine modal'ın display stilini değiştiriyoruz
+                const modal = document.getElementById('ai-modal');
+                modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+            },
+            // --- DEĞİŞİKLİK SONU ---
+
             setRibbonTab: (tabName) => {
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
                 const targetMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el => el.textContent.trim() === tabName);
@@ -700,7 +729,7 @@
             },
             process: (txt) => {
                 const l = txt.toLowerCase();
-                let r = "I can build 'house' or 'tower'.";
+                let r = "I can build 'house' or 'tower'. (Drivable cars require a physics engine like Cannon.js to be integrated first.)";
                 
                 if(l.includes('house') || l.includes('ev')) {
                     AI.build('house'); r = "Basit bir ev inşa ettim.";
@@ -710,6 +739,8 @@
                     App.scene.remove(Editor.selected); Editor.deselect(); r = Editor.selected.name + " silindi.";
                 } else if(l.includes('red') || l.includes('kırmızı')) {
                     World.add({name:'RedBlock', shape:'box', color:0xFF0000, scale:[5,5,5]}); r = "Kırmızı blok eklendi.";
+                } else if (l.includes('araba') || l.includes('car')) {
+                    r = "Sürülebilir bir araba inşa edebilmem için önce projeye Cannon.js gibi bir fizik motorunun eklenmesi gerekir.";
                 }
                 
                 const d = document.createElement('div'); d.className='ai-msg bot'; d.innerText=r;
@@ -719,7 +750,7 @@
             build: (type) => {
                 if(type==='house') {
                     World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0xD84315});
-                    World.add({name:"Wall2", scale:[1,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315});
+                    World.add({name:"Wall2", scale:[1G,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315});
                     World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0x8D6E63});
                     World.add({name:"Floor", scale:[12,1,12], pos:new THREE.Vector3(0,-0.5,0), color:0xD84315});
                 } else if (type==='tower') {
