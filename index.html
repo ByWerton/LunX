@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio - Professional Edition</title>
+    <title>LunX Studio - Pro Edition</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -43,7 +43,7 @@
         .template-card:hover { transform: translateY(-10px); }
         .t-icon { font-size: 40px; margin-bottom: 10px; }
 
-        /* --- TOP BAR --- */
+        /* --- TOP BAR (RIBBON TAB SELECTOR) --- */
         #top-bar {
             height: var(--header-h); background: var(--primary); color: white; display: flex; align-items: center; padding: 0 10px;
             font-size: 14px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -52,13 +52,17 @@
             width: 30px; height: 30px; background: white; color: var(--primary); border-radius: 4px;
             display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; margin-right: 15px;
         }
-        .menu-item { padding: 0 15px; cursor: pointer; opacity: 0.9; } .menu-item:hover { opacity: 1; font-weight: bold; }
+        .menu-item { padding: 0 15px; cursor: pointer; opacity: 0.9; height: 100%; display: flex; align-items: center; } 
+        .menu-item:hover { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: rgba(0,0,0,0.2); font-weight: bold; }
 
-        /* --- RIBBON --- */
+        /* --- RIBBON CONTENT --- */
         #ribbon {
             height: var(--ribbon-h); background: var(--bg-panel); border-bottom: 1px solid var(--border);
-            display: flex; padding: 5px; overflow-x: auto; flex-shrink: 0;
+            padding: 5px; flex-shrink: 0; position: relative; overflow: hidden;
         }
+        .ribbon-tab-content { display: flex; gap: 5px; height: 100%; overflow-x: auto; position: absolute; top: 0; left: 0; right: 0; padding: 5px; background: inherit; }
+        .ribbon-tab-content.hidden { display: none; }
         .tool-group { display: flex; gap: 5px; padding: 0 10px; border-right: 1px solid #eee; align-items: center; }
         .r-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -68,13 +72,16 @@
         .r-btn.active { background: #ffcdd2; color: var(--primary-dark); border: 1px solid var(--primary); }
         .r-btn span { font-size: 24px; margin-bottom: 5px; }
         
+        /* Always show Play/Stop buttons */
+        #game-controls { position: absolute; right: 10px; top: 5px; height: 90px; display: flex; gap: 5px; align-items: center; }
+
         /* --- MAIN LAYOUT --- */
         #layout { flex: 1; display: flex; position: relative; overflow: hidden; }
 
         /* TOOLBOX (LEFT) */
         #toolbox {
             width: 250px; background: var(--bg-panel); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 20; transition: 0.3s; position: relative;
+            display: flex; flex-direction: column; z-index: 20; transition: width 0.3s ease; position: relative;
         }
         #toolbox.closed { width: 0; border: none; overflow: hidden; }
         .tab-header { display: flex; border-bottom: 1px solid #ddd; background: #f9f9f9; }
@@ -103,7 +110,7 @@
         .prop-lbl { width: 40%; color: #666; }
         .prop-inp { width: 60%; padding: 4px; border: 1px solid #ccc; }
 
-        /* HUD & OVERLAYS */
+        /* HUD & OVERLAYS (Game Controls, X Menu, AI) - Styles kept from previous working version */
         #game-overlay { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 50; }
         #stop-btn-hud {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
@@ -114,8 +121,6 @@
         #joystick-zone { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.5); }
         #stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: white; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 2px 5px black; }
         #jump-btn { position: absolute; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.8); border-radius: 50%; border: 4px solid var(--primary); pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; font-size: 24px; }
-
-        /* X MENU */
         #x-menu {
             position: absolute; top: 40px; left: 10px; width: 250px; background: white; 
             border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none;
@@ -148,14 +153,14 @@
         }
         #script-box { width: 600px; height: 400px; background: #222; border-radius: 8px; display: flex; flex-direction: column; border: 2px solid var(--primary); }
         #code-area { flex: 1; background: #1e1e1e; color: #0f0; font-family: monospace; padding: 10px; border: none; resize: none; }
-
+        
         /* Explorer Tree */
         .tree-item { padding: 2px 5px; font-size: 12px; cursor: pointer; display: flex; align-items: center; }
         .tree-item:hover { background: #eee; }
         .tree-item.selected { background: #ffcdd2; border-left: 3px solid var(--primary); }
     </style>
 </head>
-<body>
+<body onload="App.init()">
 
     <div id="start-screen">
         <h1 style="font-size: 40px; margin: 0;">LunX Studio</h1>
@@ -190,33 +195,64 @@
             </select>
         </div>
         <button class="xm-btn btn-reset" onclick="Game.respawn()">Reset Character</button>
-        <button class="xm-btn btn-leave" onclick="Game.stop()">Stop Game (Leave)</button>
+        <button class="xm-btn btn-leave" onclick="Game.stop()">Leave Game (Editör)</button>
         <button class="xm-btn btn-close" onclick="UI.toggleXMenu()">Return</button>
     </div>
 
     <div id="top-bar" class="ui-scaled">
         <div id="x-menu-btn" onclick="UI.toggleXMenu()">X</div>
         <div style="font-weight:bold; margin-right:20px; font-size:16px;">LunX Studio</div>
-        <div class="menu-item">Home</div>
-        <div class="menu-item">Model</div>
-        <div class="menu-item">View</div>
+        <div class="menu-item active" onclick="UI.setRibbonTab('Home')">Home</div>
+        <div class="menu-item" onclick="UI.setRibbonTab('Model')">Model</div>
+        <div class="menu-item" onclick="UI.setRibbonTab('View')">View</div>
     </div>
 
     <div id="ribbon" class="ui-scaled">
-        <div class="tool-group">
-            <div class="r-btn active" onclick="Editor.setMode('select')" id="btn-select"><span>👆</span>Select</div>
-            <div class="r-btn" onclick="Editor.setMode('translate')" id="btn-translate"><span>↔️</span>Move</div>
-            <div class="r-btn" onclick="Editor.setMode('scale')" id="btn-scale"><span>⤡</span>Scale</div>
-            <div class="r-btn" onclick="Editor.setMode('rotate')" id="btn-rotate"><span>🔄</span>Rotate</div>
+        
+        <div id="ribbon-content-home" class="ribbon-tab-content">
+            <div class="tool-group">
+                <div class="r-btn active" onclick="Editor.setMode('select')" id="btn-select"><span>👆</span>Select</div>
+                <div class="r-btn" onclick="Editor.setMode('translate')" id="btn-translate"><span>↔️</span>Move</div>
+                <div class="r-btn" onclick="Editor.setMode('scale')" id="btn-scale"><span>⤡</span>Scale</div>
+                <div class="r-btn" onclick="Editor.setMode('rotate')" id="btn-rotate"><span>🔄</span>Rotate</div>
+            </div>
+            <div class="tool-group">
+                <div class="r-btn" onclick="World.add({name:'Part', shape:'box', color:0xd32f2f})"><span>🧱</span>Part</div>
+                <div class="r-btn" onclick="UI.toggleToolbox()" id="btn-toolbox"><span>🧰</span>Toolbox</div>
+                <div class="r-btn" onclick="UI.toggleAI()"><span>🤖</span>LunAIX</div>
+            </div>
         </div>
-        <div class="tool-group">
-            <div class="r-btn" onclick="UI.toggleToolbox()" id="btn-toolbox"><span>🧰</span>Toolbox</div>
-            <div class="r-btn" onclick="UI.toggleAI()"><span>🤖</span>LunAIX</div>
-            <div class="r-btn" onclick="World.add('sculpt')"><span>🗿</span>Sculpt</div>
+
+        <div id="ribbon-content-model" class="ribbon-tab-content hidden">
+            <div class="tool-group">
+                <div class="r-btn" onclick="World.add({name:'Cylinder', shape:'cylinder', color:0x1565C0})"><span>⭕</span>Cylinder</div>
+                <div class="r-btn" onclick="World.add({name:'Wedge', shape:'wedge', color:0xFBC02D})"><span>📐</span>Wedge</div>
+                <div class="r-btn" onclick="World.add({name:'Neon', shape:'box', color:0x00E5FF, mat:'neon'})"><span>💡</span>Neon</div>
+                <div class="r-btn" onclick="World.add('sculpt')"><span>🗿</span>Sculpt Block</div>
+            </div>
+            <div class="tool-group">
+                <div class="r-btn" onclick="Editor.deselect()"><span>🗑️</span>Delete Selected</div>
+                <div class="r-btn" onclick="World.add({name:'Spawn', shape:'cylinder', color:0x888888, a:true})"><span>🎯</span>Spawn Point</div>
+            </div>
         </div>
-        <div class="tool-group" style="border:none; flex:1; justify-content:center;">
+
+        <div id="ribbon-content-view" class="ribbon-tab-content hidden">
+            <div class="tool-group">
+                <div class="r-btn" onclick="App.controls.reset()"><span>🏠</span>Reset Camera</div>
+                <div class="r-btn" onclick="App.scene.fog.color.set(0x000000)"><span>🌑</span>Night Mode</div>
+                <div class="r-btn" onclick="App.scene.fog.color.set(0x87CEEB)"><span>☀️</span>Day Mode</div>
+            </div>
+            <div class="tool-group">
+                <div class="r-btn" onclick="UI.toggleToolbox()"><span>↔️</span>Toolbox Toggle</div>
+                <div class="r-btn" onclick="document.getElementById('properties').style.display='none'; App.resize();"><span>❌</span>Hide Properties</div>
+            </div>
+        </div>
+
+        <div id="game-controls">
             <div class="r-btn" onclick="Game.play()" style="color:green"><span>▶</span>Play</div>
+            <div class="r-btn" onclick="Game.stop()" style="color:var(--primary)"><span>⏹</span>Stop (Editör)</div>
         </div>
+
     </div>
 
     <div id="layout" class="ui-scaled">
@@ -224,9 +260,9 @@
         <div id="toolbox" class="closed">
             <div class="panel-h">Toolbox <span style="float:right; cursor:pointer" onclick="UI.toggleToolbox()">✕</span></div>
             <div class="tab-header">
-                <div class="tab-btn active" onclick="UI.setTab('basic')">Basic</div>
-                <div class="tab-btn" onclick="UI.setTab('nature')">Nature</div>
-                <div class="tab-btn" onclick="UI.setTab('struct')">Struct</div>
+                <div class="tab-btn active" onclick="UI.setTab('basic', event)">Basic</div>
+                <div class="tab-btn" onclick="UI.setTab('nature', event)">Nature</div>
+                <div class="tab-btn" onclick="UI.setTab('struct', event)">Struct</div>
             </div>
             <div id="toolbox-list"></div>
         </div>
@@ -241,10 +277,10 @@
             <div id="lun-aix">
                 <div class="ai-head" onclick="UI.toggleAI()">LunAIX Assistant <span>▼</span></div>
                 <div class="ai-body" id="ai-chat">
-                    <div class="ai-msg bot">Hello! I can build structures or write scripts. Try "Build a house".</div>
+                    <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a house".</div>
                 </div>
                 <div class="ai-in-area">
-                    <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command...">
+                    <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command..." onkeydown="if(event.key==='Enter') AI.send()">
                     <button onclick="AI.send()" style="margin-left:5px;">Send</button>
                 </div>
             </div>
@@ -264,16 +300,16 @@
     <div id="script-modal">
         <div id="script-box">
             <div style="padding:10px; color:white; font-weight:bold; background:#333; border-bottom:1px solid #555; display:flex; justify-content:space-between;">
-                <span>Script Editor</span>
+                <span>Script Editor (<span id="script-name"></span>)</span>
                 <span style="cursor:pointer" onclick="document.getElementById('script-modal').style.display='none'">✕</span>
             </div>
-            <textarea id="code-area" spellcheck="false">print("Hello World")</textarea>
+            <textarea id="code-area" spellcheck="false">-- Lua Simülasyonu\nprint("Hello World")</textarea>
             <button onclick="UI.saveScript()" style="padding:10px; background:var(--primary); border:none; color:white; font-weight:bold; cursor:pointer">Apply Script</button>
         </div>
     </div>
 
     <script>
-        /* --- APP CORE --- */
+        /* --- CORE ENGINE --- */
         const App = {
             scene: null, camera: null, renderer: null, controls: null, transform: null,
             clock: new THREE.Clock(),
@@ -281,7 +317,7 @@
             init: () => {
                 const vp = document.getElementById('viewport');
                 App.scene = new THREE.Scene();
-                App.scene.background = new THREE.Color(0x87CEEB); // Roblox Sky Blue
+                App.scene.background = new THREE.Color(0x87CEEB);
                 App.scene.fog = new THREE.Fog(0x87CEEB, 40, 300);
 
                 App.camera = new THREE.PerspectiveCamera(60, vp.clientWidth/vp.clientHeight, 0.1, 1000);
@@ -292,14 +328,12 @@
                 App.renderer.shadowMap.enabled = true;
                 vp.appendChild(App.renderer.domElement);
 
-                // Lights
                 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6); App.scene.add(hemi);
                 const dir = new THREE.DirectionalLight(0xffffff, 0.8); 
                 dir.position.set(50,100,50); dir.castShadow = true;
                 dir.shadow.mapSize.width=2048; dir.shadow.mapSize.height=2048;
                 App.scene.add(dir);
 
-                // Controls
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
                 App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value);
@@ -308,6 +342,7 @@
 
                 window.addEventListener('resize', App.resize);
                 UI.initToolbox();
+                UI.setRibbonTab('Home');
                 Events.init();
                 App.loop();
             },
@@ -338,15 +373,16 @@
             
             loadTemplate: (type) => {
                 document.getElementById('start-screen').style.display = 'none';
-                // Baseplate Texture (Small studs, Big plate)
+                
+                // Baseplate Texture (Dense Studs)
                 const cvs = document.createElement('canvas'); cvs.width=64; cvs.height=64;
                 const ctx = cvs.getContext('2d');
-                const color = type==='grass' ? '#4CAF50' : '#9E9E9E';
+                const color = type==='grass' || type==='village' ? '#4CAF50' : '#9E9E9E';
                 ctx.fillStyle = color; ctx.fillRect(0,0,64,64);
                 ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.arc(32,32,12,0,Math.PI*2); ctx.fill();
                 const tex = new THREE.CanvasTexture(cvs);
                 tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.RepeatWrapping;
-                tex.repeat.set(100, 100); // Dense studs
+                tex.repeat.set(100, 100);
 
                 const geo = new THREE.BoxGeometry(400, 4, 400);
                 const mat = new THREE.MeshStandardMaterial({map:tex});
@@ -364,13 +400,14 @@
 
             add: (config) => {
                 let geo;
-                if(config === 'sculpt') { config={name:"SculptTerrain", shape:'box', color:0x8D6E63, scale:[10,5,10], mat:'smooth'}; }
+                let scale = config.scale || [4,4,4];
 
                 switch(config.shape) {
-                    case 'sphere': geo=new THREE.SphereGeometry(2,32,32); break;
-                    case 'cylinder': geo=new THREE.CylinderGeometry(2,2,4,32); break;
-                    case 'wedge': geo=new THREE.ConeGeometry(2,4,4); break;
-                    default: geo=new THREE.BoxGeometry(4,4,4);
+                    case 'sphere': geo=new THREE.SphereGeometry(scale[0]/2, 32, 32); break;
+                    case 'cylinder': geo=new THREE.CylinderGeometry(scale[0]/2, scale[0]/2, scale[1], 32); break;
+                    case 'wedge': geo=new THREE.ConeGeometry(scale[0]/2, scale[1], 4); break;
+                    case 'sculpt': geo=new THREE.BoxGeometry(10,5,10); scale=[1,1,1]; config.color=0x8D6E63; break;
+                    default: geo=new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
                 }
                 
                 let mat;
@@ -379,7 +416,10 @@
 
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.copy(config.pos || new THREE.Vector3(0, 10, 0));
-                if(config.scale) mesh.scale.set(...config.scale);
+                
+                // If it's a default shape, apply explicit scale
+                if (config.shape !== 'sculpt') mesh.scale.set(1, 1, 1);
+                
                 mesh.name = config.name || "Part";
                 mesh.castShadow = true; mesh.receiveShadow = true;
                 
@@ -387,7 +427,8 @@
                     anchored: config.anchored ?? true,
                     canCollide: config.canCollide ?? true,
                     script: "",
-                    velocity: new THREE.Vector3()
+                    velocity: new THREE.Vector3(),
+                    size: scale
                 };
 
                 App.scene.add(mesh);
@@ -417,13 +458,12 @@
 
             stop: () => {
                 Game.active = false;
-                document.getElementById('ribbon').style.display = 'flex';
+                document.getElementById('ribbon').style.display = 'block';
                 document.getElementById('properties').style.display = 'flex';
                 document.getElementById('game-overlay').style.display = 'none';
                 if(Game.player) App.scene.remove(Game.player);
                 Game.player = null;
                 App.camera.position.set(20,20,20); App.controls.target.set(0,0,0); App.controls.enablePan=true;
-                // Reset Physics
                 World.objects.forEach(o=>{
                     if(!o.userData.anchored && o.name!=="Baseplate") {
                         o.position.y = Math.max(o.position.y, 2);
@@ -443,11 +483,10 @@
                 const mat = new THREE.MeshPhongMaterial({color:0xffcc80});
                 const matTorso = new THREE.MeshPhongMaterial({color:0x333});
 
-                // R6 Body
                 const head = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.2), mat); head.position.y=4.6;
                 const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), matTorso); torso.position.y=3;
                 
-                // X Logo on Chest
+                // X Logo (LunX)
                 const xCvs = document.createElement('canvas'); xCvs.width=64; xCvs.height=64;
                 const ctx = xCvs.getContext('2d');
                 ctx.fillStyle = '#333'; ctx.fillRect(0,0,64,64);
@@ -477,13 +516,13 @@
                 if(!Game.player) return;
                 const p = Game.player;
 
-                // Gravity
                 if(!Game.onGround) Game.velocity.y -= 60 * dt;
                 p.position.y += Game.velocity.y * dt;
 
-                // Floor & Void
                 if(p.position.y <= 0) { p.position.y=0; Game.velocity.y=0; Game.onGround=true; }
                 else Game.onGround=false;
+                
+                // Death Zone
                 if(p.position.y < -50) Game.respawn();
 
                 // Movement
@@ -495,7 +534,6 @@
                     p.position.add(move.multiplyScalar(20*dt));
                     p.rotation.y = Math.atan2(move.x, move.z);
                     
-                    // Anim
                     const t = Date.now()*0.02;
                     p.getObjectByName('LA').rotation.x = Math.sin(t);
                     p.getObjectByName('RA').rotation.x = -Math.sin(t);
@@ -505,11 +543,10 @@
                     ['LA','RA','LL','RL'].forEach(n=>p.getObjectByName(n).rotation.x=0);
                 }
 
-                // Camera Follow
                 App.controls.target.lerp(p.position.clone().add(new THREE.Vector3(0,4,0)), 0.1);
                 App.controls.update();
 
-                // Physics Objects
+                // Simple Physics
                 World.objects.forEach(o=>{
                     if(!o.userData.anchored && o.name!=="Baseplate") {
                         if(o.position.y>2) o.position.y-=0.2;
@@ -524,8 +561,11 @@
             selected: null,
             setMode: (m) => {
                 App.transform.setMode(m);
-                document.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('active'));
-                document.getElementById('btn-'+m).classList.add('active');
+                document.querySelectorAll('.r-btn').forEach(b=>{
+                    if(b.id && b.id.startsWith('btn-')) b.classList.remove('active');
+                });
+                const btn = document.getElementById('btn-'+m);
+                if(btn) btn.classList.add('active');
             },
             select: (obj) => {
                 Editor.selected = obj;
@@ -549,29 +589,42 @@
             setScale: (v) => document.documentElement.style.setProperty('--ui-scale', v),
             toggleAI: () => document.getElementById('lun-aix').classList.toggle('open'),
             
+            setRibbonTab: (tabName) => {
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                const targetMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el => el.textContent.trim() === tabName);
+                if (targetMenuItem) targetMenuItem.classList.add('active');
+
+                document.querySelectorAll('.ribbon-tab-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById('ribbon-content-' + tabName.toLowerCase()).classList.remove('hidden');
+            },
+
             initToolbox: () => {
                 UI.setTab('basic');
             },
-            setTab: (cat) => {
+            setTab: (cat, event) => {
                 document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-                event && event.target.classList.add('active');
+                if(event && event.target) event.target.classList.add('active');
+                
                 const list = document.getElementById('toolbox-list');
                 list.innerHTML = '';
                 
                 const items = [];
+                // 40+ Tools için genişletilmiş liste
                 if(cat==='basic') {
-                    ['Part','Sphere','Cylinder','Wedge'].forEach(n=>items.push({n, s:n.toLowerCase(), c:0xeeeeee}));
+                    ['Part','Sphere','Cylinder','Wedge','Block','Tile','Pillar','Ramp','Cone','Torus'].forEach((n,i) => items.push({n, s:n.toLowerCase(), c:0xeeeeee - i*100}));
                     items.push({n:'Spawn', s:'cylinder', c:0x888888, a:true});
-                    for(let i=0; i<10; i++) items.push({n:'Block '+i, s:'box', c:Math.random()*0xffffff});
                 } else if(cat==='nature') {
-                    items.push({n:'Grass', s:'box', c:0x4CAF50});
-                    items.push({n:'Wood', s:'box', c:0x795548});
-                    items.push({n:'Water', s:'box', c:0x2196F3, a:true});
-                    for(let i=0; i<10; i++) items.push({n:'Tree Part '+i, s:'cylinder', c:0x5D4037});
+                    items.push({n:'Grass', s:'box', c:0x4CAF50, scale:[5,1,5]});
+                    items.push({n:'Wood', s:'box', c:0x795548, scale:[1,6,1]});
+                    items.push({n:'Water', s:'box', c:0x2196F3, a:true, scale:[10,0.5,10]});
+                    items.push({n:'Rock', s:'sphere', c:0x6D4C41, scale:[2,2,2]});
+                    for(let i=0; i<15; i++) items.push({n:'Leaf '+i, s:'box', c:0x689F38});
                 } else {
                     items.push({n:'Wall', s:'box', c:0x9E9E9E, scale:[1,5,8]});
-                    items.push({n:'Neon', s:'box', c:0x00FFFF, mat:'neon'});
-                    for(let i=0; i<10; i++) items.push({n:'Struct '+i, s:'box', c:0x607D8B});
+                    items.push({n:'Window', s:'box', c:0xB3E5FC, op:0.5, scale:[0.1,3,3]});
+                    items.push({n:'Neon', s:'box', c:0x00FFFF, mat:'neon', scale:[4,1,1]});
+                    items.push({n:'Killbrick', s:'box', c:0xFF0000, mat:'neon', scale:[5,1,5], damage:100});
+                    for(let i=0; i<10; i++) items.push({n:'Metal '+i, s:'box', c:0x607D8B});
                 }
 
                 items.forEach(it => {
@@ -584,6 +637,7 @@
 
             addExplorer: (obj) => {
                 const d = document.createElement('div'); d.className='tree-item';
+                d.id = 'tree-' + obj.uuid;
                 d.innerText = "📦 " + obj.name;
                 d.onclick = () => Editor.select(obj);
                 document.getElementById('explorer').appendChild(d);
@@ -599,8 +653,12 @@
                 };
 
                 const iName = document.createElement('input'); iName.className='prop-inp'; iName.value=obj.name;
-                iName.oninput=e=>obj.name=e.target.value;
+                iName.oninput=e=>{ obj.name=e.target.value; document.getElementById('tree-'+obj.uuid).innerText="📦 " + e.target.value; };
                 add('Name', iName);
+
+                const iCol = document.createElement('input'); iCol.type='color'; iCol.value='#'+obj.material.color.getHexString();
+                iCol.onchange=e=>obj.material.color.set(e.target.value);
+                add('Color', iCol);
 
                 const iAnch = document.createElement('input'); iAnch.type='checkbox'; iAnch.checked=obj.userData.anchored;
                 iAnch.onchange=e=>obj.userData.anchored=e.target.checked;
@@ -609,11 +667,7 @@
                 const iColl = document.createElement('input'); iColl.type='checkbox'; iColl.checked=obj.userData.canCollide;
                 iColl.onchange=e=>obj.userData.canCollide=e.target.checked;
                 add('CanCollide', iColl);
-
-                const iSky = document.createElement('input'); iSky.type='color'; iSky.className='prop-inp';
-                iSky.onchange=e=>App.scene.background.set(e.target.value);
-                add('Sky Color', iSky);
-
+                
                 const btnScript = document.createElement('button');
                 btnScript.innerText = "📜 Script"; btnScript.style.width='100%';
                 btnScript.onclick = () => UI.openScript(obj);
@@ -622,7 +676,8 @@
 
             openScript: (obj) => {
                 document.getElementById('script-modal').style.display = 'flex';
-                document.getElementById('code-area').value = obj.userData.script || 'print("Hello ' + obj.name + '")';
+                document.getElementById('code-area').value = obj.userData.script || `-- ${obj.name} Script\nlocal part = script.Parent\nprint("Hello " .. part.Name)`;
+                document.getElementById('script-name').innerText = obj.name;
                 window.currentScriptObj = obj;
             },
             saveScript: () => {
@@ -640,31 +695,40 @@
                 const d = document.createElement('div'); d.className='ai-msg user'; d.innerText=txt;
                 document.getElementById('ai-chat').appendChild(d);
                 i.value = '';
+                document.getElementById('ai-chat').scrollTop = document.getElementById('ai-chat').scrollHeight;
                 setTimeout(() => AI.process(txt), 500);
             },
             process: (txt) => {
                 const l = txt.toLowerCase();
-                let r = "Done.";
-                if(l.includes('house')) AI.build('house');
-                else if(l.includes('tower')) AI.build('tower');
-                else if(l.includes('code')) r = "Script generated.";
-                else r = "I can build 'house' or 'tower'.";
+                let r = "I can build 'house' or 'tower'.";
+                
+                if(l.includes('house') || l.includes('ev')) {
+                    AI.build('house'); r = "Basit bir ev inşa ettim.";
+                } else if(l.includes('tower') || l.includes('kule')) {
+                    AI.build('tower'); r = "Bir kule inşa ettim.";
+                } else if(l.includes('delete') || l.includes('sil') && Editor.selected) {
+                    App.scene.remove(Editor.selected); Editor.deselect(); r = Editor.selected.name + " silindi.";
+                } else if(l.includes('red') || l.includes('kırmızı')) {
+                    World.add({name:'RedBlock', shape:'box', color:0xFF0000, scale:[5,5,5]}); r = "Kırmızı blok eklendi.";
+                }
                 
                 const d = document.createElement('div'); d.className='ai-msg bot'; d.innerText=r;
                 document.getElementById('ai-chat').appendChild(d);
+                document.getElementById('ai-chat').scrollTop = document.getElementById('ai-chat').scrollHeight;
             },
             build: (type) => {
                 if(type==='house') {
-                    World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0x888});
-                    World.add({name:"Wall2", scale:[1,8,10], pos:new THREE.Vector3(5,4,0), color:0x888});
-                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0xA52A2A});
+                    World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0xD84315});
+                    World.add({name:"Wall2", scale:[1,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315});
+                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0x8D6E63});
+                    World.add({name:"Floor", scale:[12,1,12], pos:new THREE.Vector3(0,-0.5,0), color:0xD84315});
                 } else if (type==='tower') {
-                    for(let i=0; i<5; i++) World.add({name:"Floor", scale:[5,1,5], pos:new THREE.Vector3(10, i*4, 10), color:Math.random()*0xffffff});
+                    for(let i=0; i<5; i++) World.add({name:"Floor"+i, scale:[5,1,5], pos:new THREE.Vector3(10, 0.5 + i*4, 10), color:0x424242});
                 }
             }
         };
 
-        /* --- EVENTS --- */
+        /* --- EVENTS & INPUT --- */
         const Events = {
             init: () => {
                 const vp = document.getElementById('viewport');
@@ -676,10 +740,10 @@
                     const ray = new THREE.Raycaster(); ray.setFromCamera({x,y}, App.camera);
                     const hits = ray.intersectObjects(World.objects);
                     if(hits.length > 0 && hits[0].object.name!=="Baseplate") Editor.select(hits[0].object);
-                    else if(hits.length===0) Editor.deselect();
+                    else if(hits.length===0 && !App.transform.dragging) Editor.deselect();
                 });
 
-                // Joystick
+                // Joystick (Touch/Pointer handling for simultaneous input)
                 const joy = document.getElementById('joystick-zone');
                 joy.addEventListener('pointerdown', e => {
                     e.stopPropagation(); joy.setPointerCapture(e.pointerId);
