@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - DÜZELTİLMİŞ</title>
+    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - DÜZELTİLMİŞ VE YENİ ÖZELLİKLER EKLENMİŞ</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -251,8 +251,8 @@
         
         /* Three.js Canvas'ı tam olarak Viewport Container'ı kaplamalı */
         #viewport canvas { 
-            width: 100% !important; 
-            height: 100% !important; 
+            width: 100 !important; 
+            height: 100 !important; 
             display: block; 
             touch-action: none; 
         }
@@ -325,24 +325,45 @@
         /* OYUN KONTROLLERİ */
         #game-controls {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
+            bottom: 0; /* Artık tuşların kendisi position absolute olduğu için bu sadece bir taşıyıcı */
+            left: 0;
+            right: 0;
+            top: 0;
             pointer-events: none; 
             z-index: 5;
             display: none;
         }
         
-        #joystick-area {
+        /* DRAGGABLE CLASS */
+        .draggable-control {
             position: absolute;
-            left: 0;
-            bottom: 0;
+            pointer-events: auto; /* Tıklanabilir olmalı */
+            touch-action: none;
+            /* TUŞLARIN BAŞLANGIÇ GÖRÜNÜMÜ */
+            transition: border 0.2s; 
+        }
+
+        .draggable-control.editing {
+            cursor: grab;
+            border: 2px dashed var(--accent-blue);
+            box-shadow: 0 0 10px rgba(255,51,51,0.5); 
+        }
+        .draggable-control.editing:active {
+            cursor: grabbing;
+        }
+
+
+        #joystick-area {
+            /* Başlangıç Pozisyonu */
+            left: 10px;
+            bottom: 10px;
             width: 120px;
             height: 120px;
             border-radius: 50%;
             background: rgba(0,0,0,0.3);
             pointer-events: auto; 
             touch-action: none; 
+            /* Sürükleme için eklenen sınıf zaten .draggable-control'de. */
         }
         #joystick-handle {
             position: absolute;
@@ -355,11 +376,11 @@
             transform: translate(0px, 0px);
         }
         
-        /* ZIPLAMA TUŞU KONUMU */
+        /* ZIPLAMA TUŞU KONUMU - YUKARI TAŞINDI */
         #jump-button {
-            position: absolute;
-            right: 150px;
-            bottom: 150px; 
+            /* Başlangıç Pozisyonu */
+            right: 10px;
+            bottom: 250px; /* Biraz daha yukarı konuldu */
             width: 80px;
             height: 80px;
             border-radius: 50%;
@@ -368,7 +389,6 @@
             font-size: 24px;
             text-align: center;
             line-height: 80px;
-            pointer-events: auto;
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
@@ -471,6 +491,10 @@
         
         <div id="menu-button" onclick="LunX.ui.toggleSettingsMenu()">☰</div>
         <div id="settings-menu">
+            <div class="menu-item">
+                <button id="lockControlButton" onclick="LunX.game.toggleControlLock()">🔒 Tuş Kilidi (Kapalı)</button>
+            </div>
+            
             <div class="menu-item">
                 <button onclick="LunX.manager.exitStudio()">🏠 Başlangıç Ekranına Dön</button>
             </div>
@@ -620,12 +644,12 @@
             </div>
             
             <div id="game-controls">
-                <div id="joystick-area" 
+                <div id="joystick-area" class="draggable-control" 
                      onmousedown="LunX.game.startJoystick(event)" 
                      ontouchstart="LunX.game.startJoystick(event)">
                     <div id="joystick-handle"></div>
                 </div>
-                <div id="jump-button" 
+                <div id="jump-button" class="draggable-control"
                      onmousedown="LunX.game.jump()" 
                      ontouchstart="LunX.game.jump()">⬆️</div>
             </div>
@@ -639,11 +663,11 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.2 - TAM VE ÇALIŞAN KOD (Three.js Çekirdeği Kurtarıldı)
-         * - Menü butonları ve Ayarlar menüsü tıklamaları kontrol edildi, düzeltmeye gerek yok.
-         * - Mobil kamera kontrolü olay dinleyicileri düzeltildi.
-         * - Joystick kontrolü olay dinleyicileri düzeltildi.
-         * - Karakter hareket mekaniği (updatePhysics) ve kamera takibi (updateCamera) eklendi/düzeltildi.
+         * LUNX STUDIO CORE V7.2 - YENİ ÖZELLİKLER EKLENDİ
+         * 1. Oynat'a basınca kamera dönüsü (Zaten vardı, mobil gösterimi ayarlandı).
+         * 2. Hamburger Menüde Tuş Kilidi/Düzenleme (toggleControlLock) eklendi.
+         * 3. Joystick ve Jump Button sürükleme mekaniği (startControlDrag, doControlDrag, endControlDrag) eklendi.
+         * 4. Jump Button başlangıç CSS'i daha yukarı alındı.
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -664,6 +688,10 @@
             cameraMaxPitch: Math.PI / 2.5, 
             cameraSensitivity: 0.003, 
             cameraTouch: { active: false, id: null, lastX: 0, lastY: 0 },
+            
+            // YENİ: KONTROL DÜZENLEME DEĞİŞKENLERİ
+            isControlEditing: false,
+            draggingControl: { element: null, x: 0, y: 0, startX: 0, startY: 0 },
             
             // Toolbox Data
             toolboxItems: [
@@ -702,6 +730,9 @@
                 document.addEventListener('mousemove', LunX.game.mouseLook, false);
                 
                 document.getElementById('viewport-container').addEventListener('mousedown', LunX.game.startMouseControl);
+                
+                // YENİ: Kontrol Tuşlarını Başlangıçta Yükle
+                LunX.game.loadControlPositions();
             },
             
             // 2. AUTHENTICATION (Kaldırıldı)
@@ -1372,9 +1403,17 @@
                     LunX.camera.position.set(10, 10, 10);
                     LunX.controls.target.set(0,0,0);
                     LunX.camera.lookAt(0,0,0);
+                    
+                    // Tuş kilidi modundaysa kapat
+                    if(LunX.isControlEditing) {
+                        LunX.game.toggleControlLock();
+                    }
                 },
                 
-                jump: () => {
+                jump: (e) => {
+                    // Düzenleme modunda zıplamayı engelle
+                    if (LunX.isControlEditing) return; 
+                    
                     if (!LunX.isPlaying || !LunX.player.userData.onGround) return;
                     LunX.player.userData.velocity.y = 7; 
                     LunX.player.userData.onGround = false;
@@ -1463,6 +1502,12 @@
 
                 // Mevcut Joystick Fonksiyonları
                 startJoystick: (e) => {
+                    // Düzenleme modunda sürüklemeyi başlat
+                    if (LunX.isControlEditing) {
+                        LunX.game.startControlDrag(e, e.currentTarget);
+                        return;
+                    }
+                    
                     e.preventDefault();
                     LunX.joystick.active = true;
                     const joystickArea = document.getElementById('joystick-area');
@@ -1472,6 +1517,12 @@
                 },
                 
                 updateJoystick: (e) => {
+                    // Düzenleme modunda tuşları sürükle
+                    if (LunX.draggingControl.element) {
+                        LunX.game.doControlDrag(e);
+                        return;
+                    }
+                    
                     if (!LunX.joystick.active) return;
                     e.preventDefault(); // Kaydırmayı engelle
                     
@@ -1501,12 +1552,171 @@
                 },
                 
                 stopJoystick: () => {
+                    // Düzenleme modunda tuş sürüklemeyi bitir
+                    if (LunX.draggingControl.element) {
+                        LunX.game.endControlDrag();
+                        return;
+                    }
+                    
                     if(!LunX.joystick.active) return;
                     LunX.joystick.active = false;
                     LunX.joystick.x = 0;
                     LunX.joystick.y = 0;
                     document.getElementById('joystick-handle').style.transform = `translate(0px, 0px)`;
                     document.getElementById('joystick-area').style.cursor = 'grab';
+                },
+                
+                // YENİ: KONTROL KİLİDİ/DÜZENLEME İŞLEVLERİ
+                toggleControlLock: () => {
+                    if (!LunX.isPlaying) {
+                        alert("Tuş ayarlarını düzenlemek için önce 'Oyna' tuşuna basarak oyunu başlatın.");
+                        return;
+                    }
+                    
+                    LunX.isControlEditing = !LunX.isControlEditing;
+                    const button = document.getElementById('lockControlButton');
+                    const controls = document.querySelectorAll('.draggable-control');
+                    
+                    if (LunX.isControlEditing) {
+                        button.textContent = "🔓 Tuş Kilidi (Açık)";
+                        controls.forEach(control => {
+                            control.classList.add('editing');
+                            // Joystick hareketini devre dışı bırak
+                            if (control.id === 'joystick-area') {
+                                control.removeEventListener('mousedown', LunX.game.startJoystick);
+                                control.removeEventListener('touchstart', LunX.game.startJoystick);
+                                control.addEventListener('mousedown', (e) => LunX.game.startControlDrag(e, control));
+                                control.addEventListener('touchstart', (e) => LunX.game.startControlDrag(e, control));
+                            }
+                        });
+                        alert("Tuş düzenleme modu açıldı. Tuşları sürükleyerek yerlerini değiştirebilirsiniz.");
+                    } else {
+                        button.textContent = "🔒 Tuş Kilidi (Kapalı)";
+                        controls.forEach(control => {
+                            control.classList.remove('editing');
+                            // Yeni pozisyonları kaydet
+                            LunX.game.saveControlPosition(control);
+                            
+                             // Joystick hareketini yeniden etkinleştir
+                            if (control.id === 'joystick-area') {
+                                control.removeEventListener('mousedown', (e) => LunX.game.startControlDrag(e, control));
+                                control.removeEventListener('touchstart', (e) => LunX.game.startControlDrag(e, control));
+                                control.addEventListener('mousedown', LunX.game.startJoystick);
+                                control.addEventListener('touchstart', LunX.game.startJoystick);
+                            }
+                        });
+                        alert("Tuşlar kilitlendi. Yeni pozisyonlar kaydedildi.");
+                        
+                        // Menüyü kapat
+                        LunX.ui.toggleSettingsMenu(); 
+                    }
+                },
+                
+                saveControlPosition: (control) => {
+                    const id = control.id;
+                    const controlPos = {
+                        left: control.style.left,
+                        right: control.style.right,
+                        top: control.style.top,
+                        bottom: control.style.bottom,
+                    };
+                    localStorage.setItem(`controlPos_${id}`, JSON.stringify(controlPos));
+                },
+
+                loadControlPositions: () => {
+                    const controls = document.querySelectorAll('.draggable-control');
+                    controls.forEach(control => {
+                        const id = control.id;
+                        const storedPos = localStorage.getItem(`controlPos_${id}`);
+                        if (storedPos) {
+                            const pos = JSON.parse(storedPos);
+                            control.style.left = pos.left || 'auto';
+                            control.style.right = pos.right || 'auto';
+                            control.style.top = pos.top || 'auto';
+                            control.style.bottom = pos.bottom || 'auto';
+                        }
+                    });
+                },
+
+                startControlDrag: (e, controlElement) => {
+                    if (!LunX.isControlEditing) return;
+                    e.preventDefault();
+
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    LunX.draggingControl.element = controlElement;
+                    
+                    // Tuşun relative konumlarını al
+                    const currentLeft = controlElement.style.left === 'auto' ? null : parseFloat(controlElement.style.left);
+                    const currentRight = controlElement.style.right === 'auto' ? null : parseFloat(controlElement.style.right);
+                    const currentTop = controlElement.style.top === 'auto' ? null : parseFloat(controlElement.style.top);
+                    const currentBottom = controlElement.style.bottom === 'auto' ? null : parseFloat(controlElement.style.bottom);
+
+                    // Başlangıç x,y değerlerini sakla
+                    LunX.draggingControl.startX = clientX;
+                    LunX.draggingControl.startY = clientY;
+                    
+                    // Relative pozisyonlara göre başlangıç değerlerini hesapla
+                    const parentRect = controlElement.parentNode.getBoundingClientRect();
+                    const controlRect = controlElement.getBoundingClientRect();
+                    
+                    LunX.draggingControl.x = currentLeft !== null ? clientX - controlRect.left : clientX - (parentRect.right - controlRect.right);
+                    LunX.draggingControl.y = currentTop !== null ? clientY - controlRect.top : clientY - (parentRect.bottom - controlRect.bottom);
+                    
+                    controlElement.style.cursor = 'grabbing';
+                    
+                    // Bu noktada event listener'ları zaten init'te document'a bağlandığı için eklenmeye gerek yok
+                },
+
+                doControlDrag: (e) => {
+                    if (!LunX.draggingControl.element) return;
+                    e.preventDefault(); 
+                    
+                    const controlElement = LunX.draggingControl.element;
+                    const parentRect = controlElement.parentNode.getBoundingClientRect();
+                    
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    let newX = clientX - LunX.draggingControl.x;
+                    let newY = clientY - LunX.draggingControl.y;
+
+                    // Koordinatları parent konteynere göre ayarla
+                    const newLeft = newX - parentRect.left;
+                    const newTop = newY - parentRect.top;
+
+                    // Kontrolün boyutları
+                    const width = controlElement.offsetWidth;
+                    const height = controlElement.offsetHeight;
+
+                    // Yeni sol ve sağ pozisyonları hesapla
+                    // Eğer yeni sol pozisyon ekranın %50'sinden azsa, sol pozisyonu kullan
+                    if (newLeft < parentRect.width / 2 - width / 2) {
+                        controlElement.style.left = Math.max(0, newLeft) + 'px';
+                        controlElement.style.right = 'auto';
+                    } 
+                    // Eğer yeni sağ pozisyon ekranın %50'sinden azsa, sağ pozisyonu kullan
+                    else if (parentRect.width - (newLeft + width) < parentRect.width / 2 - width / 2) {
+                        const newRight = parentRect.width - (newLeft + width);
+                        controlElement.style.right = Math.max(0, newRight) + 'px';
+                        controlElement.style.left = 'auto';
+                    }
+                    
+                    // Yeni üst ve alt pozisyonları hesapla
+                    // Aynı şekilde, yeni alt pozisyonu kullanmak daha kolay.
+                    const newBottom = parentRect.height - (newTop + height);
+                    controlElement.style.bottom = Math.max(0, newBottom) + 'px';
+                    controlElement.style.top = 'auto';
+                },
+
+                endControlDrag: () => {
+                    if (LunX.draggingControl.element) {
+                        LunX.draggingControl.element.style.cursor = 'pointer';
+                        LunX.draggingControl.element = null;
+                        
+                        // NOT: Konum sadece kilit kapatıldığında (toggleControlLock) kaydedilecek.
+                    }
                 },
                 
                 // DÜZELTİLDİ: Fizik ve Karakter Hareketi
@@ -1974,6 +2184,12 @@
                 }
             }
         };
+        
+        // BAŞLANGIÇTA JOYSTICK VE JUMP BUTTON SÜRÜKLEME OLAYLARI EKLENDİ (Bu kısım LunX.game.toggleControlLock ile yönetiliyor)
+        document.addEventListener('mouseup', LunX.game.endControlDrag);
+        document.addEventListener('touchend', LunX.game.endControlDrag);
+        document.addEventListener('mousemove', LunX.game.doControlDrag);
+        document.addEventListener('touchmove', LunX.game.doControlDrag);
 
     </script>
 
