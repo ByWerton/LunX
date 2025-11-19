@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio - Pro Edition (Full Physics + Health)</title>
+    <title>LunX Studio - Pro Edition (SpawnPoint & AI Scripts)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
@@ -73,7 +73,6 @@
         
         #game-controls { position: absolute; right: 10px; top: 5px; height: 90px; display: flex; gap: 5px; align-items: center; }
 
-        /* UI SCALING DÜZELTMESİ: #layout'tan .ui-scaled kaldırıldı */
         #layout { flex: 1; display: flex; position: relative; overflow: hidden; }
 
         #toolbox {
@@ -104,7 +103,7 @@
         .prop-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 11px; }
         .prop-lbl { width: 40%; color: #666; }
         .prop-inp { width: 60%; padding: 4px; border: 1px solid #ccc; }
-        .prop-inp[type="range"] { padding: 0; } /* Range kaydırıcısı için düzeltme */
+        .prop-inp[type="range"] { padding: 0; }
 
         /* HUD & OVERLAYS */
         #game-overlay { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 50; }
@@ -118,7 +117,6 @@
         #stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: white; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 2px 5px black; }
         #jump-btn { position: absolute; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.8); border-radius: 50%; border: 4px solid var(--primary); pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; font-size: 24px; }
         
-        /* YENİ: Sağlık Çubuğu */
         #health-bar-container {
             position: absolute; top: 20px; left: 20px;
             width: 200px; height: 20px;
@@ -129,7 +127,7 @@
         }
         #health-bar {
             width: 100%; height: 100%;
-            background: #4CAF50; /* Yeşil */
+            background: #4CAF50;
             border-radius: 3px;
             transition: width 0.3s ease;
         }
@@ -232,7 +230,8 @@
             <div class="tool-group">
                 <div class="r-btn active" onclick="Editor.setMode('select')" id="btn-select"><span>👆</span>Select</div>
                 <div class="r-btn" onclick="Editor.setMode('translate')" id="btn-translate"><span>↔️</span>Move</div>
-                <div class="r-btn" onclick="Editor.setMode('scale')" id="btn-scale"><span>⤡</span>Scale</div> <div class="r-btn" onclick="Editor.setMode('rotate')" id="btn-rotate"><span>🔄</span>Rotate</div>
+                <div class="r-btn" onclick="Editor.setMode('scale')" id="btn-scale"><span>⤡</span>Scale</div>
+                <div class="r-btn" onclick="Editor.setMode('rotate')" id="btn-rotate"><span>🔄</span>Rotate</div>
             </div>
             <div class="tool-group">
                 <div class="r-btn" onclick="World.add({name:'Part', shape:'box', color:0xd32f2f, anchored:false})"><span>🧱</span>Part</div>
@@ -250,7 +249,7 @@
             </div>
             <div class="tool-group">
                 <div class="r-btn" onclick="Editor.deleteSelected()"><span>🗑️</span>Delete Selected</div>
-                <div class="r-btn" onclick="World.add({name:'Spawn', shape:'cylinder', color:0x888888, anchored:true})"><span>🎯</span>Spawn Point</div>
+                <div class="r-btn" onclick="World.add({name:'Spawn', shape:'cylinder', color:0x888888, anchored:true, scale:[4,1,4]})"><span>🎯</span>Spawn Point</div>
             </div>
         </div>
 
@@ -287,7 +286,8 @@
 
         <div id="viewport">
             <div id="game-overlay">
-                <div id="health-bar-container"><div id="health-bar"></div></div> <div id="stop-btn-hud" onclick="Game.stop()">⏹ STOP</div>
+                <div id="health-bar-container"><div id="health-bar"></div></div>
+                <div id="stop-btn-hud" onclick="Game.stop()">⏹ STOP</div>
                 <div id="joystick-zone"><div id="stick"></div></div>
                 <div id="jump-btn">⬆</div>
             </div>
@@ -311,7 +311,7 @@
                 <span style="cursor:pointer;" onclick="UI.toggleAI()">✕</span>
             </div>
             <div class="ai-body" id="ai-chat">
-                <div class="ai-msg bot">Hello! I can build structures or run commands. Try "Build a car". (Physics engine is now active!)</div>
+                <div class="ai-msg bot">Try "Build a house", "Build a car", or "Build a lava block with code".</div>
             </div>
             <div class="ai-in-area">
                 <input type="text" id="ai-input" style="flex:1; padding:5px;" placeholder="Command..." onkeydown="if(event.key==='Enter') AI.send()">
@@ -332,13 +332,14 @@
     </div>
 
     <script>
-        /* --- CORE ENGINE (FİZİK & SKALALAMA GÜNCELLENDİ) --- */
+        /* --- CORE ENGINE (Cannon.js) --- */
         const App = {
             scene: null, camera: null, renderer: null, controls: null, transform: null,
             clock: new THREE.Clock(),
             
             physicsWorld: null,
-            physicsObjects: [],
+            physicsObjects: [], // Sadece dinamik (hareket eden) nesneler
+            allGameObjects: [], // Sahnedeki tüm LunX nesneleri (statik + dinamik)
             
             init: () => {
                 const vp = document.getElementById('viewport');
@@ -365,16 +366,12 @@
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
                 
-                // YENİ: Transform (Move, Scale, Rotate) Kontrolcüsü
                 App.transform.addEventListener('dragging-changed', e => {
-                    App.controls.enabled = !e.value; // Sürüklerken kamerayı durdur
+                    App.controls.enabled = !e.value;
                     if (!e.value && Editor.selected && Editor.selected.userData.body) {
-                        // Sürükleme bittiğinde
                         const body = Editor.selected.userData.body;
                         body.velocity.set(0, 0, 0);
                         body.angularVelocity.set(0, 0, 0);
-                        
-                        // Eğer mod "scale" (boyutlandırma) ise, fiziksel kalıbı güncelle
                         if (App.transform.mode === 'scale') {
                             World.updatePhysicsShape(Editor.selected);
                         }
@@ -387,12 +384,11 @@
                     const body = Editor.selected.userData.body;
                     const mesh = Editor.selected;
 
-                    // Sadece taşıma veya döndürme modundaysa anlık güncelle
                     if (App.transform.mode === 'translate' || App.transform.mode === 'rotate') {
                         body.position.copy(mesh.position);
                         body.quaternion.copy(mesh.quaternion);
                     }
-                    UI.updateProps(mesh); // Properties panelini anlık güncelle
+                    UI.updateProps(mesh);
                 });
                 
                 App.scene.add(App.transform);
@@ -421,7 +417,7 @@
             
             resize: () => {
                 const vp = document.getElementById('viewport');
-                if (!vp) return; // Hata ayıklama
+                if (!vp) return;
                 App.camera.aspect = vp.clientWidth / vp.clientHeight;
                 App.camera.updateProjectionMatrix();
                 App.renderer.setSize(vp.clientWidth, vp.clientHeight);
@@ -438,13 +434,14 @@
                 if(Game.active) {
                     Game.update(dt);
                 } else {
-                    App.controls.update(); // Sadece editör modundaysa kamerayı serbest döndür
+                    App.controls.update();
                 }
 
                 if (App.physicsWorld) {
                     App.physicsWorld.step(1/60, dt, 3);
                 }
 
+                // Sadece dinamik nesnelerin pozisyonunu FİZİK'ten GÖRSEL'e güncelle
                 for (const mesh of App.physicsObjects) {
                     if (mesh.userData.body) {
                         mesh.position.copy(mesh.userData.body.position);
@@ -456,7 +453,7 @@
             }
         };
 
-        /* --- WORLD & OBJECTS (FİZİK & SKALALAMA GÜNCELLENDİ) --- */
+        /* --- WORLD & OBJECTS (SpawnPoint & AI Scripting) --- */
         const World = {
             
             loadTemplate: (type) => {
@@ -471,6 +468,7 @@
                 tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.RepeatWrapping;
                 tex.repeat.set(100, 100);
 
+                // Görsel Zemin
                 const geo = new THREE.BoxGeometry(400, 4, 400);
                 const mat = new THREE.MeshStandardMaterial({map:tex});
                 const baseMesh = new THREE.Mesh(geo, mat);
@@ -479,15 +477,25 @@
                 baseMesh.receiveShadow = true;
                 App.scene.add(baseMesh);
                 UI.addExplorer(baseMesh);
+                App.allGameObjects.push(baseMesh); // Baseplate'i de listeye ekle
 
+                // Fiziksel Zemin
                 const baseShape = new CANNON.Plane();
                 const baseBody = new CANNON.Body({ mass: 0, shape: baseShape });
                 baseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
                 baseBody.position.y = 0;
                 App.physicsWorld.addBody(baseBody);
+                baseMesh.position.y = -2;
                 
-                baseMesh.position.y = -2; // Görsel olarak biraz aşağıda (opsiyonel)
-                if (type === 'grass') baseMesh.position.y = 0;
+                // Varsayılan SpawnPoint
+                World.add({
+                    name:'Spawn', 
+                    shape:'cylinder', 
+                    color:0x888888, 
+                    anchored:true, 
+                    scale:[4,1,4],
+                    pos: new THREE.Vector3(0, 0.5, 0)
+                });
                 
                 if(type==='village') AI.build('house');
             },
@@ -496,49 +504,38 @@
                 let geo, shape;
                 let scale = config.scale || [4,4,4];
                 
-                // 1. Görsel (Three.js) Geometri
                 switch(config.shape) {
                     case 'sphere':
-                        geo = new THREE.SphereGeometry(1, 32, 32); // Baz boyut 1
+                        geo = new THREE.SphereGeometry(1, 32, 32);
+                        shape = new CANNON.Sphere(0.5);
                         break;
                     case 'cylinder':
-                        geo = new THREE.CylinderGeometry(1, 1, 1, 32); // Baz boyut 1
-                        break;
-                    case 'wedge':
-                        geo = new THREE.ConeGeometry(1, 1, 4); // Baz boyut 1
-                        break;
-                    default: // 'box'
-                        geo = new THREE.BoxGeometry(1, 1, 1); // Baz boyut 1
-                }
-                
-                // 2. Fiziksel (Cannon.js) Kalıp
-                // FİZİKSEL KALIPLAR HER ZAMAN 1,1,1 BAZINDA OLUŞTURULUR
-                switch(config.shape) {
-                    case 'sphere':
-                        shape = new CANNON.Sphere(0.5); // Yarıçap
-                        break;
-                    case 'cylinder':
+                        geo = new THREE.CylinderGeometry(1, 1, 1, 32);
                         shape = new CANNON.Cylinder(0.5, 0.5, 1, 32);
                         break;
                     case 'wedge':
-                        shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)); // Kama, kutu ile taklit edilir
+                        geo = new THREE.ConeGeometry(1, 1, 4);
+                        shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
                         break;
-                    default: // 'box'
+                    default:
+                        geo = new THREE.BoxGeometry(1, 1, 1);
                         shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
                 }
                 
                 const isAnchored = config.anchored ?? false;
-                const mass = isAnchored ? 0 : 5; // Kütle şimdilik sabit, sonra hacme göre ayarlanabilir
+                const mass = isAnchored ? 0 : 5;
 
-                // 3. Görsel Nesne (Mesh)
                 let mat;
                 if(config.mat==='neon') mat = new THREE.MeshBasicMaterial({color:config.color});
                 else mat = new THREE.MeshStandardMaterial({color:config.color, roughness:0.5});
+                
+                if (config.op) { // Opacity (şeffaflık)
+                    mat.transparent = true;
+                    mat.opacity = config.op;
+                }
 
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.copy(config.pos || new THREE.Vector3(0, 10, 0));
-                
-                // YENİ: Mesh'in scale'i, istenen boyutu belirler
                 mesh.scale.set(scale[0], scale[1], scale[2]);
 
                 if (config.shape === 'wedge') { mesh.rotation.y = Math.PI / 4; }
@@ -546,38 +543,28 @@
                 mesh.name = config.name || "Part";
                 mesh.castShadow = true; mesh.receiveShadow = true;
                 
-                // 4. Fiziksel Nesne (Body)
                 const body = new CANNON.Body({ mass, material: App.physicsWorld.defaultMaterial });
-                body.addShape(shape); // Baz kalıbı (1x1x1) ekle
-                
-                // YENİ: Fiziksel bedenin kalıbını, mesh'in ölçeğine göre ayarla
-                body.shapes[0].radius = (scale[0]/2); // Sphere için (yaklaşık)
-                if(body.shapes[0].type === CANNON.Shape.types.BOX) {
-                    body.shapes[0].halfExtents.set(scale[0]/2, scale[1]/2, scale[2]/2);
-                } else if (body.shapes[0].type === CANNON.Shape.types.CYLINDER) {
-                    body.shapes[0].radiusTop = scale[0]/2;
-                    body.shapes[0].radiusBottom = scale[0]/2;
-                    body.shapes[0].height = scale[1];
-                }
+                body.addShape(shape);
+                World.updatePhysicsShape(mesh, body); // İlk oluşturmada kalıbı ölçeklendir
                 
                 body.position.copy(mesh.position);
                 body.quaternion.copy(mesh.quaternion);
                 App.physicsWorld.addBody(body);
 
-                // 5. Bağlantı
                 mesh.userData.body = body;
                 body.userData = { mesh: mesh };
                 
                 mesh.userData.anchored = isAnchored;
                 mesh.userData.canCollide = config.canCollide ?? true;
-                mesh.userData.script = "";
-                mesh.userData.size = scale; // Bu, orijinal (istenilen) boyutu saklar
-                if (config.damage) mesh.userData.damage = config.damage; // Hasar eklendi
+                mesh.userData.script = config.script || ""; // YENİ: AI'den gelen scripti kaydet
+                mesh.userData.size = scale;
+                if (config.damage) mesh.userData.damage = config.damage;
 
                 App.scene.add(mesh);
+                App.allGameObjects.push(mesh); // Tüm nesneler listesi
                 
                 if (mass > 0) {
-                    App.physicsObjects.push(mesh);
+                    App.physicsObjects.push(mesh); // Sadece dinamik nesneler listesi
                 }
                 
                 UI.addExplorer(mesh);
@@ -592,28 +579,26 @@
                     App.physicsWorld.removeBody(mesh.userData.body);
                 }
                 
-                const index = App.physicsObjects.indexOf(mesh);
-                if (index > -1) {
-                    App.physicsObjects.splice(index, 1);
-                }
+                let index = App.physicsObjects.indexOf(mesh);
+                if (index > -1) App.physicsObjects.splice(index, 1);
+                
+                index = App.allGameObjects.indexOf(mesh);
+                if (index > -1) App.allGameObjects.splice(index, 1);
                 
                 App.scene.remove(mesh);
                 UI.removeExplorer(mesh);
             },
             
-            // YENİ: FİZİKSEL KALIBI GÜNCELLEME FONKSİYONU
-            updatePhysicsShape: (mesh) => {
-                if (!mesh || !mesh.userData.body) return;
+            updatePhysicsShape: (mesh, body = null) => {
+                if (!body) body = mesh.userData.body;
+                if (!body) return;
                 
-                const body = mesh.userData.body;
-                const newScale = mesh.scale; // Mesh'in güncel ölçeği
-                const shape = body.shapes[0]; // Sadece ilk kalıbı güncelliyoruz (basitlik için)
+                const newScale = mesh.scale;
+                const shape = body.shapes[0];
                 
-                // Kalıbın tipine göre boyutları güncelle
                 if (shape.type === CANNON.Shape.types.BOX) {
                     shape.halfExtents.set(newScale.x / 2, newScale.y / 2, newScale.z / 2);
                 } else if (shape.type === CANNON.Shape.types.SPHERE) {
-                    // Küreler tek bir yarıçap alır, en büyüğünü kullanalım
                     shape.radius = Math.max(newScale.x, newScale.y, newScale.z) / 2;
                 } else if (shape.type === CANNON.Shape.types.CYLINDER) {
                     shape.radiusTop = newScale.x / 2;
@@ -621,21 +606,19 @@
                     shape.height = newScale.y;
                 }
                 
-                // Kalıbın AABB (sınır kutusu) ve kütle özelliklerini güncelle
                 shape.updateBoundingSphereRadius();
                 body.updateBoundingRadius();
                 body.updateMassProperties();
             }
         };
 
-        /* --- GAME & PLAYER (SAĞLIK & KARAKTER GÜNCELLENDİ) --- */
+        /* --- GAME & PLAYER (SpawnPoint & R6) --- */
         const Game = {
             active: false, 
-            player: null, // Three.js Group
-            playerBody: null, // CANNON.Body
+            player: null,
+            playerBody: null,
             onGround: false, 
             inputs:{x:0,y:0},
-            
             health: 100,
             maxHealth: 100,
 
@@ -650,13 +633,15 @@
                 UI.toggleXMenu(false);
                 setTimeout(App.resize, 350);
                 
-                App.physicsObjects.forEach(mesh => {
-                    mesh.userData.body.position.copy(mesh.position);
-                    mesh.userData.body.quaternion.copy(mesh.quaternion);
-                    mesh.userData.body.velocity.set(0,0,0);
-                    mesh.userData.body.angularVelocity.set(0,0,0);
-                    // Eğer editörde scale yapıldıysa, fizik kalıbını da güncelle
-                    World.updatePhysicsShape(mesh);
+                // Tüm nesnelerin editördeki pozisyonunu fiziğe senkronize et
+                App.allGameObjects.forEach(mesh => {
+                    if (mesh.userData.body) {
+                        mesh.userData.body.position.copy(mesh.position);
+                        mesh.userData.body.quaternion.copy(mesh.quaternion);
+                        mesh.userData.body.velocity.set(0,0,0);
+                        mesh.userData.body.angularVelocity.set(0,0,0);
+                        World.updatePhysicsShape(mesh);
+                    }
                 });
                 
                 Game.health = Game.maxHealth;
@@ -677,7 +662,7 @@
                 }
                 
                 App.camera.position.set(20,20,20); 
-                App.controls.target.set(0,0,0); // Kamera hedefini sıfırla
+                App.controls.target.set(0,0,0);
                 App.controls.enablePan = true;
                 
                 setTimeout(App.resize, 350);
@@ -693,12 +678,18 @@
             },
 
             spawnPlayer: () => {
+                // YENİ: Spawn noktası bul
+                let spawnPos = new THREE.Vector3(0, 10, 0);
+                const spawnPoint = App.allGameObjects.find(obj => obj.name === "Spawn");
+                if (spawnPoint) {
+                    spawnPos.copy(spawnPoint.position).add(new THREE.Vector3(0, 3, 0));
+                }
+
                 // 1. Görsel Oyuncu (R6 + X Logo)
                 const g = new THREE.Group(); g.name = "Player";
                 const mat = new THREE.MeshPhongMaterial({color:0xffcc80});
                 const matTorso = new THREE.MeshPhongMaterial({color:0x333});
 
-                // Parçaların pozisyonları, grubun (0,0,0) merkezine göre ayarlandı
                 const head = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.2), mat); head.position.y = 2.1;
                 const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), matTorso); torso.position.y = 0.5;
                 
@@ -708,7 +699,7 @@
                 ctx.strokeStyle = 'white'; ctx.lineWidth=5; 
                 ctx.moveTo(10,10); ctx.lineTo(54,54); ctx.moveTo(54,10); ctx.lineTo(10,54); ctx.stroke();
                 const decal = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(xCvs), transparent:true}));
-                decal.position.set(0, 0.5, 0.51); // Gövdenin üzerinde
+                decal.position.set(0, 0.5, 0.51);
                 g.add(decal);
 
                 const lims = [
@@ -723,21 +714,16 @@
                 g.add(head, torso);
                 
                 // 2. Fiziksel Oyuncu (Kapsül)
-                // Cannon.js'de kapsül yok, bu yüzden bir küre (kafa) ve bir silindir (gövde) kullanıyoruz
                 const body = new CANNON.Body({
                     mass: 70, 
-                    fixedRotation: true, // Devrilmesin
+                    fixedRotation: true,
                     material: App.physicsWorld.defaultMaterial
                 });
-                
-                // Gövde (Silindir) - Ana çarpışma
-                const bodyShape = new CANNON.Cylinder(1, 1, 3, 16); // radiusTop, radiusBottom, height
-                body.addShape(bodyShape, new CANNON.Vec3(0, 0, 0)); // Merkeze
-
-                body.position.set(0, 10, 0);
+                const bodyShape = new CANNON.Cylinder(1, 1, 3, 16);
+                body.addShape(bodyShape, new CANNON.Vec3(0, 0, 0));
+                body.position.copy(spawnPos); // Spawn noktasında başlat
                 App.physicsWorld.addBody(body);
 
-                // YENİ: Hasar için çarpışma dinleyicisi
                 body.addEventListener('collide', (event) => {
                     if (!Game.active) return;
                     const otherBody = event.body;
@@ -754,34 +740,33 @@
                 body.userData.mesh = g;
                 
                 App.scene.add(g);
-                App.physicsObjects.push(g);
+                App.physicsObjects.push(g); // Oyuncu dinamiktir
+                App.allGameObjects.push(g); // Tüm nesneler listesine de ekle
                 
                 Game.player = g;
                 Game.playerBody = body;
-                App.controls.enablePan = false; // Kamera pan'ını kapat
+                App.controls.enablePan = false;
             },
             
-            // YENİ: Hasar Alma
             takeDamage: (amount) => {
-                if (!Game.active || Game.health <= 0) return; // Zaten ölüyse hasar alma
+                if (!Game.active || Game.health <= 0) return;
                 Game.health -= amount;
                 if (Game.health < 0) Game.health = 0;
                 
                 Game.updateHealthHUD();
                 
                 if (Game.health <= 0) {
-                    setTimeout(Game.respawn, 500); // 0.5 saniye sonra yeniden doğ
+                    setTimeout(Game.respawn, 500);
                 }
             },
             
-            // YENİ: Sağlık Çubuğu Güncelleme
             updateHealthHUD: () => {
                 const bar = document.getElementById('health-bar');
                 if (bar) {
                     bar.style.width = (Game.health / Game.maxHealth) * 100 + '%';
-                    if (Game.health < 30) bar.style.background = '#d32f2f'; // Kırmızı
-                    else if (Game.health < 60) bar.style.background = '#FFC107'; // Sarı
-                    else bar.style.background = '#4CAF50'; // Yeşil
+                    if (Game.health < 30) bar.style.background = '#d32f2f';
+                    else if (Game.health < 60) bar.style.background = '#FFC107';
+                    else bar.style.background = '#4CAF50';
                 }
             },
 
@@ -791,14 +776,11 @@
                 const pBody = Game.playerBody;
                 const pMesh = Game.player;
 
-                // Yerde olup olmadığını kontrol et
                 const yVel = pBody.velocity.y;
                 Game.onGround = Math.abs(yVel) < 0.5;
 
-                // Haritadan düşme hasarı
                 if(pBody.position.y < -50) Game.takeDamage(100);
 
-                // Hareket
                 const camD = new THREE.Vector3(); App.camera.getWorldDirection(camD); camD.y=0; camD.normalize();
                 const camR = new THREE.Vector3(-camD.z, 0, camD.x);
                 
@@ -829,23 +811,21 @@
                 pBody.velocity.z = moveVel.z;
                 pBody.velocity.y = moveVel.y;
 
-                // Kamera Takibi: Kameranın hedefini oyuncuya kilitler
                 App.controls.target.lerp(pMesh.position.clone().add(new THREE.Vector3(0,2,0)), 0.2);
-                App.controls.update(); // Kameranın pozisyonunu hedefe göre günceller
+                App.controls.update();
             },
             
             jump: () => { 
                 if(Game.onGround) {
-                    Game.playerBody.velocity.y = 20; // Zıplama gücü
+                    Game.playerBody.velocity.y = 20;
                 }
             }
         };
 
-        /* --- UI & EDITOR (SKALALAMA & PROPS GÜNCELLENDİ) --- */
+        /* --- UI & EDITOR (Script Butonu Aktif) --- */
         const Editor = {
             selected: null,
             setMode: (m) => {
-                // Scale modu artık aktif
                 App.transform.setMode(m);
                 document.querySelectorAll('.r-btn').forEach(b=>{
                     if(b.id && b.id.startsWith('btn-')) b.classList.remove('active');
@@ -854,7 +834,7 @@
                 if(btn) btn.classList.add('active');
             },
             select: (obj) => {
-                if (obj.userData.locked) return;
+                if (obj.userData.locked || obj.name === "Player") return; // Player'ı da seçme
                 Editor.selected = obj;
                 App.transform.attach(obj);
                 UI.updateProps(obj);
@@ -919,27 +899,27 @@
                 } else if(cat==='nature') {
                     items.push({n:'Grass', s:'box', c:0x4CAF50, scale:[5,1,5], a:true});
                     items.push({n:'Wood', s:'box', c:0x795548, scale:[1,6,1], a:false});
-                    items.push({n:'Water', s:'box', c:0x2196F3, a:true, scale:[10,0.5,10]});
+                    items.push({n:'Water', s:'box', c:0x2196F3, a:true, scale:[10,0.5,10], op: 0.7});
                     items.push({n:'Rock', s:'sphere', c:0x6D4C41, scale:[2,2,2], a:false});
                 } else {
                     items.push({n:'Wall', s:'box', c:0x9E9E9E, scale:[1,8,10], a:true});
                     items.push({n:'Window', s:'box', c:0xB3E5FC, op:0.5, scale:[0.1,3,3], a:true});
                     items.push({n:'Neon', s:'box', c:0x00FFFF, mat:'neon', scale:[4,1,1], a:false});
                     items.push({n:'Killbrick', s:'box', c:0xFF0000, mat:'neon', scale:[5,1,5], a:true, damage:100});
-                    items.push({n:'Lava', s:'box', c:0xFF4500, mat:'neon', scale:[5,1,5], a:true, damage:20}); // YENİ
+                    items.push({n:'Lava', s:'box', c:0xFF4500, mat:'neon', scale:[5,1,5], a:true, damage:20});
                 }
 
                 items.forEach(it => {
                     const el = document.createElement('div'); el.className='tool-item';
                     el.innerHTML = `<div class="t-preview" style="background:#${new THREE.Color(it.c).getHexString()}"></div>${it.n}`;
-                    el.onclick = () => World.add({name:it.n, color:it.c, shape:it.s, mat:it.mat, scale:it.scale, anchored:it.a, damage: it.damage});
+                    el.onclick = () => World.add({name:it.n, color:it.c, shape:it.s, mat:it.mat, scale:it.scale, anchored:it.a, damage: it.damage, op: it.op});
                 });
             },
 
             addExplorer: (obj) => {
                 const d = document.createElement('div'); d.className='tree-item';
                 d.id = 'tree-' + obj.uuid;
-                d.innerText = "📦 " + obj.name;
+                d.innerText = (obj.name === "Player" ? "🧑 " : "📦 ") + obj.name;
                 d.onclick = () => Editor.select(obj);
                 document.getElementById('explorer').appendChild(d);
             },
@@ -967,7 +947,6 @@
                 iCol.onchange=e=>obj.material.color.set(e.target.value);
                 add('Color', iCol);
 
-                // YENİ: Opacity (Şeffaflık)
                 const iOpacity = document.createElement('input'); 
                 iOpacity.type='range'; iOpacity.min=0.05; iOpacity.max=1; iOpacity.step=0.05; 
                 iOpacity.className='prop-inp';
@@ -980,7 +959,6 @@
                 };
                 add('Opacity', iOpacity);
                 
-                // YENİ: Texture (Doku)
                 const iTexture = document.createElement('input'); 
                 iTexture.className='prop-inp'; iTexture.placeholder = 'Image URL...';
                 iTexture.value = obj.material.map ? obj.material.map.image.src : '';
@@ -993,8 +971,6 @@
                         loader.load(url, (texture) => {
                             obj.material.map = texture;
                             obj.material.needsUpdate = true;
-                        }, undefined, () => {
-                            console.error('Texture yüklenemedi: ' + url);
                         });
                     }
                 };
@@ -1013,7 +989,7 @@
                         const index = App.physicsObjects.indexOf(obj);
                         if (index > -1) App.physicsObjects.splice(index, 1);
                     } else {
-                        body.mass = 5; // Kütleyi geri yükle (veya hacme göre hesapla)
+                        body.mass = 5;
                         if (App.physicsObjects.indexOf(obj) === -1) {
                             App.physicsObjects.push(obj);
                         }
@@ -1022,14 +998,20 @@
                 };
                 add('Anchored', iAnch);
                 
+                // --- İSTEDİĞİNİZ KOD YAZMA BUTONU ---
                 const btnScript = document.createElement('button');
-                btnScript.innerText = "📜 Script"; btnScript.style.width='100%';
+                btnScript.innerText = "📜 Script";
+                btnScript.style.width='100%';
+                btnScript.style.padding='5px';
+                btnScript.style.cursor='pointer';
                 btnScript.onclick = () => UI.openScript(obj);
                 p.appendChild(btnScript);
+                // --- --- --- ---
             },
 
             openScript: (obj) => {
                 document.getElementById('script-modal').style.display = 'flex';
+                // YENİ: Eğer script boşsa varsayılanı, doluysa (AI'den gelen) onu göster
                 document.getElementById('code-area').value = obj.userData.script || `-- ${obj.name} Script\nlocal part = script.Parent\nprint("Hello " .. part.Name)`;
                 document.getElementById('script-name').innerText = obj.name;
                 window.currentScriptObj = obj;
@@ -1040,8 +1022,13 @@
             }
         };
 
-        /* --- AI (ARABA EKLENDİ) --- */
+        /* --- AI (SCRIPTING YETENEĞİ EKLENDİ) --- */
         const AI = {
+            // AI Script Kütüphanesi
+            scripts: {
+                damage: `-- Bu kod LunAIX tarafından eklendi! (Simülasyon)\n\nlocal part = script.Parent\nlocal damageAmount = 20\n\nfunction onTouch(hit)\n    local humanoid = hit.Parent:findFirstChild("Humanoid")\n    if humanoid then\n        humanoid:takeDamage(damageAmount)\n    end\nend\n\npart.Touched:Connect(onTouch)\n`
+            },
+
             send: () => {
                 const i = document.getElementById('ai-input');
                 const txt = i.value.trim();
@@ -1054,7 +1041,7 @@
             },
             process: (txt) => {
                 const l = txt.toLowerCase();
-                let r = "I can build 'house', 'tower', or 'car'.";
+                let r = "I can build 'house', 'tower', 'car', or 'lava block with code'.";
                 
                 if(l.includes('house') || l.includes('ev')) {
                     AI.build('house'); r = "Fiziksel bir ev inşa ettim (duvarlar sabitlendi).";
@@ -1062,8 +1049,18 @@
                     AI.build('tower'); r = "Dinamik (yıkılabilir) bir kule inşa ettim.";
                 } else if (l.includes('araba') || l.includes('car')) {
                     AI.build('car');
-                    r = "Fiziksel bir araba modeli inşa ettim. (Sürülebilir araçlar için RaycastVehicle gerekir)";
-                } else if(l.includes('delete') || l.includes('sil') && Editor.selected) {
+                    r = "Fiziksel bir araba modeli inşa ettim.";
+                } 
+                // YENİ: AI SCRIPTING
+                else if (l.includes('kodlu') || l.includes('scriptli')) {
+                    if (l.includes('lava')) {
+                        AI.build('scripted_lava');
+                        r = "Hasar veren 'Lava' bloğu ve script'i eklendi. Bloğa tıklayıp 'Script' butonuna bakabilirsiniz.";
+                    } else {
+                        r = "Hangi script'li bloğu istersiniz? 'lava block with code' deneyin.";
+                    }
+                }
+                else if(l.includes('delete') || l.includes('sil') && Editor.selected) {
                     r = Editor.selected.name + " silindi.";
                     Editor.deleteSelected();
                 } else if(l.includes('red') || l.includes('kırmızı')) {
@@ -1075,22 +1072,36 @@
                 document.getElementById('ai-chat').scrollTop = document.getElementById('ai-chat').scrollHeight;
             },
             build: (type) => {
+                const pos = new THREE.Vector3(Math.random()*20-10, 5, Math.random()*20-10); // Rastgele pozisyon
+
                 if(type==='house') {
-                    World.add({name:"Wall1", scale:[1,8,10], pos:new THREE.Vector3(-5,4,0), color:0xD84315, anchored:true});
-                    World.add({name:"Wall2", scale:[1,8,10], pos:new THREE.Vector3(5,4,0), color:0xD84315, anchored:true});
-                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos:new THREE.Vector3(0,9,0), color:0x8D6E63, anchored:true});
-                    World.add({name:"Floor", scale:[12,1,12], pos:new THREE.Vector3(0,0.5,0), color:0xD84315, anchored:true});
+                    World.add({name:"Wall1", scale:[1,8,10], pos: pos.clone().add(new THREE.Vector3(-5,4,0)), color:0xD84315, anchored:true});
+                    World.add({name:"Wall2", scale:[1,8,10], pos: pos.clone().add(new THREE.Vector3(5,4,0)), color:0xD84315, anchored:true});
+                    World.add({name:"Roof", shape:'wedge', scale:[12,4,12], pos: pos.clone().add(new THREE.Vector3(0,9,0)), color:0x8D6E63, anchored:true});
+                    World.add({name:"Floor", scale:[12,1,12], pos: pos.clone().add(new THREE.Vector3(0,0.5,0)), color:0xD84315, anchored:true});
                 } else if (type==='tower') {
-                    for(let i=0; i<5; i++) World.add({name:"Floor"+i, scale:[5,1,5], pos:new THREE.Vector3(10, 2.5 + i*1, 10), color:0x424242, anchored: false});
+                    for(let i=0; i<5; i++) World.add({name:"Floor"+i, scale:[5,1,5], pos: new THREE.Vector3(pos.x, 2.5 + i*1, pos.z), color:0x424242, anchored: false});
                 } else if (type === 'car') {
-                    // Basit, dinamik (sürülemez) araba modeli
-                    const pos = new THREE.Vector3(0, 5, 10);
                     World.add({name:"CarBody", scale:[4,1.5,2.5], pos: pos, color:0xd32f2f, anchored:false});
-                    World.add({name:"CarTop", scale:[2,1,2], pos: new THREE.Vector3(0, 6.25, 10), color:0xaaaaaa, anchored:false});
-                    World.add({name:"Wheel1", shape:'cylinder', scale:[1,1,0.5], pos: new THREE.Vector3(-1.5, 4.5, 11), color:0x111111, anchored:false});
-                    World.add({name:"Wheel2", shape:'cylinder', scale:[1,1,0.5], pos: new THREE.Vector3(1.5, 4.5, 11), color:0x111111, anchored:false});
-                    World.add({name:"Wheel3", shape:'cylinder', scale:[1,1,0.5], pos: new THREE.Vector3(-1.5, 4.5, 9), color:0x111111, anchored:false});
-                    World.add({name:"Wheel4", shape:'cylinder', scale:[1,1,0.5], pos: new THREE.Vector3(1.5, 4.5, 9), color:0x111111, anchored:false});
+                    World.add({name:"CarTop", scale:[2,1,2], pos: pos.clone().add(new THREE.Vector3(0, 1.25, 0)), color:0xaaaaaa, anchored:false});
+                    World.add({name:"Wheel1", shape:'cylinder', scale:[1,1,0.5], pos: pos.clone().add(new THREE.Vector3(-1.5, -0.25, 1.5)), color:0x111111, anchored:false});
+                    World.add({name:"Wheel2", shape:'cylinder', scale:[1,1,0.5], pos: pos.clone().add(new THREE.Vector3(1.5, -0.25, 1.5)), color:0x111111, anchored:false});
+                    World.add({name:"Wheel3", shape:'cylinder', scale:[1,1,0.5], pos: pos.clone().add(new THREE.Vector3(-1.5, -0.25, -1.5)), color:0x111111, anchored:false});
+                    World.add({name:"Wheel4", shape:'cylinder', scale:[1,1,0.5], pos: pos.clone().add(new THREE.Vector3(1.5, -0.25, -1.5)), color:0x111111, anchored:false});
+                } 
+                // YENİ: AI SCRIPTING
+                else if (type === 'scripted_lava') {
+                    World.add({
+                        name:'ScriptedLava', 
+                        shape:'box', 
+                        color:0xFF4500, 
+                        mat:'neon', 
+                        scale:[5,1,5], 
+                        pos: pos,
+                        anchored:true, 
+                        damage:20,
+                        script: AI.scripts.damage // Script'i buraya ekle
+                    });
                 }
             }
         };
@@ -1102,23 +1113,27 @@
                 vp.addEventListener('pointerdown', e => {
                     if(Game.active) return;
                     if (e.target.tagName !== 'CANVAS') return;
-                    if (App.transform.dragging) return; // Gizmo kullanılıyorsa seçim yapma
+                    if (App.transform.dragging) return;
                     
                     const rect = App.renderer.domElement.getBoundingClientRect();
                     const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
                     const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
                     const ray = new THREE.Raycaster(); ray.setFromCamera({x,y}, App.camera);
                     
-                    const selectableObjects = App.scene.children.filter(o => (o.isMesh || o.isGroup) && !o.userData.locked && o.name !== "Player");
-                    const hits = ray.intersectObjects(selectableObjects, true); // true: group içindekileri de seç
+                    // Sadece 'allGameObjects' listesindeki nesneleri kontrol et
+                    const hits = ray.intersectObjects(App.allGameObjects, true);
                     
                     if(hits.length > 0) {
                         let hitObject = hits[0].object;
-                        // Eğer bir grubun parçasına tıkladıysak, ana grubu seç (R6 karakteri gibi)
-                        while(hitObject.parent && !hitObject.userData.body) {
+                        // Ana nesneyi (Grup veya Mesh) bulana kadar yukarı çık
+                        while(hitObject.parent && !hitObject.userData.body && hitObject.parent.type !== 'Scene') {
                             hitObject = hitObject.parent;
                         }
-                        Editor.select(hitObject);
+                        if (!hitObject.userData.locked) {
+                            Editor.select(hitObject);
+                        } else {
+                            Editor.deselect(); // Kilitli bir şeye (Baseplate) tıkladıysan seçimi kaldır
+                        }
                     } else {
                         Editor.deselect();
                     }
