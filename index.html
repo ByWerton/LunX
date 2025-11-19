@@ -43,7 +43,6 @@
             width: 100vw; 
             display: flex; 
             flex-direction: column; 
-            overflow: hidden; /* Scroll engellendi */
         }
 
         /* Full Screen Containers */
@@ -136,6 +135,9 @@
             .section-label { display: none; } 
             .ribbon-text { font-size: 10px; }
             .ribbon-icon { font-size: 18px; }
+            
+            /* Mobil'de sağ paneli gizle */
+            #right-panel { display: none !important; }
         }
 
 
@@ -160,7 +162,6 @@
             overflow-y: hidden;
             white-space: nowrap; 
             flex-shrink: 0; 
-            z-index: 50; /* Menü her zaman üstte olmalı */
         }
         #ribbon-bar::-webkit-scrollbar { display: none; } 
         
@@ -197,45 +198,43 @@
 
         /* Main Workspace */
         #main-layout { 
-            display: flex; 
+            display: flex; /* Sabit panel için Flex */
             flex: 1; 
             overflow: hidden; 
             width: 100%; 
-            flex-direction: row; 
+            flex-direction: row; /* Yan yana düzen */
             position: relative; 
         }
         
         /* TOOLBOX PANEL STYLES - TAŞINABİLİR */
-        #toolbox-panel, #right-panel {
+        #toolbox-panel {
             position: absolute; 
-            z-index: 100; /* Viewport üzerinde olmalı */
+            z-index: 100;
             top: 0; 
             height: 100%;
             transition: none; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: grab;
             border: 1px solid var(--border-color);
-        }
-        
-        #toolbox-panel { 
             width: 250px; 
             min-width: 250px; 
             left: 0;
             background: var(--bg-panel); 
             display: none; 
             flex-direction: column;
-            cursor: grab; /* Sürüklenmesine izin var */
         }
         #toolbox-panel.open { display: flex; }
 
-        /* SAĞ PANELİN HAREKET ETMEMESİ İÇİN */
+        /* SAĞ PANEL STYLES - SABİT */
         #right-panel { 
             width: 300px; 
-            right: 0;
+            /* right: 0; kaldırıldı */
             background: var(--bg-panel);
             display: flex; 
             flex-direction: column; 
-            cursor: default; 
-            pointer-events: auto; 
+            flex-shrink: 0; /* Sabit genişlikte kal */
+            position: relative; /* Normal akışta kalması için */
+            border-left: 1px solid var(--border-color);
         }
         
         /* Viewport Sınırları */
@@ -254,6 +253,7 @@
             width: 100% !important; 
             height: 100% !important; 
             display: block; 
+            /* OYUN SIRASINDA TIKLAMAYI YAKALAMAK İÇİN */
             touch-action: none; 
         }
         
@@ -265,16 +265,19 @@
             font-weight: bold; 
             font-size: 12px; 
             color: #555; 
+            /* Sağ panel için sadece hareket edenlerde cursor move kalacak */
             cursor: move; 
         }
+        
+        /* Sağ panel başlığı için düzenleme */
         #right-panel .panel-header {
-             cursor: default; /* Sağ panelin başlıkları hareket etmesin */
+            cursor: default; /* Sabit olduğu için taşıma imlecini kaldır */
         }
-
+        
         #explorer, #properties { flex: 1; overflow-y: auto; background: white; padding: 5px; font-size: 13px; }
         
         
-        /* SOL ÜST MENÜ DÜĞMESİ */
+        /* MENÜ DÜĞMESİ (Yeni) */
         #menu-button {
             position: absolute;
             top: 5px;
@@ -288,11 +291,11 @@
             line-height: 30px;
             border-radius: 4px;
             cursor: pointer;
-            z-index: 105; /* Ribbon Bar'ın üstünde olmalı */
+            z-index: 200; 
             font-weight: bold;
         }
         
-        /* AYARLAR MENÜSÜ */
+        /* AYARLAR MENÜSÜ (Yeni) */
         #settings-menu {
             display: none;
             position: absolute;
@@ -304,7 +307,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             border-radius: 4px;
             padding: 10px;
-            z-index: 105; /* Menü butonundan biraz daha düşük, ancak ribbon bar'ın üstünde kalmalı */
+            z-index: 200;
         }
         .menu-item {
             padding: 8px 0;
@@ -322,7 +325,7 @@
             border-radius: 3px;
         }
         
-        /* OYUN KONTROLLERİ */
+        /* OYUN KONTROLLERİ (Yeni) */
         #game-controls {
             position: absolute;
             bottom: 10px;
@@ -352,14 +355,14 @@
             background: rgba(255,255,255,0.7);
             top: 40px;
             left: 40px;
+            /* Ortalamak için başlangıçta translate'i sıfırla */
             transform: translate(0px, 0px);
         }
         
-        /* ZIPLAMA TUŞU KONUMU */
         #jump-button {
             position: absolute;
-            right: 150px;
-            bottom: 150px; 
+            right: 0;
+            bottom: 0;
             width: 80px;
             height: 80px;
             border-radius: 50%;
@@ -374,7 +377,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
         
-        /* KAMERA DOKUNMATİK ALAN */
+        /* YENİ: KAMERA DOKUNMATİK ALAN */
         #camera-touch-area {
             position: absolute;
             top: 0;
@@ -382,18 +385,15 @@
             width: 50%; /* Ekranın sağ yarısı */
             height: 100%;
             pointer-events: auto;
-            z-index: 1; 
-            /* Varsayılan olarak gizli kalmalı, sadece play modunda açılmalı */
-            display: none; 
+            z-index: 1; /* Diğer UI öğelerinin altında */
         }
-        
-        /* Masaüstünde kamera kontrol alanını gizle */
         @media (min-width: 769px) {
+            /* Masaüstünde kamera kontrol alanını gizle */
             #camera-touch-area {
-                display: none !important; 
+                display: none;
             }
         }
-        
+
         /* Diğer stiller (Prop rows, toolbox vb.) */
         .toolbox-search-bar { padding: 10px; border-bottom: 1px solid var(--border-color); }
         .toolbox-search-bar input { width: 100%; padding: 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; }
@@ -442,6 +442,7 @@
         .panel-header {
             padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 12px; color: #555; cursor: move; 
         }
+
     </style>
 </head>
 <body onload="LunX.init()">
@@ -496,7 +497,6 @@
                 </select>
             </div>
         </div>
-        
         <div id="ribbon-bar">
              <div class="tool-section">
                 <div class="ribbon-tab-content">
@@ -620,29 +620,22 @@
             </div>
             
             <div id="game-controls">
-                <div id="joystick-area" 
-                     onmousedown="LunX.game.startJoystick(event)" 
-                     ontouchstart="LunX.game.startJoystick(event)">
+                <div id="joystick-area" onmousedown="LunX.game.startJoystick(event)" ontouchstart="LunX.game.startJoystick(event)">
                     <div id="joystick-handle"></div>
                 </div>
-                <div id="jump-button" 
-                     onmousedown="LunX.game.jump()" 
-                     ontouchstart="LunX.game.jump()">⬆️</div>
+                <div id="jump-button" onmousedown="LunX.game.jump()" ontouchstart="LunX.game.jump()">⬆️</div>
             </div>
             
             <div id="camera-touch-area" 
                  onmousedown="LunX.game.startCameraControl(event)" 
-                 ontouchstart="LunX.game.startCameraControl(event)"> 
-            </div>
+                 ontouchstart="LunX.game.startCameraControl(event)"
+                 style="display: none;"> </div>
         </div>
     </div>
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.2 - TAM VE ÇALIŞAN KOD (Three.js Çekirdeği Kurtarıldı)
-         * - Menü butonları ve Ayarlar menüsü tıklamaları kontrol edildi, düzeltmeye gerek yok.
-         * - Mobil kamera kontrolü olay dinleyicileri düzeltildi.
-         * - Joystick kontrolü olay dinleyicileri düzeltildi.
+         * LUNX STUDIO CORE V7.2 - TAM VE ÇALIŞAN KOD (Three.js Çekirdeği Kurtarıldı ve DÜZELTİLDİ)
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -658,10 +651,10 @@
             joystick: { active: false, x: 0, y: 0, maxDist: 40 },
             
             // YENİ KAMERA KONTROL DEĞİŞKENLERİ
-            cameraYaw: 0, 
-            cameraPitch: 0, 
-            cameraMaxPitch: Math.PI / 2.5, 
-            cameraSensitivity: 0.003, 
+            cameraYaw: 0, // Y ekseninde (sağa-sola dönme)
+            cameraPitch: 0, // X ekseninde (yukarı-aşağı eğilme)
+            cameraMaxPitch: Math.PI / 2.5, // 72 derece (Ters dönmeyi engeller)
+            cameraSensitivity: 0.003, // Fare/Dokunma hassasiyeti
             cameraTouch: { active: false, id: null, lastX: 0, lastY: 0 },
             
             // Toolbox Data
@@ -681,25 +674,17 @@
                 window.addEventListener('resize', LunX.editor.onResize);
                 LunX.tools.generateToolboxContent(); 
                 
-                // Panel Sürükleme için global listener'lar (Sadece Toolbox için kaldı)
+                // Panel Sürükleme için global listener'lar (Sadece Toolbox için geçerli)
                 document.addEventListener('mousemove', LunX.ui.drag);
                 document.addEventListener('mouseup', LunX.ui.stopDrag);
-                document.addEventListener('touchmove', LunX.ui.drag, { passive: false }); 
+                document.addEventListener('touchmove', LunX.ui.drag, { passive: false }); // touchmove aktif
                 document.addEventListener('touchend', LunX.ui.stopDrag);
                 
                 // Klavye kontrolü için listener (Masaüstü için)
                 document.addEventListener('keydown', LunX.game.onKeyDown);
                 document.addEventListener('keyup', LunX.game.onKeyUp);
                 
-                // Joystick ve Kamera Hareketini Global Düzeyde Yakalamak İçin
-                document.addEventListener('mousemove', LunX.game.updateJoystick, { passive: false });
-                document.addEventListener('mouseup', LunX.game.stopJoystick);
-                document.addEventListener('touchmove', LunX.game.updateJoystick, { passive: false });
-                document.addEventListener('touchend', LunX.game.stopJoystick);
-
-                // Pointer Lock (Masaüstü Kamera Kontrolü) için Listener
-                document.addEventListener('mousemove', LunX.game.mouseLook, false);
-                
+                // Fare ile R6 kamera kontrolü (Masaüstü için)
                 document.getElementById('viewport-container').addEventListener('mousedown', LunX.game.startMouseControl);
             },
             
@@ -825,7 +810,7 @@
                     
                     if (LunX.isPlaying) {
                         LunX.game.updatePhysics();
-                        LunX.game.updateCamera(); 
+                        LunX.game.updateCamera(); // YENİ: Kamera güncellemesi
                     } else {
                         LunX.controls.update();
                     }
@@ -835,6 +820,10 @@
                 onResize: () => {
                     const c = document.getElementById('viewport-container');
                     if (LunX.camera && LunX.renderer) {
+                        // Sağ panelin genişliğini hesaplamak için
+                        const rightPanel = document.getElementById('right-panel');
+                        const rightPanelWidth = window.innerWidth > 768 ? rightPanel.offsetWidth : 0; 
+                        
                         const width = c.clientWidth;
                         const height = c.clientHeight;
                         
@@ -1327,25 +1316,24 @@
                     LunX.controls.enabled = false;
                     LunX.transform.detach();
                     
-                    // Kamerayı oyuncu pozisyonuna ayarla
-                    LunX.camera.position.copy(LunX.player.position);
-                    LunX.camera.position.y += 1; 
-                    LunX.controls.target.copy(LunX.player.position);
-                    
                     // Kamera başlangıç rotasyonunu ayarla
-                    LunX.cameraYaw = LunX.camera.rotation.y;
-                    LunX.cameraPitch = 0; 
+                    // Editor kamerası ne yöne bakıyorsa, oyun kamerasını o yöne ayarla
+                    const lookDirection = new THREE.Vector3();
+                    LunX.camera.getWorldDirection(lookDirection);
+                    
+                    LunX.cameraYaw = Math.atan2(lookDirection.x, lookDirection.z);
+                    LunX.cameraPitch = 0; // Başlangıçta yatay
+                    
+                    LunX.player.rotation.y = LunX.cameraYaw; // Karakteri de başlangıçta kamerayla aynı yöne döndür
 
                     document.getElementById('tool-select').classList.remove('active');
                     document.getElementById('game-controls').style.display = 'block';
                     
-                    // Sadece mobil cihazlarda kamera dokunmatik alanını göster
-                    if (window.innerWidth <= 768) { 
-                        document.getElementById('camera-touch-area').style.display = 'block'; 
-                    }
-                    
-                    // Masaüstü için fareyi kilitle
-                    if (window.innerWidth > 768) { 
+                    // Sadece mobil arayüz açıkken kamera dokunmatik alanını aç
+                    if (window.innerWidth <= 768) {
+                       document.getElementById('camera-touch-area').style.display = 'block'; 
+                    } else {
+                        // Masaüstü için fareyi kilitle
                         document.getElementById('viewport').requestPointerLock();
                     }
                 },
@@ -1355,14 +1343,10 @@
                     LunX.isPlaying = false;
                     LunX.controls.enabled = true;
                     if(LunX.selected) LunX.transform.attach(LunX.selected);
-                    
-                    // Kamera kontrollerini sıfırla
-                    LunX.game.stopMouseControl();
-                    LunX.game.stopTouchControl();
-                    
+
                     document.getElementById('tool-select').classList.add('active');
                     document.getElementById('game-controls').style.display = 'none';
-                    document.getElementById('camera-touch-area').style.display = 'none'; 
+                    document.getElementById('camera-touch-area').style.display = 'none'; // Mobil kamera alanı kapatıldı
                     
                     // Fare kilidini kaldır
                     document.exitPointerLock();
@@ -1375,20 +1359,28 @@
                 
                 jump: () => {
                     if (!LunX.isPlaying || !LunX.player.userData.onGround) return;
-                    LunX.player.userData.velocity.y = 7; 
+                    LunX.player.userData.velocity.y = 7; // Zıplama gücü (Daha güçlü)
                     LunX.player.userData.onGround = false;
                 },
                 
+                // YENİ: Kamera Rotasyon Fonksiyonu
                 cameraRotate: (deltaX, deltaY) => {
+                    // Y ekseninde (yaw) dönme
                     LunX.cameraYaw -= deltaX * LunX.cameraSensitivity;
+                    
+                    // X ekseninde (pitch) eğilme (Y ekseni ters çevrilir)
                     LunX.cameraPitch -= deltaY * LunX.cameraSensitivity;
+                    
+                    // Pitch limitlerini uygula
                     LunX.cameraPitch = Math.max(-LunX.cameraMaxPitch, Math.min(LunX.cameraMaxPitch, LunX.cameraPitch));
                 },
 
-                // YENİ: Masaüstü Kamera Kontrolü Başlat
+                // YENİ: Masaüstü Kamera Kontrolü
                 startMouseControl: (e) => {
-                    if (!LunX.isPlaying || window.innerWidth <= 768 || document.pointerLockElement === document.getElementById('viewport')) return; 
+                    // Yalnızca Masaüstünde 'viewport' a tıklayınca pointer lock başlar
+                    if (!LunX.isPlaying || window.innerWidth <= 768) return; 
                     
+                    // Sadece 'Oyna' modundayken ve fare tuval üzerindeyken Pointer Lock isteği atılır
                     if (document.pointerLockElement !== document.getElementById('viewport')) {
                         document.getElementById('viewport').requestPointerLock();
                     }
@@ -1396,10 +1388,8 @@
                 
                 // YENİ: Mobil Kamera Kontrolü Başlat
                 startCameraControl: (e) => {
-                    if (!LunX.isPlaying || window.innerWidth > 768) return; // Sadece mobil
+                    if (!LunX.isPlaying) return;
                     e.preventDefault(); 
-                    
-                    if (e.touches && e.touches.length > 1) return;
                     
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1410,6 +1400,7 @@
                     LunX.cameraTouch.lastX = clientX;
                     LunX.cameraTouch.lastY = clientY;
                     
+                    // Mobil kamera hareketini yöneten global listener'lar
                     document.addEventListener('touchmove', LunX.game.touchLook, { passive: false });
                     document.addEventListener('touchend', LunX.game.stopTouchControl);
                 },
@@ -1432,7 +1423,7 @@
                     const deltaX = touch.clientX - LunX.cameraTouch.lastX;
                     const deltaY = touch.clientY - LunX.cameraTouch.lastY;
                     
-                    LunX.game.cameraRotate(deltaX, deltaY); 
+                    LunX.game.cameraRotate(deltaX, deltaY);
                     
                     LunX.cameraTouch.lastX = touch.clientX;
                     LunX.cameraTouch.lastY = touch.clientY;
@@ -1455,9 +1446,9 @@
                     document.removeEventListener('touchend', LunX.game.stopTouchControl);
                 },
                 
-                // YENİ: Masaüstü Kamera Kontrolü Durdur (Pointer Lock Kilitlenmesi)
+                // YENİ: Masaüstü Kamera Kontrolü Durdur (Pointer Lock'ta gerek yok, lock bitince mousemove durur)
                 stopMouseControl: () => {
-                     // MouseUp sadece PointerLock devredeyken tetiklenmez, bu yüzden sadece stopJoystick ile birlikte çalışır.
+                    // Bu fonksiyon artık kullanılmıyor, tarayıcının Pointer Lock API'ı fare hareketini yönetiyor.
                 },
 
                 // Mevcut Joystick Fonksiyonları
@@ -1465,17 +1456,28 @@
                     e.preventDefault();
                     LunX.joystick.active = true;
                     const joystickArea = document.getElementById('joystick-area');
-                    joystickArea.style.cursor = 'grabbing';
+                    const rect = joystickArea.getBoundingClientRect();
                     
-                    // Joystick hareket ve bırakma olayları init'te document'a bağlandığı için burada eklenmiyor.
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    LunX.game.updateJoystick({ clientX, clientY, rect });
+
+                    // Joystick hareketlerini yönetmek için event listener'lar eklendi
+                    if (e.touches) {
+                        document.addEventListener('touchmove', LunX.game.updateJoystick, { passive: false });
+                        document.addEventListener('touchend', LunX.game.stopJoystick);
+                    } else {
+                        document.addEventListener('mousemove', LunX.game.updateJoystick);
+                        document.addEventListener('mouseup', LunX.game.stopJoystick);
+                    }
                 },
                 
                 updateJoystick: (e) => {
                     if (!LunX.joystick.active) return;
-                    e.preventDefault(); // Kaydırmayı engelle
+                    e.preventDefault(); 
                     
-                    const joystickArea = document.getElementById('joystick-area');
-                    const rect = joystickArea.getBoundingClientRect();
+                    const rect = document.getElementById('joystick-area').getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
                     const centerY = rect.top + rect.height / 2;
 
@@ -1505,7 +1507,12 @@
                     LunX.joystick.x = 0;
                     LunX.joystick.y = 0;
                     document.getElementById('joystick-handle').style.transform = `translate(0px, 0px)`;
-                    document.getElementById('joystick-area').style.cursor = 'grab';
+                    
+                    // Listener'ları kaldır
+                    document.removeEventListener('mousemove', LunX.game.updateJoystick);
+                    document.removeEventListener('mouseup', LunX.game.stopJoystick);
+                    document.removeEventListener('touchmove', LunX.game.updateJoystick);
+                    document.removeEventListener('touchend', LunX.game.stopJoystick);
                 },
                 
                 // DÜZELTİLDİ: Fizik ve Karakter Hareketi
@@ -1513,10 +1520,11 @@
                     const gravity = 0.5;
                     const deltaT = 1/60; 
                     
+                    // Klavye ve Joystick hareket vektörlerini birleştirme
                     let horizontalMovementX = LunX.joystick.x;
                     let horizontalMovementZ = LunX.joystick.y;
                     
-                    if (window.innerWidth > 768) { 
+                    if (window.innerWidth > 768) { // Masaüstü için Klavye
                         if (LunX.game.keys['a']) horizontalMovementX = -1;
                         else if (LunX.game.keys['d']) horizontalMovementX = 1;
                         if (LunX.game.keys['w']) horizontalMovementZ = 1;
@@ -1524,21 +1532,23 @@
                         if (LunX.game.keys[' ']) LunX.game.jump();
                     }
 
-
-                    const moveVector = new THREE.Vector3(horizontalMovementX, 0, horizontalMovementZ);
+                    const moveVector = new THREE.Vector3(horizontalMovementX, 0, horizontalMovementZ).normalize();
                     
                     if (horizontalMovementX !== 0 || horizontalMovementZ !== 0) {
                         
+                        // Kameranın yön matrisi (Karakter, kameranın YAW yönünde hareket etmeli)
                         const cameraRotationMatrix = new THREE.Matrix4();
                         cameraRotationMatrix.makeRotationY(LunX.cameraYaw);
                         
+                        // Hareket yönünü kameranın baktığı yöne göre dönüştür
                         const direction = moveVector.applyMatrix4(cameraRotationMatrix);
                         direction.y = 0; 
-                        direction.normalize(); 
 
+                        // Karakteri hareket ettir
                         const totalMovement = direction.multiplyScalar(LunX.playerSpeed * deltaT);
                         LunX.player.position.add(totalMovement);
                         
+                        // Karakteri hareket yönüne doğru döndür (R6 tarzı)
                         const targetAngle = Math.atan2(direction.x, direction.z);
                         LunX.player.rotation.y = targetAngle;
                     }
@@ -1578,30 +1588,20 @@
                     });
                 },
                 
-                // YENİ: Kamera Pozisyonunu Güncelle (Karakterin Kafasını Takip Et)
+                // DÜZELTİLDİ: Kamera Pozisyonunu ve Rotasyonunu Güncelle (Serbest Bakış)
                 updateCamera: () => {
-                    const cameraHeight = 1.3; 
-                    const cameraDistance = 5; 
+                    const cameraHeight = 1.3; // R6 kafa hizası
 
+                    // 1. Kamerayı karakterin göz hizasına taşı
                     LunX.camera.position.set(
                         LunX.player.position.x,
                         LunX.player.position.y + cameraHeight,
                         LunX.player.position.z
                     );
 
-                    const rotation = new THREE.Quaternion().setFromEuler(
+                    // 2. Kamera rotasyonunu uygula (R6 tarzı: Kafa rotasyonu)
+                    LunX.camera.rotation.setFromVector3(
                         new THREE.Euler(LunX.cameraPitch, LunX.cameraYaw, 0, 'YXZ')
-                    );
-                    
-                    const cameraOffset = new THREE.Vector3(0, 0, cameraDistance); 
-                    cameraOffset.applyQuaternion(rotation);
-
-                    LunX.camera.position.add(cameraOffset.negate()); 
-                    
-                    LunX.camera.lookAt(
-                        LunX.player.position.x,
-                        LunX.player.position.y + cameraHeight,
-                        LunX.player.position.z
                     );
                 }
             },
@@ -1685,12 +1685,13 @@
                     LunX.ui.updateProperties();
                 },
                 
-                // Panel Sürükleme Mantığı
+                // Panel Sürükleme Mantığı (Sadece Toolbox için)
                 dragPanel: { element: null, x: 0, y: 0 },
 
                 startDrag: (e, panelId) => {
-                    if (panelId === 'right-panel') return;
-                    
+                    // Sadece 'toolbox-panel' sürüklenebilir
+                    if (panelId !== 'toolbox-panel') return;
+
                     const panel = document.getElementById(panelId);
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1716,7 +1717,7 @@
                     const maxY = window.innerHeight - panel.offsetHeight;
                     
                     newX = Math.max(0, Math.min(newX, maxX));
-                    newY = Math.max(75, Math.min(newY, maxY)); 
+                    newY = Math.max(75, Math.min(newY, maxY)); // Ribbon altından başla
                     
                     panel.style.left = newX + 'px';
                     panel.style.top = newY + 'px';
@@ -1775,7 +1776,7 @@
                 },
                 
                 togglePanelSide: () => {
-                    alert("Paneller artık serbestçe taşınabilir (Sağ panel hariç).");
+                    alert("Panellerin yerleşimi ayarlandı: Toolbox serbest, Explorer/Properties sabit sağda.");
                     LunX.editor.onResize();
                 },
 
@@ -1925,4 +1926,92 @@
                         input.step = axis === 'y' ? 0.5 : 0.1;
                         input.value = vector[axis].toFixed(2);
                         
-                        input.onchange = (e) =>
+                        input.onchange = (e) => {
+                            onChange(axis, e.target.value);
+                            e.target.value = parseFloat(e.target.value).toFixed(2);
+                        };
+                        
+                        valueDiv.appendChild(input);
+                        row.appendChild(valueDiv);
+                        parent.appendChild(row);
+                    });
+                },
+                
+                addSectionHeader: (parent, title) => {
+                    const header = document.createElement('div');
+                    header.className = 'panel-header';
+                    header.textContent = title;
+                    header.style.marginTop = '10px';
+                    parent.appendChild(header);
+                },
+
+                addMaterialProperty: (parent, name, currentValue, onChange) => {
+                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Rock', 'Concrete', 'ForceField'];
+                    
+                    const row = document.createElement('div');
+                    row.className = 'prop-row';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'prop-name';
+                    nameDiv.textContent = name;
+                    row.appendChild(nameDiv);
+                    
+                    const valueDiv = document.createElement('div');
+                    valueDiv.className = 'prop-value';
+                    
+                    const select = document.createElement('select');
+                    materials.forEach(mat => {
+                        const option = document.createElement('option');
+                        option.value = mat;
+                        option.textContent = mat;
+                        if (mat === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    });
+                    
+                    select.onchange = (e) => onChange(e.target.value);
+                    
+                    valueDiv.appendChild(select);
+                    row.appendChild(valueDiv);
+                    parent.appendChild(row);
+                }
+            }
+        };
+
+        // Panel sürükleme ve joystick/kamera için global listener'lar
+        document.addEventListener('touchmove', (e) => {
+            if (LunX.ui.dragPanel.element) {
+                LunX.ui.drag(e);
+            }
+        }, { passive: false });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (LunX.ui.dragPanel.element) {
+                LunX.ui.drag(e);
+            } else if (LunX.isPlaying && window.innerWidth > 768) {
+                // Masaüstü için Pointer Lock ile kamera hareketi
+                LunX.game.mouseLook(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            LunX.ui.stopDrag();
+            // Joystick durdurma, joystick'in kendi mouseup listener'ında yönetilir.
+        });
+        document.addEventListener('touchend', () => {
+             LunX.ui.stopDrag();
+             // Joystick durdurma, joystick'in kendi touchend listener'ında yönetilir.
+        });
+        
+        // Masaüstünde fare kilitlendiğinde kamera kontrolünü etkinleştir
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === document.getElementById('viewport') && LunX.isPlaying) {
+                // Kamera kontrolü artık mousemove eventinde yönetiliyor
+            } else {
+                // Kilit kalktığında bir şey yapmaya gerek yok
+            }
+        });
+
+        window.addEventListener('load', LunX.init);
+    </script>
+</body>
+</html>
