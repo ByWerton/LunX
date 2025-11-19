@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - DÜZELTİLMİŞ VE YENİ ÖZELLİKLER EKLENMİŞ</title>
+    <title>LunX Studio V7.2 - Mobil Uyumlu (Kırmızı Tema) - GÜNCEL KONTROL</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -236,6 +236,13 @@
             flex-direction: column; 
             cursor: default; 
             pointer-events: auto; 
+            /* YENİ: Gizleme için eklenen geçiş */
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        /* YENİ: Sağ paneli gizleme sınıfı */
+        .panel-hidden #right-panel {
+            transform: translateX(300px); /* Kendi genişliği kadar sağa kaydırarak gizler */
         }
         
         /* Viewport Sınırları */
@@ -301,7 +308,7 @@
             width: 250px;
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             padding: 10px;
             z-index: 105; /* Menü butonundan biraz daha düşük, ancak ribbon bar'ın üstünde kalmalı */
@@ -464,8 +471,8 @@
         }
     </style>
 </head>
-<body onload="LunX.init()">
-
+<body id="body" onload="LunX.init()">
+    
     <div id="start-screen">
         <div id="start-sidebar">
             <h2 style="color:var(--accent-blue); margin:0 0 20px 0;">LunX Studio</h2>
@@ -663,11 +670,9 @@
 
     <script>
         /**
-         * LUNX STUDIO CORE V7.2 - YENİ ÖZELLİKLER EKLENDİ
-         * 1. Oynat'a basınca kamera dönüsü (Zaten vardı, mobil gösterimi ayarlandı).
-         * 2. Hamburger Menüde Tuş Kilidi/Düzenleme (toggleControlLock) eklendi.
-         * 3. Joystick ve Jump Button sürükleme mekaniği (startControlDrag, doControlDrag, endControlDrag) eklendi.
-         * 4. Jump Button başlangıç CSS'i daha yukarı alındı.
+         * LUNX STUDIO CORE V7.2 - GÜNCEL KONTROL
+         * - Oynat: Sağ paneli (Explorer/Properties) gizler ve kamera kontrolünü açar.
+         * - Durdur: Sağ paneli gösterir ve kamera kontrolünü kapatır (OrbitControls'ü açar).
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -682,14 +687,14 @@
             playerSpeed: 8, 
             joystick: { active: false, x: 0, y: 0, maxDist: 40 },
             
-            // YENİ KAMERA KONTROL DEĞİŞKENLERİ
+            // KAMERA KONTROL DEĞİŞKENLERİ
             cameraYaw: 0, 
             cameraPitch: 0, 
             cameraMaxPitch: Math.PI / 2.5, 
             cameraSensitivity: 0.003, 
             cameraTouch: { active: false, id: null, lastX: 0, lastY: 0 },
             
-            // YENİ: KONTROL DÜZENLEME DEĞİŞKENLERİ
+            // KONTROL DÜZENLEME DEĞİŞKENLERİ
             isControlEditing: false,
             draggingControl: { element: null, x: 0, y: 0, startX: 0, startY: 0 },
             
@@ -731,7 +736,7 @@
                 
                 document.getElementById('viewport-container').addEventListener('mousedown', LunX.game.startMouseControl);
                 
-                // YENİ: Kontrol Tuşlarını Başlangıçta Yükle
+                // Kontrol Tuşlarını Başlangıçta Yükle
                 LunX.game.loadControlPositions();
             },
             
@@ -760,6 +765,8 @@
                     document.getElementById('menu-button').style.display = 'block'; 
                     LunX.editor.init3D();
                     LunX.world.loadTemplate(template);
+                    // Başlangıçta sağ paneli göster
+                    document.getElementById('body').classList.remove('panel-hidden'); 
                 },
                 
                 exitStudio: () => {
@@ -774,6 +781,7 @@
                     document.getElementById('studio-interface').style.display = 'none';
                     document.getElementById('start-screen').style.display = 'flex';
                     document.getElementById('menu-button').style.display = 'none';
+                    document.getElementById('body').classList.remove('panel-hidden'); 
                 },
                 
                 resetStudio: () => {
@@ -792,10 +800,11 @@
                     LunX.editor.init3D();
                     LunX.world.loadTemplate(currentTemplate);
                     LunX.ui.toggleSettingsMenu(); 
+                    document.getElementById('body').classList.remove('panel-hidden'); 
                 }
             },
 
-            // 4. 3D EDITOR CORE (KURTARILDI)
+            // 4. 3D EDITOR CORE 
             editor: {
                 init3D: () => {
                     const container = document.getElementById('viewport');
@@ -929,7 +938,7 @@
                 }
             },
             
-            // 5. WORLD & TEMPLATES (KURTARILDI)
+            // 5. WORLD & TEMPLATES
             world: {
                 loadTemplate: (template) => {
                     // Temizle
@@ -1091,7 +1100,7 @@
                 }
             },
             
-            // 6. TOOLS (Aynı kaldı)
+            // 6. TOOLS
             tools: {
                 setMode: (mode) => {
                     document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
@@ -1345,7 +1354,7 @@
                 }
             },
             
-            // 8. GAME (DÜZELTİLDİ: R6 Kamera Kontrolü Eklendi)
+            // 8. GAME (KONTROLLER)
             game: {
                 
                 // Klavye tuşları durumu
@@ -1359,6 +1368,9 @@
                     LunX.controls.enabled = false;
                     LunX.transform.detach();
                     
+                    // YENİ: Sağ paneli gizle
+                    document.getElementById('body').classList.add('panel-hidden');
+
                     // Kamerayı oyuncu pozisyonuna ayarla
                     LunX.camera.position.copy(LunX.player.position);
                     LunX.camera.position.y += 1; 
@@ -1387,6 +1399,9 @@
                     LunX.isPlaying = false;
                     LunX.controls.enabled = true;
                     if(LunX.selected) LunX.transform.attach(LunX.selected);
+                    
+                    // YENİ: Sağ paneli göster
+                    document.getElementById('body').classList.remove('panel-hidden');
                     
                     // Kamera kontrollerini sıfırla
                     LunX.game.stopMouseControl();
@@ -1425,7 +1440,7 @@
                     LunX.cameraPitch = Math.max(-LunX.cameraMaxPitch, Math.min(LunX.cameraMaxPitch, LunX.cameraPitch));
                 },
 
-                // YENİ: Masaüstü Kamera Kontrolü Başlat
+                // Masaüstü Kamera Kontrolü Başlat
                 startMouseControl: (e) => {
                     if (!LunX.isPlaying || window.innerWidth <= 768 || document.pointerLockElement === document.getElementById('viewport')) return; 
                     
@@ -1434,7 +1449,7 @@
                     }
                 },
                 
-                // YENİ: Mobil Kamera Kontrolü Başlat
+                // Mobil Kamera Kontrolü Başlat
                 startCameraControl: (e) => {
                     if (!LunX.isPlaying || window.innerWidth > 768) return; // Sadece mobil
                     e.preventDefault(); 
@@ -1454,7 +1469,7 @@
                     document.addEventListener('touchend', LunX.game.stopTouchControl);
                 },
                 
-                // YENİ: Mobil Kamera Kontrolü Güncelle
+                // Mobil Kamera Kontrolü Güncelle
                 touchLook: (e) => {
                     if (!LunX.isPlaying || !LunX.cameraTouch.active) return;
                     
@@ -1478,7 +1493,7 @@
                     LunX.cameraTouch.lastY = touch.clientY;
                 },
                 
-                // YENİ: Masaüstü Kamera Kontrolü Güncelle (Pointer Lock)
+                // Masaüstü Kamera Kontrolü Güncelle (Pointer Lock)
                 mouseLook: (e) => {
                     if (!LunX.isPlaying || document.pointerLockElement !== document.getElementById('viewport')) return;
                     
@@ -1488,14 +1503,14 @@
                     LunX.game.cameraRotate(deltaX, deltaY);
                 },
 
-                // YENİ: Mobil Kamera Kontrolü Durdur
+                // Mobil Kamera Kontrolü Durdur
                 stopTouchControl: () => {
                     LunX.cameraTouch.active = false;
                     document.removeEventListener('touchmove', LunX.game.touchLook);
                     document.removeEventListener('touchend', LunX.game.stopTouchControl);
                 },
                 
-                // YENİ: Masaüstü Kamera Kontrolü Durdur (Pointer Lock Kilitlenmesi)
+                // Masaüstü Kamera Kontrolü Durdur (Pointer Lock Kilitlenmesi)
                 stopMouseControl: () => {
                      // MouseUp sadece PointerLock devredeyken tetiklenmez, bu yüzden sadece stopJoystick ile birlikte çalışır.
                 },
@@ -1566,7 +1581,7 @@
                     document.getElementById('joystick-area').style.cursor = 'grab';
                 },
                 
-                // YENİ: KONTROL KİLİDİ/DÜZENLEME İŞLEVLERİ
+                // KONTROL KİLİDİ/DÜZENLEME İŞLEVLERİ
                 toggleControlLock: () => {
                     if (!LunX.isPlaying) {
                         alert("Tuş ayarlarını düzenlemek için önce 'Oyna' tuşuna basarak oyunu başlatın.");
@@ -1719,7 +1734,7 @@
                     }
                 },
                 
-                // DÜZELTİLDİ: Fizik ve Karakter Hareketi
+                // Fizik ve Karakter Hareketi
                 updatePhysics: () => {
                     const gravity = 0.5;
                     const deltaT = 1/60; 
@@ -1792,7 +1807,7 @@
                     });
                 },
                 
-                // YENİ: Kamera Pozisyonunu Güncelle (Karakterin Kafasını Takip Et)
+                // Kamera Pozisyonunu Güncelle (Karakterin Kafasını Takip Et)
                 updateCamera: () => {
                     const cameraHeight = 1.3; 
                     const cameraDistance = 5; 
