@@ -657,8 +657,8 @@
                     <div id="joystick-handle"></div>
                 </div>
                 <div id="jump-button" class="draggable-control"
-                     onmousedown="LunX.game.jump()" 
-                     ontouchstart="LunX.game.jump()">⬆️</div>
+                     onmousedown="LunX.game.jump(event)" 
+                     ontouchstart="LunX.game.jump(event)">⬆️</div>
             </div>
             
             <div id="camera-touch-area" 
@@ -671,8 +671,7 @@
     <script>
         /**
          * LUNX STUDIO CORE V7.2 - GÜNCEL KONTROL
-         * - Oynat: Sağ paneli (Explorer/Properties) gizler ve kamera kontrolünü açar.
-         * - Durdur: Sağ paneli gösterir ve kamera kontrolünü kapatır (OrbitControls'ü açar).
+         * - EK ÖZELLİKLER: Oynat modunda kamera yakınlaştırma (zoom) eklendi.
          */
          
         // --- CORE APPLICATION OBJECT ---
@@ -692,7 +691,10 @@
             cameraPitch: 0, 
             cameraMaxPitch: Math.PI / 2.5, 
             cameraSensitivity: 0.003, 
-            cameraTouch: { active: false, id: null, lastX: 0, lastY: 0 },
+            cameraTouch: { active: false, id: null, lastX: 0, lastY: 0, zoomDist: null }, // zoomDist eklendi
+            cameraDistance: 10, // Kamera başlangıç mesafesi
+            cameraMinDistance: 1.5,
+            cameraMaxDistance: 30,
             
             // KONTROL DÜZENLEME DEĞİŞKENLERİ
             isControlEditing: false,
@@ -733,6 +735,9 @@
 
                 // Pointer Lock (Masaüstü Kamera Kontrolü) için Listener
                 document.addEventListener('mousemove', LunX.game.mouseLook, false);
+                
+                // Kamera Yakınlaştırma için (Masaüstü)
+                document.addEventListener('wheel', LunX.game.onWheelZoom, false);
                 
                 document.getElementById('viewport-container').addEventListener('mousedown', LunX.game.startMouseControl);
                 
@@ -1379,6 +1384,9 @@
                     // Kamera başlangıç rotasyonunu ayarla
                     LunX.cameraYaw = LunX.camera.rotation.y;
                     LunX.cameraPitch = 0; 
+                    
+                    // Kamera mesafesini kaydet
+                    LunX.cameraDistance = 10; 
 
                     document.getElementById('tool-select').classList.remove('active');
                     document.getElementById('game-controls').style.display = 'block';
@@ -1426,9 +1434,14 @@
                 },
                 
                 jump: (e) => {
-                    // Düzenleme modunda zıplamayı engelle
-                    if (LunX.isControlEditing) return; 
+                    // **Kilit açıkken** (düzenleme modunda) zıplama işlevini değil, tuş sürüklemeyi tetikle.
+                    if (LunX.isControlEditing && e.type.includes('mouse') || e.type.includes('touch')) {
+                        // endControlDrag içinde zaten kontrol var, bu yüzden sadece sürüklemeyi başlatıyoruz.
+                        LunX.game.startControlDrag(e, e.currentTarget); 
+                        return;
+                    }
                     
+                    // **Kilit kapalıyken** (oyun modunda) zıpla.
                     if (!LunX.isPlaying || !LunX.player.userData.onGround) return;
                     LunX.player.userData.velocity.y = 7; 
                     LunX.player.userData.onGround = false;
@@ -1438,6 +1451,16 @@
                     LunX.cameraYaw -= deltaX * LunX.cameraSensitivity;
                     LunX.cameraPitch -= deltaY * LunX.cameraSensitivity;
                     LunX.cameraPitch = Math.max(-LunX.cameraMaxPitch, Math.min(LunX.cameraMaxPitch, LunX.cameraPitch));
+                },
+                
+                // YENİ: Yakınlaştırma için Mouse Tekerleği Kontrolü
+                onWheelZoom: (e) => {
+                    if (!LunX.isPlaying || LunX.isControlEditing) return;
+                    e.preventDefault();
+                    
+                    const zoomFactor = 0.005; // Zoom hızı
+                    LunX.cameraDistance += e.deltaY * zoomFactor;
+                    LunX.cameraDistance = Math.max(LunX.cameraMinDistance, Math.min(LunX.cameraMaxDistance, LunX.cameraDistance));
                 },
 
                 // Masaüstü Kamera Kontrolü Başlat
@@ -1454,43 +1477,68 @@
                     if (!LunX.isPlaying || window.innerWidth > 768) return; // Sadece mobil
                     e.preventDefault(); 
                     
-                    if (e.touches && e.touches.length > 1) return;
-                    
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                    const touchId = e.touches ? e.touches[0].identifier : 0;
-                    
                     LunX.cameraTouch.active = true;
-                    LunX.cameraTouch.id = touchId;
-                    LunX.cameraTouch.lastX = clientX;
-                    LunX.cameraTouch.lastY = clientY;
+                    
+                    if (e.touches.length === 1) {
+                        // Tek parmak: Döndürme
+                        LunX.cameraTouch.id = e.touches[0].identifier;
+                        LunX.cameraTouch.lastX = e.touches[0].clientX;
+                        LunX.cameraTouch.lastY = e.touches[0].clientY;
+                        LunX.cameraTouch.zoomDist = null; // Zoom'u sıfırla
+                    } else if (e.touches.length === 2) {
+                        // İki parmak: Zoom
+                        LunX.cameraTouch.id = null; // Döndürmeyi sıfırla
+                        LunX.cameraTouch.zoomDist = LunX.game.getTouchDistance(e.touches[0], e.touches[1]);
+                    }
                     
                     document.addEventListener('touchmove', LunX.game.touchLook, { passive: false });
                     document.addEventListener('touchend', LunX.game.stopTouchControl);
                 },
                 
-                // Mobil Kamera Kontrolü Güncelle
+                // Mobil Kamera Kontrolü Güncelle (Döndürme ve Yakınlaştırma)
                 touchLook: (e) => {
                     if (!LunX.isPlaying || !LunX.cameraTouch.active) return;
                     
-                    let touch;
-                    for(let i=0; i<e.changedTouches.length; i++) {
-                        if (e.changedTouches[i].identifier === LunX.cameraTouch.id) {
-                            touch = e.changedTouches[i];
-                            break;
-                        }
-                    }
-                    if (!touch) return;
-                    
                     e.preventDefault(); 
-                    
-                    const deltaX = touch.clientX - LunX.cameraTouch.lastX;
-                    const deltaY = touch.clientY - LunX.cameraTouch.lastY;
-                    
-                    LunX.game.cameraRotate(deltaX, deltaY); 
-                    
-                    LunX.cameraTouch.lastX = touch.clientX;
-                    LunX.cameraTouch.lastY = touch.clientY;
+
+                    if (e.touches.length === 1 && LunX.cameraTouch.id !== null) {
+                        // TEK PARMAK - DÖNDÜRME
+                        let touch;
+                        for(let i=0; i<e.changedTouches.length; i++) {
+                            if (e.changedTouches[i].identifier === LunX.cameraTouch.id) {
+                                touch = e.changedTouches[i];
+                                break;
+                            }
+                        }
+                        if (!touch) return;
+                        
+                        const deltaX = touch.clientX - LunX.cameraTouch.lastX;
+                        const deltaY = touch.clientY - LunX.cameraTouch.lastY;
+                        
+                        LunX.game.cameraRotate(deltaX, deltaY); 
+                        
+                        LunX.cameraTouch.lastX = touch.clientX;
+                        LunX.cameraTouch.lastY = touch.clientY;
+                        
+                    } else if (e.touches.length === 2 && LunX.cameraTouch.zoomDist !== null) {
+                        // İKİ PARMAK - YAKINLAŞTIRMA (PINCH-ZOOM)
+                        const currentDist = LunX.game.getTouchDistance(e.touches[0], e.touches[1]);
+                        const delta = currentDist - LunX.cameraTouch.zoomDist;
+                        
+                        const zoomFactor = 0.05;
+                        LunX.cameraDistance -= delta * zoomFactor; // Mesafe, parmaklar ayrılırsa azalır (yakınlaşma)
+                        
+                        LunX.cameraDistance = Math.max(LunX.cameraMinDistance, Math.min(LunX.cameraMaxDistance, LunX.cameraDistance));
+                        
+                        LunX.cameraTouch.zoomDist = currentDist;
+                    }
+                },
+                
+                // YENİ: İki parmak arası mesafeyi hesapla
+                getTouchDistance: (touch1, touch2) => {
+                    const dx = touch1.clientX - touch2.clientX;
+                    const dy = touch1.clientY - touch2.clientY;
+                    return Math.sqrt(dx * dx + dy * dy);
                 },
                 
                 // Masaüstü Kamera Kontrolü Güncelle (Pointer Lock)
@@ -1504,8 +1552,19 @@
                 },
 
                 // Mobil Kamera Kontrolü Durdur
-                stopTouchControl: () => {
+                stopTouchControl: (e) => {
+                    // Eğer parmak sayısı 1'e düşerse, döndürme moduna geçmeli
+                    if (e.touches.length === 1 && LunX.isPlaying) {
+                        LunX.cameraTouch.id = e.touches[0].identifier;
+                        LunX.cameraTouch.lastX = e.touches[0].clientX;
+                        LunX.cameraTouch.lastY = e.touches[0].clientY;
+                        LunX.cameraTouch.zoomDist = null;
+                        return;
+                    }
+                    
                     LunX.cameraTouch.active = false;
+                    LunX.cameraTouch.id = null;
+                    LunX.cameraTouch.zoomDist = null;
                     document.removeEventListener('touchmove', LunX.game.touchLook);
                     document.removeEventListener('touchend', LunX.game.stopTouchControl);
                 },
@@ -1523,6 +1582,7 @@
                         return;
                     }
                     
+                    if (!LunX.isPlaying) return;
                     e.preventDefault();
                     LunX.joystick.active = true;
                     const joystickArea = document.getElementById('joystick-area');
@@ -1596,12 +1656,13 @@
                         button.textContent = "🔓 Tuş Kilidi (Açık)";
                         controls.forEach(control => {
                             control.classList.add('editing');
-                            // Joystick hareketini devre dışı bırak
+                            // Joystick ve Jump Button için oyun olaylarını geçici olarak kaldır
                             if (control.id === 'joystick-area') {
                                 control.removeEventListener('mousedown', LunX.game.startJoystick);
                                 control.removeEventListener('touchstart', LunX.game.startJoystick);
-                                control.addEventListener('mousedown', (e) => LunX.game.startControlDrag(e, control));
-                                control.addEventListener('touchstart', (e) => LunX.game.startControlDrag(e, control));
+                            } else if (control.id === 'jump-button') {
+                                control.removeEventListener('mousedown', LunX.game.jump);
+                                control.removeEventListener('touchstart', LunX.game.jump);
                             }
                         });
                         alert("Tuş düzenleme modu açıldı. Tuşları sürükleyerek yerlerini değiştirebilirsiniz.");
@@ -1612,12 +1673,13 @@
                             // Yeni pozisyonları kaydet
                             LunX.game.saveControlPosition(control);
                             
-                             // Joystick hareketini yeniden etkinleştir
+                             // Joystick ve Jump Button için oyun olaylarını yeniden ekle
                             if (control.id === 'joystick-area') {
-                                control.removeEventListener('mousedown', (e) => LunX.game.startControlDrag(e, control));
-                                control.removeEventListener('touchstart', (e) => LunX.game.startControlDrag(e, control));
                                 control.addEventListener('mousedown', LunX.game.startJoystick);
                                 control.addEventListener('touchstart', LunX.game.startJoystick);
+                            } else if (control.id === 'jump-button') {
+                                control.addEventListener('mousedown', LunX.game.jump);
+                                control.addEventListener('touchstart', LunX.game.jump);
                             }
                         });
                         alert("Tuşlar kilitlendi. Yeni pozisyonlar kaydedildi.");
@@ -1747,7 +1809,7 @@
                         else if (LunX.game.keys['d']) horizontalMovementX = 1;
                         if (LunX.game.keys['w']) horizontalMovementZ = 1;
                         else if (LunX.game.keys['s']) horizontalMovementZ = -1;
-                        if (LunX.game.keys[' ']) LunX.game.jump();
+                        if (LunX.game.keys[' ']) LunX.game.jump({}); // Klavye için event objesi göndermeye gerek yok.
                     }
 
 
@@ -1807,10 +1869,10 @@
                     });
                 },
                 
-                // Kamera Pozisyonunu Güncelle (Karakterin Kafasını Takip Et)
+                // Kamera Pozisyonunu Güncelle (Karakterin Kafasını Takip Et + YAKINLAŞTIRMA/UZAKLAŞTIRMA)
                 updateCamera: () => {
                     const cameraHeight = 1.3; 
-                    const cameraDistance = 5; 
+                    // const cameraDistance = 5; // LunX.cameraDistance kullanılıyor
 
                     LunX.camera.position.set(
                         LunX.player.position.x,
@@ -1822,7 +1884,7 @@
                         new THREE.Euler(LunX.cameraPitch, LunX.cameraYaw, 0, 'YXZ')
                     );
                     
-                    const cameraOffset = new THREE.Vector3(0, 0, cameraDistance); 
+                    const cameraOffset = new THREE.Vector3(0, 0, LunX.cameraDistance); 
                     cameraOffset.applyQuaternion(rotation);
 
                     LunX.camera.position.add(cameraOffset.negate()); 
@@ -2109,104 +2171,3 @@
                         input.value = value;
                         input.readOnly = type === 'readonly';
                         if (type !== 'readonly' && onChange) {
-                            input.onchange = (e) => onChange(e.target.value);
-                        }
-                    } else if (type === 'checkbox') {
-                        input = document.createElement('input');
-                        input.type = 'checkbox';
-                        input.checked = value;
-                        if (onChange) {
-                            input.onchange = (e) => onChange(e.target.checked);
-                        }
-                    } else if (type === 'button') {
-                        input = document.createElement('button');
-                        input.textContent = value;
-                        input.style.width = '100%';
-                        input.onclick = onChange;
-                    }
-                    
-                    if (input) {
-                        valueDiv.appendChild(input);
-                    }
-                    
-                    row.appendChild(valueDiv);
-                    parent.appendChild(row);
-                },
-                
-                addVector3Property: (parent, name, vector, onChange) => {
-                    LunX.ui.addSectionHeader(parent, name);
-                    const axes = ['x', 'y', 'z'];
-                    
-                    axes.forEach(axis => {
-                        const row = document.createElement('div');
-                        row.className = 'prop-row';
-                        
-                        const nameDiv = document.createElement('div');
-                        nameDiv.className = 'prop-name';
-                        nameDiv.textContent = '  ' + axis.toUpperCase(); 
-                        row.appendChild(nameDiv);
-                        
-                        const valueDiv = document.createElement('div');
-                        valueDiv.className = 'prop-value';
-                        
-                        const input = document.createElement('input');
-                        input.type = 'number';
-                        input.step = axis === 'y' ? 0.5 : 0.1;
-                        input.value = vector[axis].toFixed(2);
-                        
-                        input.onchange = (e) => onChange(axis, e.target.value);
-                        
-                        valueDiv.appendChild(input);
-                        row.appendChild(valueDiv);
-                        parent.appendChild(row);
-                    });
-                },
-
-                addSectionHeader: (parent, title) => {
-                    const header = document.createElement('div');
-                    header.style.cssText = 'font-weight:bold; padding:5px 0; margin-top:10px; border-bottom:1px solid var(--border-color); color:var(--accent-blue); font-size:13px;';
-                    header.textContent = title;
-                    parent.appendChild(header);
-                },
-                
-                addMaterialProperty: (parent, name, currentValue, onChange) => {
-                    const materials = ['Plastic', 'SmoothPlastic', 'Neon', 'Metal', 'Glass', 'Wood', 'Grass', 'Ice', 'Rock', 'Concrete', 'ForceField'];
-                    const row = document.createElement('div');
-                    row.className = 'prop-row';
-                    
-                    const nameDiv = document.createElement('div');
-                    nameDiv.className = 'prop-name';
-                    nameDiv.textContent = name;
-                    row.appendChild(nameDiv);
-
-                    const valueDiv = document.createElement('div');
-                    valueDiv.className = 'prop-value';
-                    
-                    const select = document.createElement('select');
-                    materials.forEach(mat => {
-                        const option = document.createElement('option');
-                        option.value = mat;
-                        option.textContent = mat;
-                        if(mat === currentValue) option.selected = true;
-                        select.appendChild(option);
-                    });
-                    
-                    select.onchange = (e) => onChange(e.target.value);
-                    
-                    valueDiv.appendChild(select);
-                    row.appendChild(valueDiv);
-                    parent.appendChild(row);
-                }
-            }
-        };
-        
-        // BAŞLANGIÇTA JOYSTICK VE JUMP BUTTON SÜRÜKLEME OLAYLARI EKLENDİ (Bu kısım LunX.game.toggleControlLock ile yönetiliyor)
-        document.addEventListener('mouseup', LunX.game.endControlDrag);
-        document.addEventListener('touchend', LunX.game.endControlDrag);
-        document.addEventListener('mousemove', LunX.game.doControlDrag);
-        document.addEventListener('touchmove', LunX.game.doControlDrag);
-
-    </script>
-
-</body>
-</html>
