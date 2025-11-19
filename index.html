@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio V11.0 - Advanced AI Core</title>
+    <title>LunX Studio V12.0 - UI Fix & AI Core</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -23,12 +23,24 @@
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', sans-serif; outline: none; }
-        body { margin: 0; overflow: hidden; background: var(--bg-app); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg-app); 
+            color: var(--text-main); 
+            height: 100vh; 
+            width: 100vw; /* Tam Ekran */
+        }
 
-        /* --- UI SCALE --- */
+        /* --- UI SCALE FIX: Tüm içeriği ölçekler --- */
         #studio-container { 
-            height: 100vh; width: 100vw; display: flex; flex-direction: column; 
-            transform-origin: top left; transition: transform 0.2s;
+            height: 100vh; 
+            width: 100vw; 
+            display: flex; 
+            flex-direction: column; 
+            transform-origin: top left; 
+            transition: transform 0.2s;
+            position: absolute; /* Ölçeklenme için mutlak konum */
         }
 
         /* --- TOP BAR (YATAY SEKMELER) --- */
@@ -75,9 +87,9 @@
 
         .panel-head { padding: 8px; background: #f5f5f5; font-weight: bold; font-size: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         
-        /* --- X MENU (ALTTAN GELEN) --- */
+        /* --- X MENU (ORTADAN GELEN) --- */
         #x-menu-btn { 
-            position: absolute; top: 60px; left: 10px; width: 40px; height: 40px;
+            position: absolute; top: calc(30px + 10px); left: 10px; width: 40px; height: 40px;
             background: rgba(0,0,0,0.5); color: white; border-radius: 8px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 200;
         }
@@ -85,14 +97,15 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
             z-index: 2000; display: none; align-items: center; justify-content: center;
         }
+        #x-overlay.active { display: flex; }
         #x-panel {
             width: 90%; max-width: 700px; height: auto; background: rgba(255, 255, 255, 0.95);
             border-radius: 15px; padding: 25px; display: flex; flex-direction: column;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transform: translateY(100vh); /* Başlangıçta altta */
-            transition: transform 0.3s ease-out;
+            transform: scale(0.8) translateY(100vh); /* Başlangıçta küçük ve altta */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Yaylı Efekt */
         }
-        #x-overlay.active #x-panel { transform: translateY(0); }
+        #x-overlay.active #x-panel { transform: scale(1) translateY(0); }
         
         .x-btn { width: 100%; padding: 12px; margin: 5px 0; background: #eee; border: none; border-radius: 8px; text-align: left; font-size: 16px; cursor: pointer; }
         .x-btn:hover { background: #ddd; }
@@ -100,7 +113,7 @@
         /* OYUN KONTROLLERİ */
         #game-hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 100; }
         #joystick-area { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: auto; }
-        #joystick-knob { width: 50px; height: 50px; background: white; border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        #joystick-knob { width: 50px; height: 50px; background: white; border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translate(0,0); }
         #jump-btn { position: absolute; bottom: 80px; right: 40px; width: 80px; height: 80px; background: rgba(255,50,50,0.8); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; border: 3px solid white; cursor: pointer; }
         #interact-btn { position: absolute; bottom: 180px; right: 40px; width: 60px; height: 60px; background: #ffff00; border-radius: 50%; pointer-events: auto; display: none; align-items: center; justify-content: center; font-size: 24px; border: 3px solid #000; cursor: pointer; }
 
@@ -108,7 +121,7 @@
         #obj-input, #tex-input { display: none; }
     </style>
 </head>
-<body>
+<body onload="LunX.init()">
     <div id="studio-container">
         <div id="top-bar">
             <div style="font-weight:bold; margin-right:20px;">LunX Studio</div>
@@ -228,7 +241,8 @@
 
     <script>
         /**
-         * LunX Studio V11.0 - Advanced AI Core & Full Fixes
+         * LunX Studio V12.0 - Final UI/Physics/AI Integration
+         * Düzeltmeler: UI Scale Fix, Menü/3D Sahne Görünürlüğü
          */
         
         const LunX = {
@@ -245,6 +259,11 @@
                 ThreeEngine.init();
                 UI.initToolbox();
                 
+                // Menülerin göründüğünden emin olmak için varsayılan durumu ayarla
+                document.getElementById('studio-container').style.display = 'flex';
+                document.getElementById('top-bar').style.display = 'flex';
+                document.getElementById('ribbon').style.display = 'flex';
+
                 window.addEventListener('resize', ThreeEngine.resize);
 
                 // Joystick & Controls
@@ -316,6 +335,8 @@
             }
         };
 
+        // --- WORLD, TOOLS, AI, GAME, UI, APP Objects are kept from V11.0 to ensure functionality ---
+
         const World = {
             add: (type, opts={}) => {
                 let geo, mat = new THREE.MeshStandardMaterial({color: opts.color || Math.random()*0xffffff});
@@ -357,7 +378,7 @@
                 UI.refreshExplorer();
                 return mesh;
             },
-            addSpecial: (type) => { // Tool'lar için basit helper
+            addSpecial: (type) => { 
                 if(type==='neon') World.add('neon');
                 if(type==='damage') World.add('damage');
                 if(type==='light') World.add('light');
@@ -399,7 +420,6 @@
                 
                 if(hits.length > 0) {
                     LunX.selected = hits[0].object;
-                    // Eğer objemiz bir grubun parçasıysa, grubu seç (AI yapılarında önemli)
                     while(LunX.selected.parent && LunX.selected.parent !== LunX.scene && LunX.selected.parent.userData.isAI) {
                         LunX.selected = LunX.selected.parent;
                     }
@@ -467,7 +487,6 @@
                 }
             },
 
-            // Karmaşık Model Oluşturma ve Kod Enjeksiyonu
             buildPlane: () => {
                 const group = new THREE.Group(); group.name = "AI_Plane";
                 
@@ -480,7 +499,7 @@
                 group.position.set(0, 30, 0);
                 group.userData = { 
                     isVehicle: true, 
-                    isFlying: true, // Uçak kodu
+                    isFlying: true, 
                     anchored: false,
                     velocity: new THREE.Vector3(), 
                     rotSpeed: 0,
@@ -493,13 +512,12 @@
                 alert("AI: Jet Uçağı Oluşturuldu! Oyna modunda binebilirsin.");
             },
             
-            buildCar: () => { /* Önceki Car kodunu kullanır */
+            buildCar: () => { 
                 const group = new THREE.Group(); group.name = "AI_Car";
                 const body = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 8), new THREE.MeshStandardMaterial({color:0xff0000}));
                 body.position.y = 1;
                 group.add(body);
                 
-                // Tekerlekler (Sadece modelleme için)
                 const wheels = [ {x:-2.2, z:2.5}, {x:2.2, z:2.5}, {x:-2.2, z:-2.5}, {x:2.2, z:-2.5} ];
                 wheels.forEach(pos => {
                     const w = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16), new THREE.MeshStandardMaterial({color:0x222222}));
@@ -513,6 +531,23 @@
                 LunX.scene.add(group);
                 LunX.objects.push(group);
                 alert("AI: Araba Oluşturuldu! Oyna modunda binebilirsin.");
+            },
+            
+            buildHouse: () => {
+                const h = new THREE.Group(); h.name = "AI_House";
+                const wallMat = new THREE.MeshStandardMaterial({color: 0xddccaa});
+                const roofMat = new THREE.MeshStandardMaterial({color: 0x884444});
+                
+                const box = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), wallMat); box.position.y = 4;
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(9, 4, 4), roofMat); 
+                roof.position.y = 10; roof.rotation.y = Math.PI/4;
+                
+                h.add(box); h.add(roof);
+                h.position.set(-10, 0, -10);
+                h.userData = { anchored: true, isAI: true };
+                
+                LunX.scene.add(h);
+                LunX.objects.push(h);
             },
             
             buildTower: () => {
@@ -531,7 +566,6 @@
                 alert("AI: Gözetleme Kulesi Oluşturuldu!");
             },
 
-            // Kod Enjeksiyonu Simülasyonu
             addScriptTo: (objName, scriptType) => {
                 const target = LunX.objects.find(o => o.name === objName);
                 
@@ -542,7 +576,7 @@
                 if (scriptType.includes("yürüme kodu")) {
                     target.userData.hasWalkScript = true;
                     target.userData.scriptSpeed = 0.1;
-                    target.userData.scriptTarget = 10; // Hareket hedefi
+                    target.userData.scriptTarget = 10; 
                     alert(`AI: '${objName}' nesnesine parametrik yürüme kodu başarıyla eklendi!`);
                 } else if (scriptType.includes("dönme kodu")) {
                     target.userData.hasRotateScript = true;
@@ -608,7 +642,6 @@
                 LunX.controls.target.set(0,0,0);
                 LunX.controls.enablePan = true;
                 
-                // Reset objects position
                 LunX.objects.forEach(o => { 
                     if(o.userData.type && o.userData.type !== 'baseplate') o.position.set(0,10,0); 
                 }); 
@@ -629,7 +662,6 @@
                 let groundY = -100;
                 LunX.objects.forEach(obj => {
                     if(obj.userData.anchored) {
-                        // Basit yer çarpışması
                         if(Math.abs(target.position.x - obj.position.x) < 5 && Math.abs(target.position.z - obj.position.z) < 5) {
                             if(obj.position.y < target.position.y && obj.position.y + obj.scale.y/2 > groundY) {
                                 groundY = obj.position.y + 2; 
@@ -640,7 +672,7 @@
                             }
                         }
                     } else if(!obj.userData.isVehicle) {
-                        obj.position.y -= 0.05; // Düşen bloklar
+                        obj.position.y -= 0.05; 
                         if(obj.position.y < 2) obj.position.y = 2;
                     }
                 });
@@ -662,22 +694,19 @@
                     const right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), camAng);
                     
                     if(target.userData.isVehicle) {
-                        // Vehicle controls (Tank/Plane)
                         if(target.userData.isFlying) {
-                            target.rotation.y -= LunX.joy.x * 0.02; // Yaw
-                            target.rotation.x -= LunX.joy.y * 0.01; // Pitch
-                            target.translateZ(-target.userData.thrust); // İleri itme
+                            target.rotation.y -= LunX.joy.x * 0.02; 
+                            target.rotation.x -= LunX.joy.y * 0.01; 
+                            target.translateZ(-target.userData.thrust); 
                         } else {
                             target.translateZ(LunX.joy.y * speed);
                             target.rotation.y -= LunX.joy.x * 0.05;
                         }
                     } else {
-                        // Character controls (Player)
                         const move = fwd.multiplyScalar(-LunX.joy.y).add(right.multiplyScalar(LunX.joy.x));
                         target.position.add(move.multiplyScalar(speed));
                         target.lookAt(target.position.clone().add(move));
                         
-                        // Animasyon
                         const t = Date.now()*0.02;
                         target.userData.limbs.la.rotation.x = Math.sin(t);
                         target.userData.limbs.ra.rotation.x = -Math.sin(t);
@@ -754,8 +783,12 @@
         };
 
         const UI = {
+            // Düzeltilmiş UI Ölçekleme Fonksiyonu
             setScale: (s) => {
+                // Bu, tüm Studio arayüzünü (Menüler, Paneller, 3D alan dahil) ölçekler.
                 document.getElementById('studio-container').style.transform = `scale(${s})`;
+                // Ölçeklendirmeden sonra viewport'un doğru hesaplanması için resize çağrılır.
+                ThreeEngine.resize();
             },
             setTab: (tabId) => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -765,14 +798,14 @@
             },
             toggle: (panelId) => {
                 document.getElementById(panelId).classList.toggle('closed');
-                ThreeEngine.resize(); // Viewport yeniden boyutlandığında kamerayı düzelt
+                ThreeEngine.resize(); 
             },
             openXMenu: () => {
                 document.getElementById('x-overlay').classList.add('active');
-                document.getElementById('x-overlay').style.display = 'flex';
             },
             closeXMenu: () => {
                 document.getElementById('x-overlay').classList.remove('active');
+                // CSS transition'ının bitmesi için 300ms beklenir
                 setTimeout(() => document.getElementById('x-overlay').style.display = 'none', 300);
             },
             
@@ -836,12 +869,11 @@
             setQuality: (v) => LunX.renderer.setPixelRatio(window.devicePixelRatio * v)
         };
 
-        // UI için Toolbox CSS'ini burada tekrar tanımlıyoruz ki, body yüklendikten sonra da çalışsın.
         const style = document.createElement('style');
         style.innerHTML = '.tb-icon { width: 20px; height: 20px; border-radius: 3px; margin-right: 8px; border: 1px solid #ccc; } .tb-item { padding: 6px; margin-bottom: 2px; cursor: pointer; display: flex; align-items: center; font-size: 12px; border-radius: 3px; } .tb-item:hover { background: #eee; }';
         document.head.appendChild(style);
         
-        LunX.init();
+        // LunX.init() body onload içinde çağrılıyor.
     </script>
 </body>
 </html>
