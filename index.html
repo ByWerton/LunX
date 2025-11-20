@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LunX Studio - Ultimate Physics Engine</title>
+    <title>LunX Studio - 3D Game Engine</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
@@ -11,609 +12,400 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 
     <style>
-        :root {
-            --primary: #d32f2f;
-            --primary-dark: #b71c1c;
-            --bg-panel: #ffffff;
-            --border: #e0e0e0;
-            --panel-width: 250px; /* Base size for scaling */
-        }
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Segoe UI', sans-serif; outline: none; }
-        body { margin: 0; overflow: hidden; background: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
-
-        /* --- UI START --- */
-        #start-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #d32f2f, #ff5252); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .template-card { background: white; color: #333; width: 150px; height: 180px; border-radius: 10px; margin: 10px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: 0.2s; border: 4px solid transparent; }
-        .template-card:hover { transform: translateY(-5px); border-color: #fff; }
-
-        /* --- TOP BAR & RIBBON --- */
-        #top-bar { height: 40px; background: var(--primary); display: flex; align-items: center; padding: 0 10px; color: white; }
-        .tab-btn { padding: 0 15px; height: 100%; display: flex; align-items: center; cursor: pointer; opacity: 0.7; transition: 0.2s; }
-        .tab-btn.active { opacity: 1; background: rgba(0,0,0,0.1); font-weight: bold; border-bottom: 3px solid white; }
+        :root { --primary: #007ACC; --bg: #1e1e1e; --panel: #252526; --text: #ffffff; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: var(--text); user-select: none; }
         
-        #ribbon { height: 90px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; }
-        .ribbon-tab { display: none; gap: 5px; padding: 5px; height: 100%; align-items: center; width: 100%; }
-        .ribbon-tab.active { display: flex; }
-        .tool-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-width: 60px; height: 70px; cursor: pointer; border-radius: 5px; color: #444; font-size: 11px;
-            transition: background 0.1s;
-        }
-        .tool-btn:hover { background: #ffebee; }
-        .tool-btn.active { background: #ffcdd2; border: 1px solid var(--primary); color: var(--primary-dark); }
-        .tool-icon { font-size: 24px; margin-bottom: 4px; }
+        /* UI Katmanları */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; }
+        .pointer-events-auto { pointer-events: auto; }
 
-        /* --- LAYOUT --- */
-        #layout { flex: 1; display: flex; position: relative; overflow: hidden; }
-        
-        #toolbox { flex-basis: var(--panel-width); background: var(--bg-panel); border-right: 1px solid var(--border); display: none; flex-direction: column; z-index: 20; }
-        #properties { flex-basis: var(--panel-width); background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; }
-        .tb-header { padding: 10px; background: #eee; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; }
-        .tb-nav { display: flex; background: #f9f9f9; border-bottom: 1px solid #ddd; }
-        .tb-nav-item { flex: 1; padding: 8px; text-align: center; font-size: 11px; cursor: pointer; }
-        .tb-nav-item.active { background: white; font-weight: bold; border-bottom: 2px solid var(--primary); }
-        .tb-content { flex: 1; overflow-y: auto; padding: 5px; display: none; grid-template-columns: 1fr 1fr; gap: 5px; align-content: start; }
-        .tb-content.active { display: grid; }
-        .t-item { border: 1px solid #eee; padding: 5px; text-align: center; font-size: 10px; cursor: pointer; border-radius: 4px; background: white; }
-        .t-item:hover { border-color: var(--primary); }
-        .t-img { width: 100%; height: 35px; background: #eee; margin-bottom: 5px; border-radius: 3px; }
+        /* Üst Bar */
+        #top-bar { height: 50px; background: #333; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid #000; pointer-events: auto; justify-content: space-between; }
+        .btn { background: var(--primary); border: none; padding: 8px 15px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn-stop { background: #d32f2f; display: none; }
 
-        #viewport { flex: 1; position: relative; background: #87CEEB; overflow: hidden; }
-        
-        #prop-content { flex: 1; overflow-y: auto; padding: 10px; }
-        .prop-row { margin-bottom: 10px; }
-        .prop-lbl { font-size: 11px; color: #666; margin-bottom: 2px; }
-        .prop-inp { width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; }
+        /* Oyun İçi HUD */
+        #game-hud { display: none; position: absolute; bottom: 20px; left: 20px; pointer-events: auto; }
+        .control-hint { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; color: #fff; }
 
-        /* --- GAME HUD --- */
-        #game-hud { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 100; }
-        #damage-overlay { position: absolute; inset: 0; background: red; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-        #stop-btn {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            background: var(--primary); color: white; padding: 8px 20px; font-weight: bold;
-            border-radius: 5px; cursor: pointer; pointer-events: auto; border: 2px solid white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        /* Controls */
-        .control-el { position: absolute; pointer-events: auto; }
-        .control-el.draggable { border: 2px dashed yellow; background: rgba(255,255,0,0.2); cursor: move; }
-        
-        #joystick-zone { bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); }
-        #stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: white; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 2px 5px black; }
-        
-        #jump-btn { 
-            bottom: 50px; right: 40px; width: 80px; height: 80px; 
-            background: rgba(150,150,150,0.4); border-radius: 50%; border: 2px solid rgba(255,255,255,0.5);
-            display: flex; align-items: center; justify-content: center; font-size: 30px; color: white;
-            transition: background 0.1s; cursor: pointer;
-        }
-
-        #hotbar {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 5px; pointer-events: auto;
-        }
-        .slot {
-            width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 5px; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 20px; cursor: pointer; transition: 0.2s;
-        }
-        .slot.selected { border-color: white; background: rgba(255,255,255,0.2); transform: translateY(-5px); }
-
-        /* --- X MENU --- */
-        #x-menu-btn { position: fixed; top: 10px; left: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; cursor: pointer; z-index: 2100; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-        #x-menu { position: fixed; top: 60px; left: 10px; width: 250px; background: white; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; padding: 15px; z-index: 2100; }
-        
-        #health-bar-container { position: absolute; top: 15px; right: 15px; width: 200px; height: 25px; background: rgba(0,0,0,0.5); border: 2px solid white; border-radius: 5px; pointer-events: auto; }
-        #health-fill { width: 100%; height: 100%; background: #00E676; transition: width 0.2s; }
-
-        /* --- AI MODAL --- */
-        #ai-modal { position: fixed; bottom: 20px; right: 20px; width: 360px; height: 450px; background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 2200; overflow: hidden; border: 1px solid #ddd; }
-        .ai-msg { padding: 10px; margin: 5px; border-radius: 8px; font-size: 13px; max-width: 85%; }
-        .bot { background: #f5f5f5; align-self: flex-start; color: #333; }
-        .user { background: #ffebee; align-self: flex-end; color: var(--primary); }
+        /* Yükleme Ekranı */
+        #loader { position: fixed; inset: 0; background: #1e1e1e; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
-<body onload="App.init()">
+<body>
 
-    <div id="start-screen">
-        <h1 style="font-size: 50px; margin-bottom: 5px; text-shadow: 0 3px 5px rgba(0,0,0,0.2);">LunX Studio</h1>
-        <p>Ultimate AI Physics Engine (Baseplate 1000x1000)</p>
-        <div style="display:flex; margin-top:20px;">
-            <div class="template-card" onclick="World.load('baseplate')"><div style="font-size:40px">⬜</div><br>Baseplate</div>
-            <div class="template-card" onclick="World.load('grass')"><div style="font-size:40px">🌳</div><br>Grass</div>
-            <div class="template-card" onclick="World.load('city')"><div style="font-size:40px">🏙️</div><br>City (AI)</div>
-        </div>
+    <div id="loader">
+        <h1 style="color:var(--primary); font-size:40px;">LunX 3D</h1>
+        <p>Engine Loading...</p>
     </div>
 
-    <div id="x-menu-btn" onclick="UI.toggleXMenu()">✕</div>
-    <div id="x-menu">
-        <h3 style="margin-top:0; color:var(--primary)">Ayarlar</h3>
-        <div style="margin-bottom:10px">
-            <label style="font-size:12px">UI Ölçeği (Paneller)</label>
-            <input type="range" min="200" max="400" step="10" value="250" oninput="document.documentElement.style.setProperty('--panel-width', this.value + 'px')" style="width:100%">
-        </div>
-        <button onclick="Game.toggleLock()" id="btn-lock" style="width:100%; padding:8px; background:#eee; border:none; margin-bottom:5px; cursor:pointer;">🔒 Tuş Kilidi: Açık</button>
-        <button onclick="Game.stop()" style="width:100%; padding:8px; background:var(--primary); color:white; border:none; cursor:pointer;">Oyundan Çık</button>
-    </div>
+    <div id="viewport"></div>
 
-    <div id="top-bar">
-        <div style="width:40px"></div>
-        <div class="tab-btn active" onclick="UI.setTab('home')">Home</div>
-        <div class="tab-btn" onclick="UI.setTab('model')">Model</div>
-        <div class="tab-btn" onclick="UI.setTab('view')">View</div>
-    </div>
-
-    <div id="ribbon">
-        <div id="tab-home" class="ribbon-tab active">
-            <div class="tool-btn active" onclick="Editor.setMode('select')"><span class="tool-icon">👆</span>Seç</div>
-            <div class="tool-btn" onclick="Editor.setMode('translate')"><span class="tool-icon">↔️</span>Taşı</div>
-            <div class="tool-btn" onclick="Editor.setMode('rotate')"><span class="tool-icon">🔄</span>Döndür</div>
-            <div class="tool-btn" onclick="Editor.setMode('scale')"><span class="tool-icon">⤡</span>Boyut</div>
-            <div style="width:1px; height:50px; background:#ddd; margin:0 5px;"></div>
-            <div class="tool-btn" onclick="Editor.duplicate()"><span class="tool-icon">📄</span>Duplike</div>
-            <div class="tool-btn" onclick="Editor.delete()"><span class="tool-icon">🗑️</span>Sil</div>
-            <div class="tool-btn" onclick="Editor.anchor()"><span class="tool-icon">⚓</span>Çapa</div>
-            <div class="tool-btn" onclick="Editor.weld()"><span class="tool-icon">🔗</span>Kaynak</div>
-            <div class="tool-btn" onclick="UI.toggleAI()"><span class="tool-icon">🤖</span>LunAIX</div>
-            <div class="tool-btn" onclick="Game.play()" style="margin-left:auto; color:green; font-weight:bold; border:2px solid green;"><span class="tool-icon">▶</span>OYNAT</div>
-        </div>
-        <div id="tab-model" class="ribbon-tab">
-            <div class="tool-btn" onclick="World.addPart('box')"><span class="tool-icon">📦</span>Part</div>
-            <div class="tool-btn" onclick="World.addPart('sphere')"><span class="tool-icon">⚪</span>Part</div>
-            <div class="tool-btn" onclick="World.addPart('cylinder')"><span class="tool-icon">🛢️</span>Part</div>
-            <div class="tool-btn" onclick="Editor.group()"><span class="tool-icon">🗂️</span>Grup</div>
-            <div class="tool-btn" onclick="Editor.ungroup()"><span class="tool-icon">📂</span>Çöz</div>
-            <div style="width:1px; height:50px; background:#ddd; margin:0 5px;"></div>
-            <div class="tool-btn" onclick="Editor.material('Wood')"><span class="tool-icon">🪵</span>Odun</div>
-            <div class="tool-btn" onclick="Editor.material('Metal')"><span class="tool-icon">⚙️</span>Metal</div>
-            <div class="tool-btn" onclick="Editor.material('Glass')"><span class="tool-icon">🪟</span>Cam</div>
-            <div class="tool-btn" onclick="Editor.material('Water')"><span class="tool-icon">🌊</span>Su</div>
-        </div>
-        <div id="tab-view" class="ribbon-tab">
-            <div class="tool-btn" onclick="UI.toggleToolbox()"><span class="tool-icon">🧰</span>Toolbox</div>
-            <div class="tool-btn" onclick="UI.toggleProperties()"><span class="tool-icon">📝</span>Özellikler</div>
-            <div class="tool-btn" onclick="Editor.toggleGrid()"><span class="tool-icon">🌐</span>Grid</div>
-            <div class="tool-btn" onclick="Editor.toggleWireframe()"><span class="tool-icon">🕸️</span>Wireframe</div>
-            <div class="tool-btn" onclick="Editor.view('Front')"><span class="tool-icon">⬇️</span>Ön</div>
-            <div class="tool-btn" onclick="Editor.view('Top')"><span class="tool-icon">⬆️</span>Üst</div>
-            <div class="tool-btn" onclick="Editor.view('Iso')"><span class="tool-icon">📐</span>İzometrik</div>
-        </div>
-    </div>
-
-    <div id="layout">
-        <div id="toolbox">
-            <div class="tb-header">Toolbox <span onclick="UI.toggleToolbox()" style="cursor:pointer">✕</span></div>
-            <div class="tb-nav">
-                <div class="tb-nav-item active" onclick="UI.setToolTab('parts')">Bloklar</div>
-                <div class="tb-nav-item" onclick="UI.setToolTab('builds')">Builds</div>
-                <div class="tb-nav-item" onclick="UI.setToolTab('items')">Eşyalar</div>
-                <div class="tb-nav-item" onclick="UI.setToolTab('fx')">Efekt</div>
+    <div id="ui-layer">
+        <div id="top-bar">
+            <div style="font-weight:bold; font-size:18px;">LunX Studio</div>
+            <div>
+                <button class="btn" onclick="World.addBlock()">+ Blok Ekle</button>
+                <button class="btn" onclick="World.clear()">Temizle</button>
             </div>
-            <div id="t-parts" class="tb-content active"></div>
-            <div id="t-builds" class="tb-content"></div>
-            <div id="t-items" class="tb-content"></div>
-            <div id="t-fx" class="tb-content"></div>
-        </div>
-
-        <div id="viewport">
-            <div id="game-hud">
-                <div id="damage-overlay"></div>
-                <div id="health-bar-container"><div id="health-fill"></div></div>
-                <div id="stop-btn" onclick="Game.stop()">⏹ DURDUR</div>
-                
-                <div id="joystick-zone" class="control-el"><div id="stick"></div></div>
-                <div id="jump-btn" class="control-el">⬆</div>
-                <div id="hotbar"></div>
+            <div>
+                <button id="btn-play" class="btn" style="background:#4CAF50;" onclick="Game.start()">▶ OYNA</button>
+                <button id="btn-stop" class="btn btn-stop" onclick="Game.stop()">⏹ DURDUR</button>
             </div>
         </div>
 
-        <div id="properties">
-            <div class="tb-header">Özellikler</div>
-            <div id="prop-content"><div style="text-align:center; color:#999; margin-top:20px">Seçim Yok</div></div>
-        </div>
-    </div>
-
-    <div id="ai-modal">
-        <div style="background:var(--primary); color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between;">
-            <span>LunAIX Mimar</span> <span style="cursor:pointer" onclick="UI.toggleAI()">✕</span>
-        </div>
-        <div id="ai-chat" style="flex:1; overflow-y:auto; padding:10px; background:#fafafa;">
-            <div class="ai-msg bot">Merhaba! "Menteşeli Kapı yap", "Süper Araba yap" veya "100 Bloklu Köprü kur" diyebilirsin.</div>
-        </div>
-        <div style="padding:10px; display:flex; border-top:1px solid #eee;">
-            <input type="text" id="ai-input" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="Ne yapayım?" onkeydown="if(event.key==='Enter')AI.send()">
-            <button onclick="AI.send()" style="margin-left:5px; padding:0 15px; background:var(--primary); color:white; border:none; border-radius:4px;">→</button>
+        <div id="game-hud">
+            <div class="control-hint">
+                <b>Kontroller:</b><br>
+                W, A, S, D : Hareket<br>
+                SPACE : Zıpla<br>
+                Mouse : Kamera
+            </div>
         </div>
     </div>
 
     <script>
-        /* --- CORE ENGINE --- */
+        // --- ANA YAPILANDIRMA ---
         const App = {
-            scene: null, camera: null, renderer: null, controls: null, transform: null,
-            world: null, clock: new THREE.Clock(), objects: [], bots: [], particles: [], constraints: [],
+            scene: null, camera: null, renderer: null,
+            world: null, // Fizik Dünyası
+            clock: new THREE.Clock(),
+            objects: [], // Görsel Nesneler ve Fizik Body Eşleşmeleri
+            raycaster: new THREE.Raycaster(),
+            mouse: new THREE.Vector2(),
             
             init: () => {
-                const vp = document.getElementById('viewport');
+                // 1. Three.js Sahne Kurulumu
                 App.scene = new THREE.Scene();
-                App.scene.background = new THREE.Color(0x87CEEB);
-                App.scene.fog = new THREE.Fog(0x87CEEB, 400, 1000); // Increased fog for large world
+                App.scene.background = new THREE.Color(0x87CEEB); // Gökyüzü Mavisi
+                App.scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
-                App.camera = new THREE.PerspectiveCamera(60, vp.clientWidth/vp.clientHeight, 0.1, 2000);
-                App.camera.position.set(15, 20, 15);
+                // Kamera
+                App.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                App.camera.position.set(0, 10, 15);
 
-                App.renderer = new THREE.WebGLRenderer({antialias:true});
-                App.renderer.setSize(vp.clientWidth, vp.clientHeight);
+                // Renderer
+                App.renderer = new THREE.WebGLRenderer({ antialias: true });
+                App.renderer.setSize(window.innerWidth, window.innerHeight);
                 App.renderer.shadowMap.enabled = true;
-                App.renderer.domElement.style.touchAction = 'none';
-                vp.appendChild(App.renderer.domElement);
+                document.getElementById('viewport').appendChild(App.renderer.domElement);
 
-                const light = new THREE.DirectionalLight(0xffffff, 1);
-                light.position.set(200, 300, 200); light.castShadow=true;
-                light.shadow.camera.left = light.shadow.camera.bottom = -500;
-                light.shadow.camera.right = light.shadow.camera.top = 500;
-                light.shadow.mapSize.width=4096; light.shadow.mapSize.height=4096;
-                App.scene.add(light); App.scene.add(new THREE.AmbientLight(0x666));
+                // Işıklandırma
+                const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+                App.scene.add(ambient);
+                const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+                sun.position.set(50, 100, 50);
+                sun.castShadow = true;
+                sun.shadow.camera.left = -50; sun.shadow.camera.right = 50;
+                sun.shadow.camera.top = 50; sun.shadow.camera.bottom = -50;
+                sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
+                App.scene.add(sun);
 
+                // 2. Cannon.js Fizik Kurulumu
+                App.world = new CANNON.World();
+                App.world.gravity.set(0, -20, 0); // Yerçekimi
+                App.world.broadphase = new CANNON.NaiveBroadphase();
+                App.world.defaultContactMaterial.friction = 0.3;
+
+                // Zemin Materyali (Kayganlığı önlemek için)
+                const groundMat = new CANNON.Material();
+                const playerMat = new CANNON.Material();
+                const contactMat = new CANNON.ContactMaterial(groundMat, playerMat, { friction: 0.0, restitution: 0.0 });
+                App.world.addContactMaterial(contactMat);
+
+                // 3. Kontroller (Editör Kamerası)
                 App.controls = new THREE.OrbitControls(App.camera, App.renderer.domElement);
                 App.controls.enableDamping = true;
-                App.controls.dampingFactor = 0.05;
-                App.controls.target.set(0, 0, 0);
 
-                App.transform = new THREE.TransformControls(App.camera, App.renderer.domElement);
-                App.transform.addEventListener('dragging-changed', e => App.controls.enabled = !e.value);
-                App.transform.addEventListener('objectChange', () => Editor.syncPhysics());
-                App.scene.add(App.transform);
-
-                App.world = new CANNON.World();
-                App.world.gravity.set(0, -30, 0);
-                App.world.broadphase = new CANNON.NaiveBroadphase();
-                App.world.defaultContactMaterial.friction = 0.0;
-
+                // Olay Dinleyicileri
                 window.addEventListener('resize', App.resize);
+                document.getElementById('loader').style.display = 'none';
 
-                UI.initToolbox();
-                Game.initControls();
+                // Dünyayı Oluştur
+                World.init();
+
+                // Döngüyü Başlat
                 App.loop();
             },
 
             resize: () => {
-                const vp = document.getElementById('viewport');
-                if(!vp) return;
-                App.camera.aspect = vp.clientWidth / vp.clientHeight;
-                App.renderer.setSize(vp.clientWidth, vp.clientHeight);
+                App.camera.aspect = window.innerWidth / window.innerHeight;
                 App.camera.updateProjectionMatrix();
+                App.renderer.setSize(window.innerWidth, window.innerHeight);
             },
 
             loop: () => {
                 requestAnimationFrame(App.loop);
-                const dt = App.clock.getDelta();
-                const time = Date.now() * 0.001;
+                const dt = Math.min(App.clock.getDelta(), 0.1);
 
-                if(Game.active) {
-                    App.world.step(1/60, dt, 3);
-                    Game.update(dt);
-                } else {
-                    App.controls.update();
-                }
+                // Fizik Güncellemesi
+                App.world.step(1/60, dt, 3);
 
-                // Sync Objects (Physics -> Visual)
-                App.objects.forEach(o => {
-                    if(o.userData.body && !o.userData.anchored) {
-                        o.position.copy(o.userData.body.position);
-                        o.quaternion.copy(o.userData.body.quaternion);
+                // Nesne Senkronizasyonu (Fizik -> Görsel)
+                App.objects.forEach(obj => {
+                    if (obj.body) {
+                        obj.mesh.position.copy(obj.body.position);
+                        obj.mesh.quaternion.copy(obj.body.quaternion);
+                        
+                        // Karakterin görseli fizik silindirinin merkezinden aşağıda olmalı (ayaklar yere bassın)
+                        if (obj.isPlayer) {
+                            obj.mesh.position.y -= 1.5; 
+                        }
                     }
-                    if(o.userData.isWater) o.material.opacity = 0.6 + Math.sin(time*2+o.position.x)*0.05;
                 });
 
-                App.bots.forEach(b => b.update(dt));
-                App.particles.forEach((p, i) => { if(!p.update(dt)) App.particles.splice(i, 1); });
+                // Oyun Mantığı
+                if (Game.active) Game.update();
+                else App.controls.update();
 
                 App.renderer.render(App.scene, App.camera);
             }
         };
 
-        /* --- WORLD MANAGEMENT --- */
+        // --- DÜNYA YÖNETİMİ ---
         const World = {
-            load: (type) => {
-                document.getElementById('start-screen').style.display = 'none';
-                [...App.objects, ...App.bots, ...App.constraints].forEach(o => { 
-                    App.scene.remove(o.mesh || o); 
-                    if(o.userData?.body) App.world.removeBody(o.userData.body);
-                    if(o.body) App.world.removeBody(o.body);
-                    if(o instanceof CANNON.Constraint) App.world.removeConstraint(o);
-                });
-                App.objects=[]; App.bots=[]; App.constraints=[];
-
-                const col = type==='grass' || type==='city' ? 0x4CAF50 : 0x9E9E9E;
-                World.addPart('box', {scale:[1000, 2, 1000], color:col, anchored:true, pos:new THREE.Vector3(0,-1,0), name:"Zemin"});
-                World.addPart('cylinder', {scale:[6, 0.5, 6], color:0x888888, anchored:true, pos:new THREE.Vector3(0,0.25,0), name:"Spawn"});
-
-                if(type==='city') AI.build('complex_city');
-            },
-
-            addPart: (type, cfg={}) => {
-                const scale = cfg.scale || [4,4,4];
-                let geo, shape;
-                
-                if(type==='sphere') { geo=new THREE.SphereGeometry(1,32,32); shape=new CANNON.Sphere(Math.max(...scale)/2); }
-                else if(type==='cylinder') { geo=new THREE.CylinderGeometry(1,1,1,32); shape=new CANNON.Cylinder(scale[0]/2,scale[0]/2,scale[1],12); }
-                else { geo=new THREE.BoxGeometry(1,1,1); shape=new CANNON.Box(new CANNON.Vec3(scale[0]/2,scale[1]/2,scale[2]/2)); }
-
-                const mat = new THREE.MeshStandardMaterial({color:cfg.color||0xeeeeee, transparent:!!cfg.opacity, opacity:cfg.opacity||1, roughness:0.5});
+            init: () => {
+                // Zemin (Baseplate)
+                const geo = new THREE.BoxGeometry(100, 1, 100);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x4CAF50 });
                 const mesh = new THREE.Mesh(geo, mat);
-                mesh.scale.set(scale[0],scale[1],scale[2]);
-                mesh.position.copy(cfg.pos || new THREE.Vector3(0,5,0));
-                if(cfg.rot) mesh.rotation.copy(cfg.rot);
-                mesh.castShadow = true; mesh.receiveShadow = true;
-                mesh.name = cfg.name || "Part";
-
-                const body = new CANNON.Body({mass: cfg.anchored?0:10, shape:shape});
-                body.position.copy(mesh.position);
-                body.quaternion.copy(mesh.quaternion);
-                
-                mesh.userData = { body:body, anchored:cfg.anchored!==undefined?cfg.anchored:false, isWater:cfg.isWater, script:cfg.script||"", isItem:cfg.isItem, type:type, color:cfg.color||0xeeeeee };
-                body.userData = { mesh:mesh };
-
-                if(cfg.isWater) body.collisionFilterGroup = 0;
-
-                App.world.addBody(body);
+                mesh.position.y = -0.5;
+                mesh.receiveShadow = true;
                 App.scene.add(mesh);
-                App.objects.push(mesh);
-                return mesh;
-            }
-        };
 
-        /* --- CHARACTER & GAMEPLAY --- */
-        const Game = {
-            active: false, player: null, body: null, health: 100, locked: true,
-            inputs: {x:0, y:0}, limbs: {}, inventory: new Array(10).fill(null), equipped: null,
-            
-            play: () => {
-                Game.active = true; Editor.select(null);
-                document.getElementById('ribbon').style.display='none';
-                document.getElementById('properties').style.display='none';
-                document.getElementById('toolbox').style.display='none';
-                document.getElementById('game-hud').style.display='block';
-                
-                // 360 Camera Setup
-                App.controls.enabled = true; // Re-enable OrbitControls
-                App.controls.minDistance = 5; App.controls.maxDistance = 30;
-                App.controls.enablePan = false;
+                // Zemin Fiziği
+                const shape = new CANNON.Box(new CANNON.Vec3(50, 0.5, 50));
+                const body = new CANNON.Body({ mass: 0, shape: shape });
+                body.position.copy(mesh.position);
+                App.world.addBody(body);
 
-                Game.spawnCharacter();
-                Game.health=100; Game.updateHP(); Game.updateHotbar();
+                // Birkaç Test Kutusu
+                World.addBlock(0, 5, -10);
+                World.addBlock(2, 5, -10);
+                World.addBlock(1, 8, -10);
             },
 
-            // ... (Game.stop and spawnCharacter from previous version, slightly modified)
-            spawnCharacter: () => {
-                const rig = new THREE.Group(); rig.name = "Player";
-                const matY = new THREE.MeshStandardMaterial({color:0xFBC02D});
-                const matB = new THREE.MeshStandardMaterial({color:0x1565C0});
-                const matG = new THREE.MeshStandardMaterial({color:0x4CAF50});
+            addBlock: (x=0, y=10, z=0) => {
+                // Görsel
+                const size = 2;
+                const geo = new THREE.BoxGeometry(size, size, size);
+                const mat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.castShadow = true; mesh.receiveShadow = true;
+                App.scene.add(mesh);
 
-                // R6 PARTS
-                const head = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), matY); head.position.y=4.5;
-                const torso = new THREE.Mesh(new THREE.BoxGeometry(2,2,1), matB); torso.position.y=3;
-                const la = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), matY); la.position.set(-1.5, 3, 0); la.name="LA";
-                const ra = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), matY); ra.position.set(1.5, 3, 0); ra.name="RA";
-                const ll = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), matG); ll.position.set(-0.5, 1, 0); ll.name="LL";
-                const rl = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), matG); rl.position.set(0.5, 1, 0); rl.name="RL";
-                rig.add(head,torso,la,ra,ll,rl);
+                // Fizik
+                const shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
+                const body = new CANNON.Body({ mass: 5, shape: shape });
+                body.position.set(Math.random()*10-5 + x, y, Math.random()*10-5 + z);
+                App.world.addBody(body);
 
-                let pos = new THREE.Vector3(0,5,0);
-                const sp = App.scene.getObjectByName("Spawn");
-                if(sp) pos.copy(sp.position).add(new THREE.Vector3(0,3,0));
-
-                // ANTI-CLIP PHYSICS: Total R6 height is 6 (1+2+2+1). Collider height should be 6.
-                // The center of the body is at y=0. R6 rig base is at y=0.
-                const body = new CANNON.Body({mass:60, fixedRotation:true});
-                // Height 6 (from 0 to 6). Center is at Y=3.
-                // Visual Rig is set up so feet are at y=0 when placed at body.position.
-                body.addShape(new CANNON.Cylinder(1.2, 1.2, 6, 12), new CANNON.Vec3(0,3,0)); // Offset center 
-                body.position.copy(pos);
-                body.linearDamping = 0.9;
-                
-                App.world.addBody(body); App.scene.add(rig);
-                Game.player=rig; Game.body=body; Game.limbs={la,ra,ll,rl};
+                App.objects.push({ mesh: mesh, body: body });
             },
 
-            update: (dt) => {
-                if(!Game.player) return;
-                
-                // 1. Sync Physics & Anti-Clip Visual Adjustment
-                // The visual rig's lowest point (feet) is at Y=0 relative to the rig's origin.
-                // The physics body's lowest point is at Y=0 relative to the body's origin.
-                // This ensures feet stay on the ground (no clipping).
-                Game.player.position.copy(Game.body.position);
-
-                // 2. 360 Camera Update
-                App.controls.target.copy(Game.body.position);
-                // App.controls.update() is called in App.loop
-
-                // 3. Movement (Relative to Camera)
-                const speed = 25;
-                const moveZ = -Game.inputs.y; // Forward/Backward
-                const moveX = Game.inputs.x;  // Strafe Left/Right
-
-                if(Math.abs(moveX) > 0.1 || Math.abs(moveZ) > 0.1) {
-                    const camAngle = App.camera.rotation.y;
-                    const rotation = new THREE.Euler(0, camAngle, 0, 'YXZ');
-                    const moveVector = new THREE.Vector3(moveX, 0, moveZ).applyEuler(rotation);
-
-                    Game.body.velocity.x = moveVector.x * speed;
-                    Game.body.velocity.z = moveVector.z * speed;
-                    
-                    // Rotate character to face movement direction
-                    Game.player.rotation.y = Math.atan2(moveVector.x, moveVector.z);
-                    
-                    // Animation
-                    const t = Date.now()*0.015;
-                    Game.limbs.la.rotation.x = Math.sin(t); Game.limbs.ra.rotation.x = Game.equipped?1.5:-Math.sin(t);
-                    Game.limbs.ll.rotation.x = -Math.sin(t); Game.limbs.rl.rotation.x = Math.sin(t);
-                } else {
-                    Game.body.velocity.x *= 0.5; Game.body.velocity.z *= 0.5;
-                    Game.limbs.la.rotation.x = 0; Game.limbs.ra.rotation.x = Game.equipped?1.5:0;
-                }
-            },
-            
-            // ... (Existing Game functions like initControls, takeDamage, etc.)
-            updateHotbar: () => {
-                const h = document.getElementById('hotbar'); h.innerHTML='';
-                Game.inventory.forEach((i, idx) => {
-                    const s = document.createElement('div'); 
-                    s.className = 'slot ' + (Game.equipped===i?'selected':'');
-                    s.innerText = i ? i.charAt(0) : (idx + 1);
-                    s.onclick = () => { 
-                        if(i) Game.equipped = Game.equipped===i ? null : i; 
-                        Game.updateHotbar(); 
-                    };
-                    h.appendChild(s);
+            clear: () => {
+                // Sadece dinamik objeleri sil
+                App.objects.forEach(obj => {
+                    App.scene.remove(obj.mesh);
+                    App.world.removeBody(obj.body);
                 });
+                App.objects = [];
             }
         };
 
-        /* --- LUNAIX AI (ADVANCED) --- */
-        const AI = {
-            // ... (msg, send functions)
-            process: (t) => {
-                const l = t.toLowerCase(); let r="";
-                if(l.includes('villa') || l.includes('ev')) { AI.build('house'); r="Lüks villa inşa edildi."; }
-                else if(l.includes('kapı') || l.includes('menteşe')) { AI.build('hinged_door'); r="Menteşeli kapı inşa edildi. İt ve aç!"; }
-                else if(l.includes('araba')) { AI.build('car'); r="Tam fizik motorlu araba eklendi. (Basit model)"; }
-                else if(l.includes('köprü') || l.includes('100')) { AI.build('hundred_block_bridge'); r="İnternetten bakarak yüzlerce bloktan oluşan devasa köprü inşa edildi."; }
-                else { r="Bunu tam anlamadım. Menteşe, Araba, Köprü gibi anahtar kelimeler kullan."; }
-                AI.msg(r,'bot');
-            },
-            
-            build: (type) => {
-                const p = new THREE.Vector3(Math.random()*20-10, 0, Math.random()*20-10);
-                if(type === 'hinged_door') {
-                    const frame = World.addPart('box', {scale:[1, 10, 10], pos:p.clone().add(new THREE.Vector3(-6, 5, 0)), color:0x333, anchored:true, name:'Kapi_Cercevesi'});
-                    const door = World.addPart('box', {scale:[1, 9, 8], pos:p.clone().add(new THREE.Vector3(-4.5, 4.5, 0)), color:0x795548, anchored:false, name:'Kapi'});
+        // --- OYUN VE KARAKTER MANTIĞI ---
+        const Game = {
+            active: false,
+            player: null,
+            playerBody: null,
+            input: { w: false, a: false, s: false, d: false, space: false },
+            canJump: false,
 
-                    // Cannon.js Hinge Constraint
-                    const hingePoint = new CANNON.Vec3(-5.5, 4.5, 0);
-                    const axis = new CANNON.Vec3(0, 1, 0);
+            start: () => {
+                Game.active = true;
+                document.getElementById('btn-play').style.display = 'none';
+                document.getElementById('btn-stop').style.display = 'inline-block';
+                document.getElementById('game-hud').style.display = 'block';
 
-                    const hinge = new CANNON.HingeConstraint(
-                        frame.userData.body, 
-                        door.userData.body, 
-                        {
-                            pivotA: new CANNON.Vec3(-0.5, 0, 0), // Relative to Frame center
-                            axisA: axis,
-                            pivotB: new CANNON.Vec3(-1.0, 0, 0), // Relative to Door center
-                            axisB: axis,
-                            maxForce: 1e6
-                        }
-                    );
-                    App.world.addConstraint(hinge);
-                    App.constraints.push(hinge);
-                }
-                else if (type === 'hundred_block_bridge') {
-                    const startP = new THREE.Vector3(p.x, 0, p.z);
-                    World.addPart('box', {scale:[10, 10, 10], pos:startP.clone().add(new THREE.Vector3(0,5,0)), color:0xAAAAAA, anchored:true});
-                    let prev = World.addPart('box', {scale:[10, 1, 10], pos:startP.clone().add(new THREE.Vector3(10, 10, 0)), color:0xCCCCCC, anchored:false});
-                    
-                    for(let i = 1; i < 50; i++) {
-                        const currentP = startP.clone().add(new THREE.Vector3(10 + i * 10, 10, 0));
-                        const current = World.addPart('box', {scale:[10, 1, 10], pos:currentP, color:i%2==0?0xCCCCCC:0xBBBBBB, anchored:false});
-                        
-                        // PointToPointConstraint (Weld)
-                        const pivot = new CANNON.Vec3(currentP.x - 5, 10, 0); // Weld point
-                        const constraint = new CANNON.PointToPointConstraint(
-                            prev.userData.body, new CANNON.Vec3(5, 0, 0),
-                            current.userData.body, new CANNON.Vec3(-5, 0, 0)
-                        );
-                        App.world.addConstraint(constraint);
-                        App.constraints.push(constraint);
-                        prev = current;
-                    }
-                    World.addPart('box', {scale:[10, 10, 10], pos:startP.clone().add(new THREE.Vector3(500,5,0)), color:0xAAAAAA, anchored:true});
-                }
-                else if (type === 'car') {
-                    // Simplified Car Physics (Body and 4 spheres)
-                    const chassis = World.addPart('box', {scale:[6, 2, 10], pos:p.clone().add(new THREE.Vector3(0, 5, 0)), color:0x00BFA5, anchored:false, name:'Araba_Govde'});
-                    const wheelC = 0x333333;
-                    const r = 1;
-                    const w1 = World.addPart('sphere', {scale:[r*2,r*2,r*2], pos:p.clone().add(new THREE.Vector3(-3, 4, 4)), color:wheelC, anchored:false, name:'Wheel1'});
-                    const w2 = World.addPart('sphere', {scale:[r*2,r*2,r*2], pos:p.clone().add(new THREE.Vector3(3, 4, 4)), color:wheelC, anchored:false, name:'Wheel2'});
-                    const w3 = World.addPart('sphere', {scale:[r*2,r*2,r*2], pos:p.clone().add(new THREE.Vector3(-3, 4, -4)), color:wheelC, anchored:false, name:'Wheel3'});
-                    const w4 = World.addPart('sphere', {scale:[r*2,r*2,r*2], pos:p.clone().add(new THREE.Vector3(3, 4, -4)), color:wheelC, anchored:false, name:'Wheel4'});
+                // Orbit Kontrolleri Ayarla (Karakter Takibi İçin)
+                App.controls.enablePan = false;
+                App.controls.minDistance = 5;
+                App.controls.maxDistance = 20;
 
-                    // Add constraints to keep wheels attached (HingeConstraint simplified to Distance)
-                    const distC = (bodyA, bodyB, dist) => {
-                        const c = new CANNON.DistanceConstraint(bodyA, bodyB, dist);
-                        App.world.addConstraint(c); App.constraints.push(c);
-                    };
-                    distC(chassis.userData.body, w1.userData.body, 1);
-                    distC(chassis.userData.body, w2.userData.body, 1);
-                    distC(chassis.userData.body, w3.userData.body, 1);
-                    distC(chassis.userData.body, w4.userData.body, 1);
-                }
-            }
-            // ... (Other AI functions)
-        };
-
-        /* --- UI & EDITOR --- */
-        const UI = {
-            initToolbox: () => {
-                // ... (Previous toolbox setup)
-                const add = (id, items) => { /* ... existing function ... */ };
+                Game.spawnPlayer();
                 
-                // Redefining items to include 10 slots and car
-                add('items', [
-                    {n:'Kılıç', c:'#D32F2F', f:()=>World.addPart('box', {scale:[0.2,0.2,1.5], color:0xD32F2F, isItem:true, name:"Sword"})},
-                    {n:'Silah', c:'#607D8B', f:()=>World.addPart('box', {scale:[0.2,0.2,0.5], pos:new THREE.Vector3(1,5,0), color:0x607D8B, isItem:true, name:"Gun"})},
-                    {n:'İksir', c:'#9C27B0', f:()=>World.addPart('cylinder', {scale:[0.3,0.5,0.3], pos:new THREE.Vector3(2,5,0), color:0x9C27B0, isItem:true, name:"Potion"})},
-                    {n:'Anahtar', c:'#FFC107', f:()=>World.addPart('box', {scale:[0.1,0.5,0.1], pos:new THREE.Vector3(3,5,0), color:0xFFC107, isItem:true, name:"Key"})},
-                    {n:'Balta', c:'#795548', f:()=>World.addPart('box', {scale:[0.1,0.2,0.8], pos:new THREE.Vector3(4,5,0), color:0x795548, isItem:true, name:"Axe"})},
-                    {n:'Radyo', c:'#000000', f:()=>World.addPart('box', {scale:[0.5,0.5,0.5], pos:new THREE.Vector3(5,5,0), color:0x000000, isItem:true, name:"Radio"})},
-                    {n:'Çekiç', c:'#F44336', f:()=>World.addPart('box', {scale:[0.1,0.2,0.5], pos:new THREE.Vector3(6,5,0), color:0xF44336, isItem:true, name:"Hammer"})},
-                    {n:'Kalkan', c:'#2196F3', f:()=>World.addPart('box', {scale:[1,1,0.2], pos:new THREE.Vector3(7,5,0), color:0x2196F3, isItem:true, name:"Shield"})},
-                    {n:'Para', c:'#FFEB3B', f:()=>World.addPart('cylinder', {scale:[0.2,0.05,0.2], pos:new THREE.Vector3(8,5,0), color:0xFFEB3B, isItem:true, name:"Coin"})},
-                    {n:'Mermi', c:'#BDBDBD', f:()=>World.addPart('sphere', {scale:[0.1,0.1,0.1], pos:new THREE.Vector3(9,5,0), color:0xBDBDBD, isItem:true, name:"Bullet"})},
-                ]);
+                // Klavye Dinleyicileri
+                document.addEventListener('keydown', Game.onKey);
+                document.addEventListener('keyup', Game.onKey);
             },
-            // ... (Other UI functions)
+
+            stop: () => {
+                Game.active = false;
+                document.getElementById('btn-play').style.display = 'inline-block';
+                document.getElementById('btn-stop').style.display = 'none';
+                document.getElementById('game-hud').style.display = 'none';
+
+                // Karakteri Sil
+                if(Game.player) {
+                    App.scene.remove(Game.player);
+                    App.world.removeBody(Game.playerBody);
+                    // Arrayden temizle
+                    App.objects = App.objects.filter(o => o.mesh !== Game.player);
+                }
+
+                // Kontrolleri Eski Haline Getir
+                App.controls.target.set(0,0,0);
+                App.controls.enablePan = true;
+
+                document.removeEventListener('keydown', Game.onKey);
+                document.removeEventListener('keyup', Game.onKey);
+            },
+
+            spawnPlayer: () => {
+                // --- ROBLOX NOOB GÖRSELİ ---
+                const playerGroup = new THREE.Group();
+
+                // Renkler
+                const yellow = new THREE.MeshStandardMaterial({ color: 0xFBC02D }); // Kafa, Kollar
+                const blue = new THREE.MeshStandardMaterial({ color: 0x0D47A1 }); // Gövde
+                const green = new THREE.MeshStandardMaterial({ color: 0x4CAF50 }); // Bacaklar
+
+                // 1. Gövde (2x2x1)
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), blue);
+                torso.position.y = 2; // Yerden yükseklik (Ayaklar 0'da ise)
+                playerGroup.add(torso);
+
+                // 2. Kafa (1.2x1.2x1.2)
+                const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), yellow);
+                head.position.y = 3.6;
+                playerGroup.add(head);
+
+                // 3. Kollar (1x2x1)
+                const armGeo = new THREE.BoxGeometry(1, 2, 1);
+                const lArm = new THREE.Mesh(armGeo, yellow); lArm.position.set(-1.5, 2, 0);
+                const rArm = new THREE.Mesh(armGeo, yellow); rArm.position.set(1.5, 2, 0);
+                playerGroup.add(lArm); playerGroup.add(rArm);
+
+                // 4. Bacaklar (1x2x1)
+                const legGeo = new THREE.BoxGeometry(0.9, 2, 1);
+                const lLeg = new THREE.Mesh(legGeo, green); lLeg.position.set(-0.5, 0, 0); // Y merkezi 1, ama görsel grubu 0'a oturtacağız
+                const rLeg = new THREE.Mesh(legGeo, green); rLeg.position.set(0.5, 0, 0);
+                // Not: Bacakların merkezi (0,0,0) noktasına göre ayarlandı.
+                // Aslında kutu geometrileri merkezden çizilir. O yüzden Y pozisyonlarını yukarı almamız lazım.
+                lLeg.position.y = 0; // Bu bacağın ortası. Ayaklar -1'de kalır.
+                rLeg.position.y = 0;
+                // Düzeltme: Tüm grup Y ekseninde 1 birim yukarıda tanımlanmalı ki ayak tabanı 0 olsun.
+                // Basitleştirmek için: Fizik body merkezi (0,1.5,0) olacak (yükseklik 3).
+                
+                // Grubun içindeki parçaların yerlerini düzeltiyoruz:
+                // Body Center (Physics) yerden 1.5 yukarıda olacak.
+                // Görselin merkezi de physics body'nin merkezine oturacak.
+                // R6 Toplam Boy ~ 5-6 birim.
+                
+                lLeg.position.y = 1; rLeg.position.y = 1; // Ayaklar 0'da.
+                torso.position.y = 3; 
+                lArm.position.y = 3; rArm.position.y = 3;
+                head.position.y = 4.6;
+
+                playerGroup.castShadow = true;
+                App.scene.add(playerGroup);
+                Game.player = playerGroup;
+
+                // --- FİZİK (HITBOX) ---
+                // Kapsül yerine Silindir kullanıyoruz (R6 karakterler gibi)
+                // Yarıçap: 1, Yükseklik: 3 (Gövde + Bacak)
+                const shape = new CANNON.Cylinder(1, 1, 4, 12);
+                const body = new CANNON.Body({
+                    mass: 60, // Karakter ağırlığı
+                    fixedRotation: true, // Top gibi yuvarlanmasını engeller
+                    position: new CANNON.Vec3(0, 5, 0),
+                    shape: shape,
+                    linearDamping: 0.9 // Sürtünme simülasyonu (durması için)
+                });
+                
+                // Silindir CannonJS'de farklı eksende olabilir, döndürmemiz gerekebilir.
+                // CannonJS silindirleri varsayılan olarak diktir.
+                
+                App.world.addBody(body);
+                Game.playerBody = body;
+
+                // Listeye ekle ki loop döngüsü pozisyonunu güncellesin
+                App.objects.push({ mesh: Game.player, body: Game.playerBody, isPlayer: true });
+            },
+
+            onKey: (e) => {
+                const s = e.type === 'keydown';
+                switch(e.key.toLowerCase()) {
+                    case 'w': Game.input.w = s; break;
+                    case 's': Game.input.s = s; break;
+                    case 'a': Game.input.a = s; break;
+                    case 'd': Game.input.d = s; break;
+                    case ' ': Game.input.space = s; break;
+                }
+            },
+
+            update: () => {
+                if (!Game.playerBody) return;
+
+                // 1. Hareket Vektörünü Hesapla
+                const speed = 15;
+                const inputVector = new THREE.Vector3(0, 0, 0);
+                
+                if (Game.input.w) inputVector.z -= 1;
+                if (Game.input.s) inputVector.z += 1;
+                if (Game.input.a) inputVector.x -= 1;
+                if (Game.input.d) inputVector.x += 1;
+
+                // 2. Kamera Açısına Göre Yönlendir
+                // Kameranın Y eksenindeki dönüşünü al
+                const angle = App.controls.getAzimuthalAngle();
+                inputVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
+
+                // 3. Fiziği Uygula
+                if (inputVector.length() > 0) {
+                    inputVector.normalize().multiplyScalar(speed);
+                    Game.playerBody.velocity.x = inputVector.x;
+                    Game.playerBody.velocity.z = inputVector.z;
+
+                    // Karakteri gittiği yöne döndür
+                    const targetRotation = Math.atan2(Game.playerBody.velocity.x, Game.playerBody.velocity.z);
+                    Game.player.rotation.y = targetRotation;
+                } else {
+                    // Tuşa basılmıyorsa dur
+                    Game.playerBody.velocity.x = 0;
+                    Game.playerBody.velocity.z = 0;
+                }
+
+                // 4. Zıplama (Basit Raycast Zemin Kontrolü)
+                // Karakterin merkezinden aşağıya ışın gönder
+                const rayStart = new CANNON.Vec3(Game.playerBody.position.x, Game.playerBody.position.y, Game.playerBody.position.z);
+                const rayEnd = new CANNON.Vec3(rayStart.x, rayStart.y - 2.1, rayStart.z); // 2 (yarı boy) + 0.1 tolerans
+                
+                // Raycast işlemi
+                const rayResult = new CANNON.RaycastResult();
+                // CannonJS World raycast biraz karmaşık olabilir, basit yükseklik kontrolü yapalım:
+                
+                // Zıplama Mantığı
+                if (Game.input.space && Math.abs(Game.playerBody.velocity.y) < 0.1) {
+                     Game.playerBody.velocity.y = 10; // Zıplama Gücü
+                }
+
+                // 5. Kamerayı Karaktere Odakla
+                App.controls.target.copy(Game.player.position);
+                App.controls.update();
+
+                // 6. Karakter Düştü mü? (Void kontrolü)
+                if (Game.playerBody.position.y < -20) {
+                    Game.playerBody.position.set(0, 10, 0);
+                    Game.playerBody.velocity.set(0,0,0);
+                }
+            }
         };
 
-        const Editor = {
-            // ... (setMode, select, etc. functions)
-            duplicate: () => { /* ... calls World.addPart with current object props ... */ },
-            anchor: () => { /* ... sets anchor property ... */ },
-            weld: () => { /* ... simplified weld (PointToPointConstraint) ... */ },
-            group: () => { /* ... simple group logic ... */ },
-            ungroup: () => { /* ... simple ungroup logic ... */ },
-            material: (mat) => { /* ... changes material color/properties ... */ },
-            view: (angle) => { /* ... sets camera position for standard views ... */ },
-            toggleGrid: () => { /* ... toggles a GridHelper ... */ },
-            toggleWireframe: () => { /* ... toggles wireframe property ... */ },
-        };
+        // Başlat
+        window.onload = App.init;
 
-        // --- STUB IMPLEMENTATIONS FOR RIBBON TOOLS (SIMPLIFIED FOR SINGLE FILE) ---
-        // (These functions would be fleshed out in a real engine)
-        Editor.duplicate = () => { if(Editor.object) World.addPart(Editor.object.userData.type, { scale:[Editor.object.scale.x, Editor.object.scale.y, Editor.object.scale.z], pos:Editor.object.position.clone().add(new THREE.Vector3(5,0,0)), color:Editor.object.userData.color, anchored:Editor.object.userData.anchored }); };
-        Editor.anchor = () => { if(Editor.object) Editor.setAnchored(true); };
-        Editor.weld = () => { alert("Kaynaklama (Weld) aktif. İki blok seçilmelidir."); };
-        Editor.group = () => { alert("Seçili nesneler gruplandı."); };
-        Editor.ungroup = () => { alert("Seçili grup çözüldü."); };
-        Editor.material = (mat) => { if(Editor.object) Editor.object.material.color.set(mat==='Wood' ? 0x795548 : mat==='Metal' ? 0x9E9E9E : mat==='Glass' ? 0x64B5F6 : 0xEEEEEE); };
-        Editor.toggleGrid = () => { 
-            let grid = App.scene.getObjectByName('GridHelper');
-            if(!grid) { grid = new THREE.GridHelper(1000, 100); grid.name='GridHelper'; App.scene.add(grid); }
-            else App.scene.remove(grid);
-        };
-        Editor.view = (angle) => { 
-            if(angle==='Top') App.camera.position.set(0, 50, 0); 
-            else if(angle==='Front') App.camera.position.set(0, 20, 50); 
-            else App.camera.position.set(20, 20, 20); 
-            App.controls.target.set(0,0,0); 
-        };
-        Editor.toggleWireframe = () => { if(Editor.object) Editor.object.material.wireframe = !Editor.object.material.wireframe; };
-        // --- END STUB IMPLEMENTATIONS ---
-
-        // (The rest of the boilerplate functions from the previous version are assumed to be present for brevity, e.g., Game.stop, Game.takeDamage, AI.msg, UI.setTab, etc.)
     </script>
 </body>
 </html>
