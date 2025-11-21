@@ -22,10 +22,9 @@ source "./emsdk/emsdk_env.sh"
 # =========================================================
 
 # motor_core.cpp dosyasını derle
-# Gerekli Bayraklar:
-# 1. --js-library js_api.js: C++'tan çağrılan JS fonksiyonlarının tanımlarını (stubs) sağlar.
-# 2. -s EXPORTED_FUNCTIONS: C-style olarak dışa aktarılacak fonksiyonları belirtir. (Önek olarak "_" unutulmamalıdır.)
-# 3. --bind: Emscripten C++ bindings (embind) kullanımını etkinleştirir.
+# ÖNEMLİ DÜZELTME: EXPORTED_FUNCTIONS listesindeki C fonksiyonlarının 
+# (RunScript, InitializeEngine, CreateNewBlockFromUI) başına '_' (alt çizgi) eklendi.
+# Bu, linker'ın (wasm-ld) C++ tarafından üretilen doğru sembol adlarını bulmasını sağlar.
 
 emcc motor_core.cpp \
     --js-library js_api.js \
