@@ -2,7 +2,6 @@
 // Emscripten linker'ına tanıtır.
 mergeInto(LibraryManager.library, {
     // C++ kodu bir string işaretçisi (messagePtr) gönderir.
-    // JS tarafında bu işaretçiyi C-string'e çevirip kullanacağız.
     JS_LogOutput: function (messagePtr) {},
     
     // JS_AddHierarchyItem(const char* name, int id)
