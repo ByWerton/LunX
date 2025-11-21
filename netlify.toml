@@ -1,9 +1,7 @@
 [build]
-​Netlify artık emcc'yi doğrudan çağırmak yerine, kurulumu yapan build.sh betiğini çalıştıracak.
-​command = "bash build.sh"
+command = "bash build.sh"
 publish = "."
 ​[build.environment]
-​Bunlar hala Netlify'a bağlam (context) sağlamak için iyi bir uygulamadır.
-​EMSDK_VERSION = "latest"
+EMSDK_VERSION = "latest"
 CC = "emcc"
 CXX = "em++
