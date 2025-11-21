@@ -4,6 +4,9 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <memory>        // unique_ptr için
+#include <cstring>       // strcpy için
+#include <cstdlib>       // malloc, rand, RAND_MAX için
 #include <emscripten/bind.h>
 
 using namespace emscripten;
@@ -86,6 +89,8 @@ struct Entity {
     // Yardımcı fonksiyon: Component'e kolay erişim
     template<typename T>
     T* GetComponent(const string& typeName) {
+        // Kontrol için safety check
+        if (components.find(typeName) == components.end()) return nullptr;
         return static_cast<T*>(components[typeName].get());
     }
 };
@@ -98,7 +103,10 @@ class LunXEngine {
 private:
     map<int, unique_ptr<Entity>> entities;
     int nextEntityId = 1;
-    LunXEngine() {}
+    LunXEngine() { 
+        // Motor başlatıldığında rastgele tohumla (seed)
+        srand(time(0));
+    }
     ~LunXEngine() = default;
 
 public:
@@ -117,19 +125,25 @@ public:
 
         // Başlangıç Konumlarını Rastgele Ayarla
         TransformComponent* t = newEntity->GetComponent<TransformComponent>("Transform");
-        t->x = (float)(rand() % 10) - 5;
-        t->y = (float)(rand() % 5) + 1;
-        t->z = (float)(rand() % 10) - 5;
+        if (t) {
+            t->x = (float)(rand() % 10) - 5;
+            t->y = (float)(rand() % 5) + 1;
+            t->z = (float)(rand() % 10) - 5;
+        }
         
         // Renkleri Rastgele Ayarla
         MeshRendererComponent* m = newEntity->GetComponent<MeshRendererComponent>("MeshRenderer");
-        m->r = (float)rand() / RAND_MAX;
-        m->g = (float)rand() / RAND_MAX;
-        m->b = (float)rand() / RAND_MAX;
+        if (m) {
+            m->r = (float)rand() / RAND_MAX;
+            m->g = (float)rand() / RAND_MAX;
+            m->b = (float)rand() / RAND_MAX;
+        }
         
         // JS Arayüzünü Güncelle
-        JS_AddHierarchyItem(newEntity->name.c_str(), id);
-        JS_Spawn3DObject(id, t->x, t->y, t->z, m->r, m->g, m->b);
+        if (t && m) {
+            JS_AddHierarchyItem(newEntity->name.c_str(), id);
+            JS_Spawn3DObject(id, t->x, t->y, t->z, m->r, m->g, m->b);
+        }
 
         string logMessage = "[GameWorld]: Yeni varlık oluşturuldu: " + newEntity->name;
         JS_LogOutput(logMessage.c_str());
@@ -175,6 +189,7 @@ public:
             } else if (componentType == "MeshRenderer") {
                 MeshRendererComponent* m = static_cast<MeshRendererComponent*>(comp);
                 m->set_property(propName, propValue);
+                // Renk güncellemelerini işlemek için (Gelişmiş bir motorda burada 3D rengi de güncelleriz)
             }
             
             string log = "[C++]: " + entity->name + " varlığının " + componentType + "." + propName + " özelliği " + propValue + " olarak güncellendi.";
@@ -233,7 +248,9 @@ char* GetEntityProperties(int id) {
     string jsonString = LunXEngine::Get().GetEntityProperties(id);
     // JSON dizesini JS'ye geri göndermek için dinamik olarak ayır
     char* result = (char*)malloc(jsonString.length() + 1);
-    strcpy(result, jsonString.c_str());
+    if (result) {
+        strcpy(result, jsonString.c_str());
+    }
     return result;
 }
 
@@ -244,13 +261,15 @@ void SetEntityProperty(int id, const char* compType, const char* propName, const
 
 
 // ==========================================================
-// Emscripten Bağlantı Noktaları (Gereklidir)
+// Emscripten Bağlantı Noktaları (KRİTİK DÜZELTME BURADA)
 // ==========================================================
 
 EMSCRIPTEN_BINDINGS(lunx_module) {
-    function("InitializeEngine", &InitializeEngine);
-    function("RunScript", &RunScript);
-    function("CreateNewBlockFromUI", &CreateNewBlockFromUI);
-    function("GetEntityProperties", &GetEntityProperties, allow_raw_pointer<char>());
-    function("SetEntityProperty", &SetEntityProperty);
+    // std::function ile karışmaması için açıkça 'emscripten::function' kullanıldı.
+    emscripten::function("InitializeEngine", &InitializeEngine);
+    emscripten::function("RunScript", &RunScript);
+    emscripten::function("CreateNewBlockFromUI", &CreateNewBlockFromUI);
+    // allow_raw_pointer, C++'tan ayrılmış belleği JS'ye aktarırken gereklidir.
+    emscripten::function("GetEntityProperties", &GetEntityProperties, allow_raw_pointer<char>());
+    emscripten::function("SetEntityProperty", &SetEntityProperty);
 }
