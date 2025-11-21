@@ -1,7 +1,7 @@
 [build]
 command = "bash build.sh"
 publish = "."
-​[build.environment]
+[build.environment]
 EMSDK_VERSION = "latest"
 CC = "emcc"
 CXX = "em++"
