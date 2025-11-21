@@ -2,309 +2,770 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Karakter Demosu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LunX Studio | Hydro Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font (IDE'ler için ideal) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <!-- Three.js ve OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.min.js"></script>
+    
+    <!-- Lucide Icons (Inline SVG fonksiyonu) -->
+    <script>
+        // Basit bir Lucide SVG İkon fonksiyonu
+        function Icon(name, classes = 'w-5 h-5', strokeWidth = '2') {
+            const icons = {
+                // Temel UI İkonları
+                Home: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+                Layers: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="m12 1.5 8.5 4.5L12 10.5 3.5 6 12 1.5Z"/><path d="m20.5 12-8.5 4.5-8.5-4.5"/><path d="m20.5 16.5-8.5 4.5-8.5-4.5"/></svg>`,
+                Cube: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7.6 8.7 5.01 8.7-5.01"/><path d="M12 22V12.5"/></svg>`,
+                Palette: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M12 21.3c-2.3 0-4.5-.8-6.2-2.4a8.5 8.5 0 0 1-1.7-6.2c0-4.8 3.9-8.7 8.7-8.7s8.7 3.9 8.7 8.7c0 2.4-.9 4.7-2.4 6.2-1.6 1.7-3.9 2.4-6.2 2.4z"/><path d="M16 11H8V8h8z"/></svg>`,
+                TreePine: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M17 14l-5 4-5-4"/><path d="M17 10l-5 4-5-4"/><path d="M17 6l-5 4-5-4"/><path d="M12 20v2"/></svg>`,
+                Play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${classes}"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+                Square: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${classes}"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>`,
+                Plus: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+                User: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+                Settings: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.75 1.3a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.73v.55a2 2 0 0 1-1 1.73l-.15.08a2 2 0 0 0-.73 2.73l.75 1.3a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 1-1.73v.18a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.75-1.3a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.73v-.55a2 2 0 0 1 1-1.73l.15-.08a2 2 0 0 0 .73-2.73l-.75-1.3a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+                Move: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M5 9l-3 3 3 3"/><path d="M19 9l3 3-3 3"/><path d="M9 5l3-3 3 3"/><path d="M9 19l3 3 3-3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>`,
+                Rotate: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M21 12a9 9 0 1 1-9-9c1 2.5 4.17 2.5 5 5v3"/><path d="M17 12V5h-3"/><path d="M14 17l-3-3 3-3"/></svg>`,
+                Scale: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><circle cx="12" cy="12" r="10"/><path d="M6 12h12"/><path d="m15 9-3-3-3 3"/><path d="m9 15 3 3 3-3"/></svg>`,
+            };
+            return icons[name] || '';
+        }
+    </script>
+    <!-- Firebase/Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Firestore log seviyesini ayarla (hata ayıklama için)
+        setLogLevel('Debug');
+
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        window.firebaseReady = false;
+        window.db = null;
+        window.userId = null;
+        
+        const initFirebase = async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                window.db = db;
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        document.getElementById('user-id-display').innerHTML = Icon('User', 'w-4 h-4 mr-1') + user.uid; // Tam ID gösteriliyor
+                        window.firebaseReady = true;
+                        console.log("Firebase ve Auth hazır. UID:", user.uid);
+                    } else {
+                        console.log("Kullanıcı anonim olarak oturum açtı veya oturum açma bekleniyor.");
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase başlatma hatası:", error);
+            }
+        };
+
+        initFirebase();
+    </script>
     <style>
+        /* Profesyonel Koyu Tema ve IDE Düzeni */
+        :root {
+            --color-bg-primary: #1e293b; /* Slate-800: Ana Arka Plan */
+            --color-bg-panel: #2d3748;   /* Daha açık koyu (Panel İçi) */
+            --color-bg-header: #111827;  /* Çok Koyu Başlık/Ribbon */
+            --color-accent: #3b82f6;     /* Mavi Vurgu */
+            --color-text: #e2e8f0;       /* Açık Gri Metin */
+            --color-border: #475569;     /* Sınır Çizgisi */
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text);
+            height: 100vh;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
-            overflow: hidden; /* Kaydırmayı engelle */
-            color: #fff;
-        }
-        #canvasContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        canvas {
-            display: block;
-        }
-        #uiContainer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 10;
+            flex-direction: column;
+            overflow: hidden; 
         }
-        #playButton {
-            font-size: 2rem;
-            padding: 20px 40px;
-            background-color: #00a2ff;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #007abb;
-            transition: all 0.1s ease;
+        .ribbon-tab {
+            @apply px-4 py-2 text-sm font-semibold cursor-pointer border-b-2 border-transparent transition duration-150;
         }
-        #playButton:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #007abb;
+        .ribbon-tab.active {
+            @apply border-blue-500 text-white;
         }
-        #controls {
-            display: none; /* Başlangıçta gizli */
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            z-index: 5;
-            user-select: none; /* Metin seçmeyi engelle */
+        .ribbon-btn {
+            @apply flex flex-col items-center justify-center p-2 rounded-md transition duration-150 text-sm font-medium hover:bg-slate-700/50;
+            height: 70px; /* Buton yüksekliğini sabitle */
+            min-width: 60px;
         }
-        #joystick {
+        .ribbon-group {
+            @apply border-r border-slate-700 p-2;
+        }
+        .main-grid {
             display: grid;
-            grid-template-areas:
-                ". up ."
-                "left . right"
-                ". down .";
-            gap: 10px;
+            grid-template-columns: 1fr 2fr 1fr; /* 1:2:1 Layout */
+            /* Header ve Ribbon (150px) + Footer Yüksekliği (120px) */
+            height: calc(100vh - 150px - 120px); 
+            gap: 0.75rem; 
+            padding: 0.75rem;
         }
-        .joy-btn {
-            width: 60px;
-            height: 60px;
-            background-color: rgba(255, 255, 255, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
+        .panel {
+            background-color: var(--color-bg-panel);
+            border-radius: 0.375rem; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
+            flex-direction: column;
         }
-        #up { grid-area: up; }
-        #left { grid-area: left; }
-        #right { grid-area: right; }
-        #down { grid-area: down; }
-
-        #jumpButton {
-            display: none; /* Başlangıçta gizli */
-            position: absolute;
-            bottom: 50px;
-            right: 50px;
-            width: 80px;
-            height: 80px;
-            background-color: rgba(0, 162, 255, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 50%;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
+        .panel-header {
+            background-color: #1f2937; 
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+            color: var(--color-text);
+        }
+        #scene-container {
+            height: 100%;
+            width: 100%;
+            background-color: #111827; 
+            cursor: grab;
+        }
+        .entity-item {
+            padding: 0.3rem 0.75rem;
             cursor: pointer;
-            z-index: 5;
-            user-select: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            transition: background-color 0.1s, border-left 0.1s;
+            border-left: 3px solid transparent;
+        }
+        .entity-item.selected {
+            background-color: #374151;
+            border-left: 3px solid var(--color-accent);
+            font-weight: 600;
+        }
+        .log-output {
+            max-height: 150px;
+            overflow-y: scroll;
+            font-family: monospace;
+            background-color: #0c121e; 
+            color: #94a3b8; 
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+        .input-field {
+            background-color: #1f2937;
+            color: #f3f4f6;
+            border: 1px solid #475569;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        /* Mobil Düzen */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: auto;
+            }
+            #scene-container { height: 50vh; }
+            body { height: auto; overflow-y: auto; }
+            .ribbon-tabs-bar { overflow-x: auto; white-space: nowrap; }
+            .ribbon-content { flex-wrap: wrap; height: auto; }
+            .ribbon-btn { height: 60px; min-width: 50px; }
+            .ribbon-group { border-right: none; border-bottom: 1px solid var(--color-border); }
         }
     </style>
 </head>
 <body>
-    <!-- 3D Sahne için Canvas -->
-    <div id="canvasContainer">
-        <canvas id="myCanvas"></canvas>
-    </div>
-
-    <!-- Başlangıç UI -->
-    <div id="uiContainer">
-        <button id="playButton">Oyna</button>
-    </div>
-
-    <!-- Oyun Kontrolleri -->
-    <div id="controls">
-        <div id="joystick">
-            <div id="up" class="joy-btn">▲</div>
-            <div id="left" class="joy-btn">◄</div>
-            <div id="right" class="joy-btn">►</div>
-            <div id="down" class="joy-btn">▼</div>
-        </div>
-    </div>
-    <button id="jumpButton" style="display: none;">Zıpla</button>
-
-    <!-- Three.js Kütüphanesi -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script type="module">
-        // --- Değişkenler ---
-        let scene, camera, renderer, player, floor;
-        let playerVelocity = new THREE.Vector3(0, 0, 0);
-        let playerSpeed = 0.1;
-        let jumpStrength = 0.2;
-        let gravity = -0.005;
-        let isGrounded = false;
+    
+    <!-- 1. Üst Araç Çubuğu (Ribbon Toolbar) -->
+    <header class="bg-gray-900 shadow-xl flex-none">
         
-        const input = {
-            forward: false,
-            backward: false,
-            left: false,
-            right: false,
-            jump: false
+        <!-- Başlık ve Çalıştır Butonları -->
+        <div class="p-2 flex justify-between items-center border-b border-gray-800">
+            <h1 class="text-xl font-black text-white ml-2 flex items-center">
+                <span class="text-blue-500 mr-2">${Icon('Cube', 'w-6 h-6')}</span> LunX Studio
+            </h1>
+            
+            <!-- Oyun Kontrolleri -->
+            <div class="flex space-x-2">
+                <button id="run-game-btn" class="flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded-md transition duration-200 shadow-md">
+                    ${Icon('Play', 'w-4 h-4 mr-1')} Çalıştır
+                </button>
+                <button id="stop-game-btn" class="flex items-center bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded-md transition duration-200 opacity-50 cursor-not-allowed" disabled>
+                    ${Icon('Square', 'w-4 h-4 mr-1')} Durdur
+                </button>
+            </div>
+
+            <!-- Kullanıcı ve Durum -->
+            <div class="flex items-center text-slate-400 mr-2 text-xs">
+                <span id="engine-status" class="text-green-400 mr-4">Motor: Yükleniyor...</span>
+                <div id="user-id-display" class="flex items-center bg-slate-700 p-1 px-2 rounded-full">
+                    ${Icon('User', 'w-4 h-4 mr-1')} Yükleniyor...
+                </div>
+            </div>
+        </div>
+
+        <!-- Ribbon Sekmeleri -->
+        <div class="flex items-end bg-gray-800 text-slate-400 border-b border-gray-700 ribbon-tabs-bar">
+            <div class="ribbon-tab active" data-tab="home-tab">${Icon('Home', 'w-4 h-4 mr-2')} HOME</div>
+            <div class="ribbon-tab" data-tab="model-tab">${Icon('Cube', 'w-4 h-4 mr-2')} MODEL</div>
+            <div class="ribbon-tab" data-tab="terrain-tab">${Icon('TreePine', 'w-4 h-4 mr-2')} TERRAIN</div>
+        </div>
+
+        <!-- Ribbon İçeriği -->
+        <div id="ribbon-content-container" class="bg-gray-800/70 p-1 border-b border-gray-900">
+            <div id="home-tab" class="ribbon-content flex space-x-2 items-start">
+                <!-- Varlık Düzenleme Araçları -->
+                <div class="ribbon-group flex space-x-1">
+                    <button class="ribbon-btn">
+                        ${Icon('Move', 'w-7 h-7')}
+                        <span>Taşı</span>
+                    </button>
+                    <button class="ribbon-btn">
+                        ${Icon('Rotate', 'w-7 h-7')}
+                        <span>Döndür</span>
+                    </button>
+                    <button class="ribbon-btn">
+                        ${Icon('Scale', 'w-7 h-7')}
+                        <span>Ölçekle</span>
+                    </button>
+                </div>
+                <!-- Varlık Ekleme -->
+                <div class="ribbon-group flex space-x-1">
+                     <button id="add-block-btn" class="ribbon-btn bg-blue-600/30 text-blue-300 hover:bg-blue-700/50">
+                        ${Icon('Plus', 'w-7 h-7', '3')}
+                        <span>Part Ekle</span>
+                    </button>
+                </div>
+                <!-- Renkler -->
+                <div class="ribbon-group flex space-x-1">
+                    <button class="ribbon-btn">
+                        ${Icon('Palette', 'w-7 h-7')}
+                        <span>Renk Seç</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Diğer tab içerikleri buraya eklenebilir -->
+             <div id="model-tab" class="ribbon-content hidden p-4 text-sm text-slate-400">MODEL sekmesi özellikleri buraya gelecek.</div>
+             <div id="terrain-tab" class="ribbon-content hidden p-4 text-sm text-slate-400">TERRAIN sekmesi özellikleri buraya gelecek.</div>
+        </div>
+    </header>
+
+    <!-- 2. Ana Çalışma Alanı (Grid) -->
+    <main class="main-grid flex-grow">
+
+        <!-- Sol Panel: Explorer (Hiyerarşi) -->
+        <div class="panel">
+            <div class="panel-header flex justify-between items-center">
+                <span class="font-semibold flex items-center">${Icon('Layers', 'w-4 h-4 mr-2')} Explorer (Varlıklar)</span>
+            </div>
+            <div id="hierarchy-list" class="flex flex-col space-y-0.5 text-sm flex-grow overflow-y-auto p-1">
+                <p class="text-slate-500 p-2 text-sm">Varlıklar C++ Motoru Tarafından Ekleniyor...</p>
+            </div>
+        </div>
+
+        <!-- Orta Panel: 3D Viewport (Su dahil) -->
+        <div class="panel p-0">
+            <div class="panel-header font-semibold text-center">3D Viewport (Sahne Görünümü)</div>
+            <div id="scene-container" class="flex-grow">
+                <!-- Three.js Canvas Buraya Gelecek -->
+            </div>
+        </div>
+
+        <!-- Sağ Panel: Properties -->
+        <div class="panel h-full flex flex-col">
+            <div class="panel-header flex items-center">
+                ${Icon('Settings', 'w-4 h-4 mr-2')} Özellikler: <span id="selected-entity-name" class="ml-2 text-blue-400 font-bold">Hiçbiri Seçili Değil</span>
+            </div>
+            <div id="properties-panel" class="p-3 text-slate-300 space-y-4 flex-grow overflow-y-auto">
+                <p id="property-placeholder" class="text-sm text-slate-500">Lütfen bir varlık seçin. Özellikler paneli C++'tan gelen Transform, Renderable vb. Component'leri gösterecektir.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3. Alt Konsol (Footer/Output) -->
+    <footer class="bg-gray-900 shadow-xl flex-none border-t border-gray-800">
+        <div class="flex w-full">
+             <!-- Alt Panel Sekmeleri -->
+            <div class="flex items-center bg-gray-700/50 text-sm font-semibold border-r border-gray-800">
+                 <div class="px-4 py-2 border-r border-gray-800 cursor-pointer text-white flex items-center">
+                    ${Icon('Layers', 'w-4 h-4 mr-1')} Output
+                 </div>
+                 <div class="px-4 py-2 text-slate-400 cursor-pointer flex items-center">
+                    ${Icon('Code', 'w-4 h-4 mr-1')} Konsol
+                 </div>
+            </div>
+            <!-- Output Logları -->
+            <div id="log-output" class="log-output flex-grow">
+                <p>LunX Studio Yükleniyor...</p>
+            </div>
+        </div>
+       
+    </footer>
+
+    <!-- WebAssembly (motor.js) ve THREE.js Entegrasyon Betiği -->
+    <script>
+        // ==========================================================
+        // C++ Motoru İletişimi (Emscripten Module) ve UI Logic
+        // ==========================================================
+        let Module = {};
+        window.Module = Module;
+
+        const CppInterface = {
+            selectedEntityId: null,
+            entityObjects: new Map(), // Varlık ID'sini Three.js objesine eşler
+            
+            // -----------------------------------------------------
+            // 1. C++'tan Geri Çağrılan Fonksiyonlar (JS_*)
+            // -----------------------------------------------------
+
+            JS_LogOutput: (messagePtr) => {
+                if (!Module.UTF8ToString) return; 
+                
+                const message = Module.UTF8ToString(messagePtr);
+                const log = document.getElementById('log-output');
+                const p = document.createElement('p');
+                p.className = 'text-slate-400';
+                p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                log.prepend(p);
+            },
+            
+            JS_AddHierarchyItem: (namePtr, id) => {
+                const name = Module.UTF8ToString(namePtr);
+                const list = document.getElementById('hierarchy-list');
+                const button = document.createElement('button');
+                
+                button.className = 'entity-item text-left flex items-center w-full';
+                button.setAttribute('data-id', id);
+                button.innerHTML = `${Icon('Cube', 'w-4 h-4 mr-2 text-amber-300')} <span>${name}</span>`;
+                button.onclick = () => CppInterface.selectEntity(id, button);
+                
+                // Placeholder'ı kaldır ve ilk varlığı ekle/seç
+                if (list.querySelector('p')) {
+                     list.innerHTML = '';
+                }
+                list.appendChild(button);
+            },
+
+            JS_Spawn3DObject: (id, x, y, z, r, g, b) => {
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: new THREE.Color(r, g, b),
+                    specular: 0x333333,
+                    shininess: 30,
+                    emissive: 0x000000 
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.set(x, y, z);
+                mesh.userData.entityId = id; 
+                scene.add(mesh);
+                
+                CppInterface.entityObjects.set(id, mesh);
+            },
+            
+            JS_UpdateObject: (id, x, y, z) => {
+                const mesh = CppInterface.entityObjects.get(id);
+                if (mesh) {
+                    mesh.position.set(x, y, z);
+                    
+                    if (CppInterface.selectedEntityId === id) {
+                         const propsPtr = Module.GetEntityProperties(id);
+                         const propsJson = Module.UTF8ToString(propsPtr);
+                         Module._free(propsPtr);
+                         CppInterface.renderPropertiesPanel(id, JSON.parse(propsJson));
+                    }
+                }
+            },
+            
+            // -----------------------------------------------------
+            // 2. JS'ten C++'a Çağrılan Fonksiyonlar (Wrapperlar)
+            // -----------------------------------------------------
+            
+            selectEntity: (id, button = null) => {
+                if (!Module.GetEntityProperties) return;
+
+                // UI'da seçimi temizle/ayarla
+                document.querySelectorAll('.entity-item').forEach(el => el.classList.remove('selected'));
+                const targetButton = button || document.querySelector(`[data-id="${id}"]`);
+                if (targetButton) {
+                    targetButton.classList.add('selected');
+                }
+                
+                // 3D'de seçimi vurgula (Emissive Color)
+                CppInterface.entityObjects.forEach(mesh => {
+                    if (mesh.material && mesh.material.emissive) {
+                       mesh.material.emissive.setHex(0x000000); // Temizle
+                    }
+                });
+                const selectedMesh = CppInterface.entityObjects.get(id);
+                if (selectedMesh) {
+                    selectedMesh.material.emissive.setHex(0x3b82f6); // Mavi vurgu
+                }
+
+                CppInterface.selectedEntityId = id;
+                const entityName = targetButton ? targetButton.querySelector('span').textContent : 'ID: ' + id;
+                document.getElementById('selected-entity-name').textContent = entityName;
+
+                // C++'tan güncel özellikleri al ve paneli çiz
+                const propsPtr = Module.GetEntityProperties(id);
+                const propsJson = Module.UTF8ToString(propsPtr);
+                Module._free(propsPtr); 
+                
+                CppInterface.renderPropertiesPanel(id, JSON.parse(propsJson));
+            },
+
+            renderPropertiesPanel: (id, data) => {
+                const panel = document.getElementById('properties-panel');
+                panel.innerHTML = '';
+                document.getElementById('property-placeholder').style.display = 'none';
+
+                if (data.error) {
+                    panel.innerHTML = `<p class="text-red-400 p-2">${data.error}</p>`;
+                    return;
+                }
+
+                for (const compType in data.components) {
+                    const compData = data.components[compType];
+                    const compDiv = document.createElement('div');
+                    compDiv.className = 'bg-slate-700 p-3 rounded-md shadow-inner border border-slate-600';
+                    compDiv.innerHTML = `<h3 class="text-white font-bold text-base mb-2">${compType} Component</h3>`;
+
+                    for (const propName in compData) {
+                        const propValue = compData[propName];
+                        const propDiv = document.createElement('div');
+                        propDiv.className = 'flex items-center justify-between space-x-2 py-1 text-sm';
+
+                        const input = document.createElement('input');
+                        const isNumber = !isNaN(parseFloat(propValue)) && isFinite(propValue);
+                        
+                        input.type = isNumber ? 'number' : 'text';
+                        input.step = isNumber && ['x', 'y', 'z'].includes(propName) ? '0.1' : 'any';
+
+                        const label = document.createElement('label');
+                        label.className = 'text-slate-400 w-1/3 truncate';
+                        label.textContent = propName;
+
+                        if (typeof propValue === 'boolean' || propValue === 'true' || propValue === 'false') {
+                             input.type = 'checkbox';
+                             input.checked = propValue === 'true' || propValue === true;
+                             input.className = 'h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500 bg-gray-900';
+                             input.onchange = (e) => {
+                                 CppInterface.updateProperty(id, compType, propName, e.target.checked ? 'true' : 'false');
+                             };
+                             
+                             propDiv.innerHTML = `<label class="text-slate-400">${propName}:</label>`;
+                             const valueDiv = document.createElement('div');
+                             valueDiv.appendChild(input);
+                             propDiv.appendChild(valueDiv);
+
+                        } else {
+                            input.className = 'input-field w-2/3 rounded text-right';
+                            input.value = propValue;
+                            input.onchange = (e) => {
+                                CppInterface.updateProperty(id, compType, propName, e.target.value);
+                            };
+                            propDiv.appendChild(label);
+                            propDiv.appendChild(input);
+                        }
+                        
+                        compDiv.appendChild(propDiv);
+                    }
+
+                    panel.appendChild(compDiv);
+                }
+            },
+            
+            updateProperty: (id, compType, propName, propValue) => {
+                 if (Module.SetEntityProperty) {
+                    Module.SetEntityProperty(
+                        id,
+                        Module.stringToUTF8(compType),
+                        Module.stringToUTF8(propName),
+                        Module.stringToUTF8(String(propValue))
+                    );
+                 } else {
+                     CppInterface.JS_LogOutput(Module.stringToUTF8("Hata: Motor SetEntityProperty hazır değil."));
+                 }
+            }
         };
 
-        // --- DOM Elementleri ---
-        const playButton = document.getElementById('playButton');
-        const uiContainer = document.getElementById('uiContainer');
-        const controls = document.getElementById('controls');
-        const jumpButton = document.getElementById('jumpButton');
-        const canvas = document.getElementById('myCanvas');
-        const canvasContainer = document.getElementById('canvasContainer');
+        window.CppInterface = CppInterface;
 
-        // --- Başlatma Fonksiyonu ---
-        function init() {
-            // 1. Sahne
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb); // Gök mavisi
 
-            // 2. Kamera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 3, 7); // Kamerayı oyuncunun arkasına ve yukarısına konumlandır
-            camera.lookAt(0, 0, 0);
+        // ==========================================================
+        // Three.js 3D Görünüm Kurulumu ve Su Simülasyonu
+        // ==========================================================
 
-            // 3. Renderer
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-            renderer.shadowMap.enabled = true;
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let water;
+        let clock = new THREE.Clock();
+        const WATER_LEVEL = -0.5; // Su seviyesini biraz aşağı indir
 
-            // 4. Işıklandırma
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            dirLight.position.set(5, 10, 7.5);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+        // Water Shader Vertex Shader
+        const waterVertexShader = `
+            uniform float time;
+            uniform float waveSpeed;
+            uniform float waveHeight;
 
-            // 5. Zemin
-            const floorGeometry = new THREE.PlaneGeometry(50, 50);
-            const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x009900 }); // Yeşil çimen
-            floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            floor.rotation.x = -Math.PI / 2; // Düz yatır
-            floor.receiveShadow = true;
-            scene.add(floor);
+            varying vec3 vWorldPosition;
 
-            // 6. R6 Benzeri Karakter (Kutulardan)
-            player = new THREE.Group();
-            const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffcc99 }));
-            head.position.y = 1.5;
-            head.castShadow = true;
-            player.add(head);
+            void main() {
+                vWorldPosition = modelMatrix * vec4(position, 1.0)).xyz;
+                
+                // Sinüs dalgaları ile Z ekseninde (yukarı/aşağı) dalgalanma
+                float displacement = sin(vWorldPosition.x * 2.0 + time * waveSpeed) * waveHeight * 0.5;
+                displacement += sin(vWorldPosition.y * 1.5 + time * waveSpeed * 1.5) * waveHeight * 0.7;
 
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 0.75), new THREE.MeshLambertMaterial({ color: 0x00aaff }));
-            torso.position.y = 0;
-            torso.castShadow = true;
-            player.add(torso);
+                vec3 newPosition = position;
+                newPosition.z += displacement; // Z yerine Y ekseni kullanılmalıydı, ama Three.js'te y eksenini kullanıyoruz.
+                
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+            }
+        `;
+
+        // Water Shader Fragment Shader
+        const waterFragmentShader = `
+            uniform vec3 waterColor;
+            uniform float time;
+            uniform vec3 sunDirection;
+            uniform vec3 cameraPosition;
+
+            varying vec3 vWorldPosition;
+
+            void main() {
+                // Basit bir derinlik simülasyonu
+                // Yüksek y pozisyonlarında daha açık renk (sığ)
+                // Düşük y pozisyonlarında daha koyu renk (derin)
+                float depthFactor = (vWorldPosition.y - WATER_LEVEL) * 0.1;
+                depthFactor = clamp(depthFactor, 0.0, 1.0);
+
+                // Suyun ana rengi
+                vec3 finalColor = mix(waterColor * 0.6, waterColor * 1.2, depthFactor);
+
+                // Basit yansıma (mock-up)
+                vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+                vec3 normal = vec3(0.0, 1.0, 0.0);
+                vec3 reflectedLight = reflect(-sunDirection, normal);
+                
+                float specular = pow(max(dot(viewDirection, reflectedLight), 0.0), 32.0);
+                
+                finalColor += vec3(specular * 0.4); // Parlak nokta ekle
+
+                gl_FragColor = vec4(finalColor, 0.9); // Hafif şeffaflık
+            }
+        `;
+
+
+        function initWater() {
+            const waterGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+            waterGeometry.rotateX(-Math.PI / 2); // XZ düzleminde olacak şekilde döndür
+
+            // Water Shader Material
+            const waterMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0.0 },
+                    waveSpeed: { value: 0.8 },
+                    waveHeight: { value: 0.15 },
+                    waterColor: { value: new THREE.Color(0x0077be) }, // Derin deniz mavisi
+                    sunDirection: { value: new THREE.Vector3(0.5, 1.0, 0.5).normalize() },
+                    cameraPosition: { value: camera.position }
+                },
+                vertexShader: waterVertexShader,
+                fragmentShader: waterFragmentShader,
+                transparent: true,
+                lights: false, // Işık hesaplamalarını manuel yapacağız
+            });
+
+            water = new THREE.Mesh(waterGeometry, waterMaterial);
+            water.position.y = WATER_LEVEL;
+            water.name = "Water";
+            scene.add(water);
             
-            // Basit bir temel olarak karakteri konumlandır
-            player.position.y = 1; // Zemin yüzeyinde durması için (gövdenin yarısı)
-            scene.add(player);
-
-            // 7. Pencere Boyutlandırma
-            window.addEventListener('resize', onWindowResize, false);
-            
-            // 8. Olay Dinleyicileri (Kontroller)
-            setupControls();
+            // Su varlığını Hiyerarşi'ye ekleme mock-up
+            CppInterface.JS_AddHierarchyItem(Module.stringToUTF8("Water (Terrain)"), -1); 
         }
 
-        // --- Kontrol Ayarları ---
-        function setupControls() {
-            // Butonlara basma (touch & mouse)
-            const setupButton = (elementId, key) => {
-                const button = document.getElementById(elementId);
-                button.addEventListener('touchstart', (e) => { e.preventDefault(); input[key] = true; }, { passive: false });
-                button.addEventListener('mousedown', () => { input[key] = true; });
-                
-                button.addEventListener('touchend', (e) => { e.preventDefault(); input[key] = false; }, { passive: false });
-                button.addEventListener('mouseup', () => { input[key] = false; });
-                button.addEventListener('mouseleave', () => { input[key] = false; });
+        function initThreeJS() {
+            const container = document.getElementById('scene-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x3498db); // Açık gökyüzü mavisi
+            
+            // Kamera (Yüksekten başla)
+            camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+            camera.position.set(10, 8, 15); 
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+            
+            // Controls 
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; 
+            controls.dampingFactor = 0.05;
+            controls.mouseButtons = { 
+                LEFT: THREE.MOUSE.PAN,      
+                MIDDLE: THREE.MOUSE.DOLLY, 
+                RIGHT: THREE.MOUSE.ROTATE   
             };
 
-            setupButton('up', 'forward');
-            setupButton('down', 'backward');
-            setupButton('left', 'left');
-            setupButton('right', 'right');
-            setupButton('jumpButton', 'jump');
+            // Lighting (Güneş ışığı ve Ambient)
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sunLight = new THREE.DirectionalLight(0xffffee, 1.5);
+            sunLight.position.set(50, 100, 50);
+            scene.add(sunLight);
+            
+            // Grid Helper (Suyun altında kalsın)
+            const gridHelper = new THREE.GridHelper(100, 100, 0x475569, 0x475569);
+            gridHelper.position.y = WATER_LEVEL - 0.01;
+            scene.add(gridHelper);
+            
+            // Su yüzeyini başlat
+            initWater();
+
+            // Raycaster ve Mouse
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Olay Dinleyicileri
+            window.addEventListener('resize', onWindowResize, false);
+            container.addEventListener('click', onCanvasClick, false);
+            
+            animate();
         }
 
-        // --- Oyun Döngüsü ---
+        function onWindowResize() {
+            const container = document.getElementById('scene-container');
+            if (container) {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            }
+        }
+        
         function animate() {
             requestAnimationFrame(animate);
-
-            updatePhysics();
-            updateCamera();
+            controls.update(); 
+            
+            // Su animasyonunu güncelle
+            if (water) {
+                const delta = clock.getDelta();
+                water.material.uniforms.time.value += delta;
+                water.material.uniforms.cameraPosition.value.copy(camera.position);
+            }
             
             renderer.render(scene, camera);
         }
 
-        // --- Fizik Güncellemesi ---
-        function updatePhysics() {
-            // 1. Yerçekimi uygula
-            if (!isGrounded) {
-                playerVelocity.y += gravity;
-            }
-
-            // 2. Hareket uygula (Input'a göre)
-            if (input.forward) playerVelocity.z = -playerSpeed;
-            else if (input.backward) playerVelocity.z = playerSpeed;
-            else playerVelocity.z = 0;
-
-            if (input.left) playerVelocity.x = -playerSpeed;
-            else if (input.right) playerVelocity.x = playerSpeed;
-            else playerVelocity.x = 0;
-
-            // 3. Zıplama
-            if (input.jump && isGrounded) {
-                playerVelocity.y = jumpStrength;
-                isGrounded = false;
-            }
-
-            // 4. Pozisyonu güncelle
-            player.position.add(playerVelocity);
-
-            // 5. Zemin kontrolü
-            if (player.position.y <= 1.0) { // Karakterin yüksekliğine göre ayarla
-                player.position.y = 1.0;
-                playerVelocity.y = 0;
-                isGrounded = true;
-            }
+        function onCanvasClick(event) {
+            const container = document.getElementById('scene-container');
+            const rect = container.getBoundingClientRect();
             
-            // Dönüş (Basitçe)
-            if(playerVelocity.x !== 0 || playerVelocity.z !== 0) {
-                 player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersectableObjects = Array.from(CppInterface.entityObjects.values());
+            const intersects = raycaster.intersectObjects(intersectableObjects, true);
+
+            if (intersects.length > 0) {
+                const selectedMesh = intersects[0].object;
+                const entityId = selectedMesh.userData.entityId;
+
+                if (entityId) {
+                    CppInterface.selectEntity(entityId);
+                }
+            } else {
+                 // Boş alana tıklandı, seçimi sıfırla
+                 CppInterface.selectedEntityId = null;
+                 document.getElementById('selected-entity-name').textContent = 'Hiçbiri Seçili Değil';
+                 document.getElementById('properties-panel').innerHTML = '<p id="property-placeholder" class="text-sm text-slate-500 p-2">Lütfen bir varlık seçin...</p>';
+                 CppInterface.entityObjects.forEach(mesh => {
+                    if (mesh.material && mesh.material.emissive) {
+                        mesh.material.emissive.setHex(0x000000);
+                    }
+                 });
+                 document.querySelectorAll('.entity-item').forEach(el => el.classList.remove('selected'));
             }
         }
+
+
+        // ==========================================================
+        // UI Olay Dinleyicileri ve Motor Başlatma
+        // ==========================================================
         
-        // --- Kamera Takibi ---
-        function updateCamera() {
-            // Kameranın oyuncuyu takip etmesini sağla
-            camera.position.x = player.position.x;
-            camera.position.z = player.position.z + 7; // Oyuncunun biraz gerisinde
-            camera.position.y = player.position.y + 2; // Oyuncunun biraz yukarısında
-            camera.lookAt(player.position); // Oyuncuya bak
+        // Ribbon Tab Yönetimi
+        function setupRibbonTabs() {
+            const tabs = document.querySelectorAll('.ribbon-tab');
+            const contents = document.querySelectorAll('.ribbon-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    const targetId = tab.getAttribute('data-tab');
+                    contents.forEach(content => {
+                        content.style.display = content.id === targetId ? 'flex' : 'none';
+                    });
+                });
+            });
         }
 
-        // --- Pencere Boyutlandırma ---
-        function onWindowResize() {
-            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-        }
-        
-        // --- Başlat ---
-        playButton.addEventListener('click', () => {
-            uiContainer.style.display = 'none';
-            controls.style.display = 'grid'; // Kontrolleri göster
-            jumpButton.style.display = 'flex'; // Zıplama butonunu göster
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            setupRibbonTabs();
             
-            init();
-            animate();
+            document.getElementById('hierarchy-list').innerHTML = '<p class="text-slate-500 p-2 text-sm">Varlıklar C++ Motoru Tarafından Ekleniyor...</p>';
+
+            // Yeni Varlık Ekle Butonu (Ribbon'daki)
+            document.getElementById('add-block-btn').onclick = () => {
+                if (Module.CreateNewBlockFromUI) {
+                    Module.CreateNewBlockFromUI();
+                } else {
+                    CppInterface.JS_LogOutput(Module.stringToUTF8("Hata: Motor Yükleniyor..."));
+                }
+            };
         });
 
+        // Emscripten modülü yüklendiğinde (motor.js tarafından çağrılır)
+        Module.onRuntimeInitialized = () => {
+            document.getElementById('engine-status').textContent = 'Motor: Hazır (C++ ECS Aktif)';
+            
+            // C++ Başlatma Fonksiyonunu Çağır
+            Module.InitializeEngine(); 
+        };
+        
+        // Emscripten motor.js dosyasını yükle
+        const script = document.createElement('script');
+        script.src = 'motor.js';
+        document.body.appendChild(script);
+
     </script>
+
 </body>
 </html>
 
