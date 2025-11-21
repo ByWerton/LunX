@@ -1,10 +1,8 @@
 [build]
-​Build komutu: (Örneğin: 'npm run build')
-​command = "npm run build"
-​Yayınlanacak dizin (Örneğin: 'dist')
-​publish = "dist"
-​Tek sayfa uygulamaları için yönlendirme kuralı
-​[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
