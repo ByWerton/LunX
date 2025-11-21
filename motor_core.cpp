@@ -1,8 +1,11 @@
 #include <iostream>
+#include <string>
 #include <emscripten/emscripten.h>
 
 // ==========================================================
 // LUAU SCRIPTING KÖPRÜSÜ (Simülasyon)
+// Luau'yu Wasm ile derlerken gerçek Luau kütüphanesini kullanırız.
+// Bu simülasyon, kod yapısını göstermek içindir.
 // ==========================================================
 extern "C" {
     // Luau Sanal Makine tipleri ve fonksiyonları simülasyonu
@@ -14,6 +17,9 @@ extern "C" {
     void luaL_loadstring(lua_State* L, const char* s) {}
     void lua_close(lua_State* L) {}
     void lua_pushnumber(lua_State* L, double n) {}
+
+    // JavaScript'e çıktı göndermek için bir köprü fonksiyonu
+    extern void JS_LogOutput(const char* message);
 }
 
 class LunXEngine {
@@ -25,23 +31,26 @@ public:
 
     void InitLuau() {
         L_luau = luaL_newstate();
-        if (!L_luau) { std::cerr << "Luau VM HATA!" << std::endl; return; }
-        std::cout << "[C++]: Luau entegrasyonu tamamlandı. Motor hazır." << std::endl;
+        if (!L_luau) { 
+            JS_LogOutput("[C++ HATA]: Luau VM başlatılamadı!"); 
+            return; 
+        }
+        JS_LogOutput("[C++]: Luau entegrasyonu tamamlandı. Motor hazır.");
     }
 
     // Harici JavaScript/Wasm tarafından çağrılacak asıl fonksiyon.
     void RunLuauCode(const char* luau_code) {
-        std::cout << "[C++]: Harici Luau Betiği çalıştırılıyor..." << std::endl;
+        JS_LogOutput("[C++]: Luau Betiği çalıştırılıyor...");
         
         // Luau betiğini VM'ye yükle ve çalıştır
         luaL_loadstring(L_luau, luau_code);
         int result = lua_pcallk(L_luau, 0, 0, 0, 0, NULL);
         
         if (result != 0) {
-            // Hata durumunda (Gerçekte hata mesajını alıp JavaScript'e geri göndeririz)
-            std::cerr << "[C++ ERROR]: Luau Betiği Çalıştırılırken Hata Oluştu!" << std::endl;
+            // Hata durumunda (Gerçek uygulamada stack'ten hata mesajını alırdık)
+            JS_LogOutput("[C++ HATA]: Luau Betiği Çalıştırılırken Hata Oluştu!");
         } else {
-             std::cout << "[C++]: Luau Betiği başarıyla tamamlandı." << std::endl;
+             JS_LogOutput("[C++]: Luau Betiği başarıyla tamamlandı.");
         }
     }
 };
@@ -56,13 +65,13 @@ LunXEngine g_engine;
 extern "C" {
     EMSCRIPTEN_KEEPALIVE 
     void RunScript(const char* luau_code) {
+        // RunLuauCode C++ string'i bekler, bu yüzden const char* uygun.
         g_engine.RunLuauCode(luau_code);
     }
     
     EMSCRIPTEN_KEEPALIVE 
     void InitializeLunXStudio() {
         g_engine.InitLuau();
-        // Ana oyun döngüsü burada başlar.
     }
 }
 
