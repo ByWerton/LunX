@@ -1,0 +1,17 @@
+==========================================================
+​3 Dosyalık Mimarinin Yayınlanma Talimatları
+​==========================================================
+​[build]
+​Temel Dizin: Kodların başladığı yer.
+​base    = "."
+​Build Command (Derleme Komutu):
+​Motor_core.cpp dosyasını web'e çeviren komut buraya gelir (Örn: emcc motor_core.cpp -o public/motor.js)
+​command = ""
+​Publish Directory (Yayınlama Dizini):
+​Web sitesi içeriği buradadır.
+​publish = "public"
+​WebAssembly dosyaları için zorunlu MIME tipini ayarlar.
+​[[headers]]
+for = "/*.wasm"
+[headers.values]
+Content-Type = "application/wasm"
