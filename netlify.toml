@@ -1,8 +1,9 @@
 [build]
-command = "emcc motor_core.cpp -o motor_core.js -s WASM=1 -s SINGLE_FILE=1 -s EXPORTED_FUNCTIONS='[\"_RunScript\", \"_InitializeLunXStudio\", \"_CreateNewBlockFromUI\"]'"
+​Netlify artık emcc'yi doğrudan çağırmak yerine, kurulumu yapan build.sh betiğini çalıştıracak.
+​command = "bash build.sh"
 publish = "."
-
-[build.environment]
-EMSDK_VERSION = "latest"
+​[build.environment]
+​Bunlar hala Netlify'a bağlam (context) sağlamak için iyi bir uygulamadır.
+​EMSDK_VERSION = "latest"
 CC = "emcc"
-CXX = "em++"
+CXX = "em++
