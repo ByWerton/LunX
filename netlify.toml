@@ -4,4 +4,4 @@ publish = "."
 ​[build.environment]
 EMSDK_VERSION = "latest"
 CC = "emcc"
-CXX = "em++
+CXX = "em++"
