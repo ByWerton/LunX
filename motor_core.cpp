@@ -1,167 +1,105 @@
 #include <iostream>
-#include <emscripten/emscripten.h>
-#include <string>
 #include <vector>
-#include <memory>
 #include <map>
+#include <string>
 #include <sstream>
+#include <algorithm>
+#include <emscripten/bind.h>
 
-// ==========================================================
-// C++ MOTOR ÇEKİRDEĞİ (LunX Engine Core)
-// Endüstriyel Oyun Motoru Mimarisi Simülasyonu
-// ==========================================================
+using namespace emscripten;
+using namespace std;
 
-// --- 1. JS Köprü Fonksiyonları (Wasm -> JavaScript) ---
+// JavaScript tarafından çağrılabilen harici fonksiyonlar
 extern "C" {
-    // Motor çıktılarını web konsoluna yönlendirir
     extern void JS_LogOutput(const char* message);
-    // Hiyerarşi ağacına yeni bir obje eklenmesini bildirir
     extern void JS_AddHierarchyItem(const char* name, int id);
-    // 3D görünümde bir objenin oluşturulması için komut gönderir
-    extern void JS_Spawn3DObject(int id, float x, float y, float z);
+    extern void JS_Spawn3DObject(int id, float x, float y, float z, float r, float g, float b);
+    extern void JS_UpdateObject(int id, float x, float y, float z);
 }
 
-// Luau Sanal Makinesi Simülasyonu (Roblox'un kullandığı Luau/Lua)
-extern "C" {
-    typedef struct lua_State lua_State;
-    lua_State* luaL_newstate() { return (lua_State*)1; }
-    void lua_settop(lua_State* L, int index) {}
-    int lua_pcallk(lua_State* L, int nargs, int nresults, int errfunc, int k, int (*kfunc)(lua_State*)) { return 0; }
-    void luaL_loadstring(lua_State* L, const char* s) {}
-    void lua_close(lua_State* L) {}
-}
+// ==========================================================
+// 1. Component Sistemi (Bileşenler)
+// ==========================================================
 
-
-// --- 2. ECS ve Varlık Yönetimi (Entity Component System) ---
-
-using EntityID = unsigned int;
-
-// TEMEL BİLEŞEN: Konum, bir objenin nerede olduğunu tanımlar.
-struct PositionComponent {
-    float x = 0, y = 0, z = 0;
+struct Component {
+    string type;
+    virtual ~Component() = default;
+    // JS Properties paneli için JSON formatında çıktı üretir.
+    virtual string to_json_properties() const = 0;
 };
 
-// TEMEL BİLEŞEN: Görünüm, bir objenin nasıl göründüğünü tanımlar (Mesh, Texture)
-struct VisualComponent {
-    std::string meshPath = "DefaultCube.fbx";
-    std::string texturePath = "Brick_Texture_001.png";
-};
+struct TransformComponent : public Component {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    TransformComponent() { type = "Transform"; }
 
-// Varlık Sınıfı (Basitçe bir Entity)
-class Entity {
-public:
-    EntityID id;
-    std::string name;
-    
-    PositionComponent position; 
-    VisualComponent visual;
-
-    Entity(EntityID _id, const std::string& _name) : id(_id), name(_name) {}
-};
-
-
-// --- 3. Motor Modülleri (Sistemler) ---
-
-class GameWorld {
-private:
-    EntityID nextEntityID = 100;
-    std::map<EntityID, std::shared_ptr<Entity>> entities;
-
-public:
-    void Initialize() {
-        JS_LogOutput("[GameWorld]: Oyun Dünyası ve ECS kayıt sistemi başlatıldı.");
+    string to_json_properties() const override {
+        stringstream ss;
+        ss << R"("x": ")" << x << R"(", "y": ")" << y << R"(", "z": ")" << z << R"(")";
+        return ss.str();
     }
-    
-    // Yeni bir Part (Blok) oluşturma
-    std::shared_ptr<Entity> CreatePart(const std::string& name) {
-        EntityID newID = nextEntityID++;
-        std::stringstream ss;
-        ss << name << "_" << newID;
-        
-        auto newEntity = std::make_shared<Entity>(newID, ss.str());
-        
-        // Başlangıç konumu (Yere düşmesin diye biraz havada)
-        newEntity->position.y = 5.0f;
-        
-        entities[newID] = newEntity;
-        
-        // JS Arayüzüne Part'ın oluşturulduğunu ve Hiyerarşiye eklenmesi gerektiğini bildir
-        JS_AddHierarchyItem(newEntity->name.c_str(), newID);
-        JS_Spawn3DObject(newID, newEntity->position.x, newEntity->position.y, newEntity->position.z);
-        
-        JS_LogOutput("[GameWorld]: Yeni 'Part' (Blok) oluşturuldu: " + newEntity->name);
-        return newEntity;
+    void set_property(const string& name, const string& value) {
+        float val = stof(value);
+        if (name == "x") x = val;
+        else if (name == "y") y = val;
+        else if (name == "z") z = val;
     }
+};
 
-    // Bir varlığın konumunu C++ içinden güncelleme
-    void SetEntityPosition(EntityID id, float x, float y, float z) {
-        if (entities.count(id)) {
-            auto& pos = entities[id]->position;
-            pos.x = x;
-            pos.y = y;
-            pos.z = z;
-            JS_LogOutput("[GameWorld]: Varlık " + entities[id]->name + " konumu güncellendi.");
-            // Gerçek motorda buradan 3D Rendering System'e güncelleme komutu gider.
+struct MeshRendererComponent : public Component {
+    string shape = "Block";
+    float r = 0.5f;
+    float g = 0.5f;
+    float b = 0.5f;
+    bool isVisible = true;
+    MeshRendererComponent() { type = "MeshRenderer"; }
+
+    string to_json_properties() const override {
+        stringstream ss;
+        ss << R"("shape": ")" << shape << R"(", "r": ")" << r << R"(", "g": ")" << g << R"(", "b": ")" << b << R"(", "isVisible": ")" << (isVisible ? "true" : "false") << R"(")";
+        return ss.str();
+    }
+    void set_property(const string& name, const string& value) {
+        if (name == "shape") shape = value;
+        else if (name == "isVisible") isVisible = (value == "true");
+        else if (name == "r" || name == "g" || name == "b") {
+            float val = stof(value);
+            if (name == "r") r = val;
+            else if (name == "g") g = val;
+            else if (name == "b") b = val;
         }
     }
 };
 
-class ScriptingSystem {
-private:
-    lua_State* L_luau = nullptr;
-    GameWorld& world; // GameWorld'e referans
+// ==========================================================
+// 2. Varlık Sistemi (Entity)
+// ==========================================================
 
-    // Luau'dan çağrılacak C++ fonksiyonu (Basit "print" simülasyonu)
-    static int Luau_print(lua_State* L) {
-        // Lua'dan gelen argümanları alıp JS konsoluna yönlendirir
-        JS_LogOutput("[Luau VM Çıktı]: Hello from Lua/Luau!"); 
-        return 0;
-    }
+struct Entity {
+    int id;
+    string name;
+    map<string, unique_ptr<Component>> components;
+
+    Entity(int _id, const string& _name) : id(_id), name(_name) {}
     
-public:
-    ScriptingSystem(GameWorld& gw) : world(gw) {}
-
-    void Initialize() {
-        L_luau = luaL_newstate();
-        if (L_luau) {
-            JS_LogOutput("[ScriptingSystem]: Luau VM başlatıldı. C++ API'leri Luau'ya bağlanıyor.");
-            // Örnek bir Luau-C++ bağlantısı (Normalde burada binlerce API çağrısı olur)
-            // lua_pushcfunction(L_luau, Luau_print);
-            // lua_setglobal(L_luau, "print");
-        }
-    }
-
-    void RunScript(const char* luau_code) {
-        JS_LogOutput("-> Betik Çalışıyor (Luau VM)...");
-        // lua_pushstring(L_luau, luau_code);
-        // luaL_loadstring(L_luau, luau_code);
-        
-        // Başarılı bir çağrı olduğunu simüle et
-        if (std::string(luau_code).find("error") != std::string::npos) {
-             JS_LogOutput("[ScriptingSystem HATA]: Betik Çalıştırılırken Sözdizimi Hatası! (Simülasyon)");
-        } else {
-             JS_LogOutput("-> Betik başarıyla tamamlandı.");
-             // Eğer betik yeni bir Part oluşturuyorsa:
-             if (std::string(luau_code).find("CreatePart") != std::string::npos) {
-                 world.CreatePart("ScriptedPart");
-             }
-        }
+    // Yardımcı fonksiyon: Component'e kolay erişim
+    template<typename T>
+    T* GetComponent(const string& typeName) {
+        return static_cast<T*>(components[typeName].get());
     }
 };
 
-// --- 4. Ana Motor Sınıfı (Singleton) ---
+// ==========================================================
+// 3. Oyun Dünyası ve Motor Çekirdeği (Singleton)
+// ==========================================================
 
 class LunXEngine {
 private:
-    // SİSTEMLER
-    // Binlerce satırlık motorun ana sistemleri burada yönetilir.
-    // Physics, Rendering, Networking gibi sistemler de buraya eklenir.
-    GameWorld gameWorld;
-    std::unique_ptr<ScriptingSystem> scripting; // Scripting, GameWorld'e bağlıdır.
-
-    LunXEngine() : scripting(std::make_unique<ScriptingSystem>(gameWorld)) {}
-    LunXEngine(const LunXEngine&) = delete;
-    void operator=(const LunXEngine&) = delete;
+    map<int, unique_ptr<Entity>> entities;
+    int nextEntityId = 1;
+    LunXEngine() {}
+    ~LunXEngine() = default;
 
 public:
     static LunXEngine& Get() {
@@ -169,50 +107,150 @@ public:
         return instance;
     }
 
-    // Motorun Ana Başlatma İşlemi
-    void Initialize() {
-        JS_LogOutput("\n--- LUNX PROFESSIONAL ENGINE ÇEKİRDEĞİ BAŞLATILIYOR ---\n");
-        gameWorld.Initialize();
-        scripting->Initialize();
+    void CreatePart(const string& name) {
+        int id = nextEntityId++;
+        auto newEntity = make_unique<Entity>(id, name + to_string(id));
         
-        // Başlangıç sahneleri (Baseplate ve Spawn konumu gibi)
-        gameWorld.CreatePart("Baseplate");
-        gameWorld.CreatePart("SpawnPoint");
-        
-        JS_LogOutput("\n--- LUNX MOTOR ÇEKİRDEĞİ HAZIR. Lua/Luau Betiklerini Kabul Ediyor. ---\n");
-    }
+        // Temel Komponentleri Ekle
+        newEntity->components["Transform"] = make_unique<TransformComponent>();
+        newEntity->components["MeshRenderer"] = make_unique<MeshRendererComponent>();
 
-    // Luau Betiği Çalıştırma (JS'ten çağrılır)
-    void ExecuteScript(const char* luau_code) {
-        scripting->RunScript(luau_code);
+        // Başlangıç Konumlarını Rastgele Ayarla
+        TransformComponent* t = newEntity->GetComponent<TransformComponent>("Transform");
+        t->x = (float)(rand() % 10) - 5;
+        t->y = (float)(rand() % 5) + 1;
+        t->z = (float)(rand() % 10) - 5;
+        
+        // Renkleri Rastgele Ayarla
+        MeshRendererComponent* m = newEntity->GetComponent<MeshRendererComponent>("MeshRenderer");
+        m->r = (float)rand() / RAND_MAX;
+        m->g = (float)rand() / RAND_MAX;
+        m->b = (float)rand() / RAND_MAX;
+        
+        // JS Arayüzünü Güncelle
+        JS_AddHierarchyItem(newEntity->name.c_str(), id);
+        JS_Spawn3DObject(id, t->x, t->y, t->z, m->r, m->g, m->b);
+
+        string logMessage = "[GameWorld]: Yeni varlık oluşturuldu: " + newEntity->name;
+        JS_LogOutput(logMessage.c_str());
+
+        entities[id] = std::move(newEntity);
+    }
+    
+    // Tüm Komponent Özelliklerini JSON olarak döndürür
+    string GetEntityProperties(int id) {
+        if (!entities.count(id)) {
+            return R"({"error": "Entity bulunamadı."})";
+        }
+        Entity* entity = entities[id].get();
+        stringstream ss;
+        ss << R"({"name": ")" << entity->name << R"(", "id": )" << id << R"(, "components": {)";
+
+        bool firstComponent = true;
+        for (const auto& pair : entity->components) {
+            if (!firstComponent) ss << ",";
+            ss << R"(")" << pair.first << R"(": {)" << pair.second->to_json_properties() << R"(})";
+            firstComponent = false;
+        }
+
+        ss << R"(}})";
+        return ss.str();
+    }
+    
+    // JS'den gelen tek bir özellik güncellemesini işler
+    void SetEntityProperty(int id, const string& componentType, const string& propName, const string& propValue) {
+        if (!entities.count(id)) return;
+        Entity* entity = entities[id].get();
+
+        if (entity->components.count(componentType)) {
+            Component* comp = entity->components[componentType].get();
+            
+            // Komponent tipine göre doğru set_property fonksiyonunu çağır
+            if (componentType == "Transform") {
+                TransformComponent* t = static_cast<TransformComponent*>(comp);
+                t->set_property(propName, propValue);
+                
+                // Konum değiştiyse 3D görünümü güncelle
+                JS_UpdateObject(id, t->x, t->y, t->z);
+            } else if (componentType == "MeshRenderer") {
+                MeshRendererComponent* m = static_cast<MeshRendererComponent*>(comp);
+                m->set_property(propName, propValue);
+            }
+            
+            string log = "[C++]: " + entity->name + " varlığının " + componentType + "." + propName + " özelliği " + propValue + " olarak güncellendi.";
+            JS_LogOutput(log.c_str());
+        }
+    }
+    
+    // Luau betik sistemi için basit bir arayüz simülasyonu
+    void ExecuteScript(const string& script) {
+        JS_LogOutput("[Luau VM]: Betik çalıştırma simülasyonu başlatıldı.");
+
+        if (script.find("CreatePart()") != string::npos) {
+            CreatePart("ScriptedPart");
+        } else if (script.find("RotateWorld()") != string::npos) {
+             // 3D sahneyi döndürme emri JS'e gönderilebilir
+             JS_LogOutput("[Luau VM]: 'RotateWorld()' çağrısı simüle ediliyor. 3D sahne dönüyor...");
+        } else {
+            JS_LogOutput("[Luau VM]: Geçerli komut bulunamadı veya simüle edilmedi.");
+        }
+        
+        JS_LogOutput("[Luau VM]: Çalıştırma tamamlandı.");
     }
 };
 
+
 // ==========================================================
-// Wasm/JavaScript Arayüzü (Emscripten Bağlantıları)
+// 4. Emscripten EXPORT Fonksiyonları
 // ==========================================================
 
-extern "C" {
-    // Motoru başlatan fonksiyon (JS'ten çağrılır)
-    EMSCRIPTEN_KEEPALIVE 
-    void InitializeLunXStudio() {
-        LunXEngine::Get().Initialize();
-    }
+// Motorun başlatılması
+void InitializeEngine() {
+    JS_LogOutput("---------------------------------------");
+    JS_LogOutput("LunX Studio Motoru BAŞLATILIYOR (C++ ECS)");
+    JS_LogOutput("---------------------------------------");
     
-    // Betik çalıştırma fonksiyonu (JS'ten çağrılır)
-    EMSCRIPTEN_KEEPALIVE 
-    void RunScript(const char* luau_code) {
-        LunXEngine::Get().ExecuteScript(luau_code);
-    }
+    LunXEngine::Get().CreatePart("Baseplate");
+    LunXEngine::Get().CreatePart("SpawnPoint");
 
-    // JS Arayüzü: Yeni bir blok oluşturma butonu (JS'ten çağrılır)
-    EMSCRIPTEN_KEEPALIVE
-    void CreateNewBlockFromUI() {
-        LunXEngine::Get().gameWorld.CreatePart("UISpawnedPart");
+    JS_LogOutput("Motor Başlatma Tamamlandı. Lütfen Hiyerarşiden bir varlık seçin.");
+}
+
+// UI Butonundan Yeni Varlık Oluşturma
+void CreateNewBlockFromUI() {
+    LunXEngine::Get().CreatePart("UISpawnedPart"); 
+}
+
+// Luau betiğini çalıştırma
+void RunScript(const char* script) {
+    if (script) {
+        LunXEngine::Get().ExecuteScript(string(script));
     }
 }
 
-int main() { 
-    // Emscripten derlemesi için boş main
-    return 0; 
+// Seçilen Varlığın Özelliklerini Almak
+char* GetEntityProperties(int id) {
+    string jsonString = LunXEngine::Get().GetEntityProperties(id);
+    // JSON dizesini JS'ye geri göndermek için dinamik olarak ayır
+    char* result = (char*)malloc(jsonString.length() + 1);
+    strcpy(result, jsonString.c_str());
+    return result;
+}
+
+// Varlık Özelliğini Güncellemek
+void SetEntityProperty(int id, const char* compType, const char* propName, const char* propValue) {
+    LunXEngine::Get().SetEntityProperty(id, string(compType), string(propName), string(propValue));
+}
+
+
+// ==========================================================
+// Emscripten Bağlantı Noktaları (Gereklidir)
+// ==========================================================
+
+EMSCRIPTEN_BINDINGS(lunx_module) {
+    function("InitializeEngine", &InitializeEngine);
+    function("RunScript", &RunScript);
+    function("CreateNewBlockFromUI", &CreateNewBlockFromUI);
+    function("GetEntityProperties", &GetEntityProperties, allow_raw_pointer<char>());
+    function("SetEntityProperty", &SetEntityProperty);
 }
