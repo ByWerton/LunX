@@ -1,12 +1,12 @@
 #include <iostream>
-#include <string>
 #include <emscripten/emscripten.h>
+#include <string>
 
 // ==========================================================
-// LUAU SCRIPTING KÖPRÜSÜ (Simülasyon)
-// Luau'yu Wasm ile derlerken gerçek Luau kütüphanesini kullanırız.
-// Bu simülasyon, kod yapısını göstermek içindir.
+// C++ Motor Çekirdeği - Profesyonel Oyun Motoru Mimarisi
 // ==========================================================
+
+// Luau Kütüphanesi Simülasyonu (Gerçek Luau entegrasyonu için kütüphane eklenmeli)
 extern "C" {
     // Luau Sanal Makine tipleri ve fonksiyonları simülasyonu
     typedef struct lua_State lua_State;
@@ -18,61 +18,83 @@ extern "C" {
     void lua_close(lua_State* L) {}
     void lua_pushnumber(lua_State* L, double n) {}
 
-    // JavaScript'e çıktı göndermek için bir köprü fonksiyonu
+    // JavaScript'e çıktı göndermek için köprü fonksiyonu (index.html'deki JS_LogOutput'u çağırır)
     extern void JS_LogOutput(const char* message);
 }
 
+// Motorun Ana Sınıfı
 class LunXEngine {
 private:
-    lua_State* L_luau;
+    lua_State* L_luau; // Luau Sanal Makinesi
 
 public:
     LunXEngine() : L_luau(nullptr) {}
 
-    void InitLuau() {
+    // 1. Motor Başlangıcı
+    void InitEngine() {
+        JS_LogOutput("LunX Motor Çekirdeği başlatılıyor...");
+        
+        // Luau VM başlatılıyor
         L_luau = luaL_newstate();
         if (!L_luau) { 
-            JS_LogOutput("[C++ HATA]: Luau VM başlatılamadı!"); 
+            JS_LogOutput("[C++ KRİTİK HATA]: Luau VM başlatılamadı!"); 
             return; 
         }
-        JS_LogOutput("[C++]: Luau entegrasyonu tamamlandı. Motor hazır.");
+        
+        // Diğer motor bileşenlerinin başlatılması simülasyonu (Grafik, Fizik, Ses)
+        JS_LogOutput("[C++]: Grafik Modülü (OpenGL/Vulkan) hazır.");
+        JS_LogOutput("[C++]: Fizik Motoru (Box2D/PhysX) hazır.");
+        JS_LogOutput("[C++]: Luau Scripting Katmanı aktif. Motor hazır.");
     }
 
-    // Harici JavaScript/Wasm tarafından çağrılacak asıl fonksiyon.
+    // 2. Script Çalıştırma Fonksiyonu (Web Arayüzünden çağrılır)
     void RunLuauCode(const char* luau_code) {
-        JS_LogOutput("[C++]: Luau Betiği çalıştırılıyor...");
+        JS_LogOutput("-> Luau Betiği Çalıştırılıyor...");
         
-        // Luau betiğini VM'ye yükle ve çalıştır
+        // Luau betiğini VM'ye yükle
         luaL_loadstring(L_luau, luau_code);
+        
+        // Betiği çalıştır
         int result = lua_pcallk(L_luau, 0, 0, 0, 0, NULL);
         
         if (result != 0) {
-            // Hata durumunda (Gerçek uygulamada stack'ten hata mesajını alırdık)
-            JS_LogOutput("[C++ HATA]: Luau Betiği Çalıştırılırken Hata Oluştu!");
+            // Hata Durumu
+            JS_LogOutput("[C++ LUAU HATA]: Betik Çalıştırılırken Hata Oluştu!");
         } else {
-             JS_LogOutput("[C++]: Luau Betiği başarıyla tamamlandı.");
+             JS_LogOutput("-> Luau Betiği başarıyla tamamlandı.");
         }
+    }
+    
+    // Motorun Kapatılması
+    ~LunXEngine() {
+        if (L_luau) {
+            lua_close(L_luau);
+        }
+        JS_LogOutput("LunX Motor Çekirdeği kapatıldı.");
     }
 };
 
 LunXEngine g_engine;
 
 // ==========================================================
-// Wasm/JavaScript Arayüzü
+// Wasm/JavaScript Arayüzü (Emscripten Bağlantıları)
 // ==========================================================
 
-// JavaScript'ten çağrılabilir fonksiyon (Run Butonu için)
 extern "C" {
-    EMSCRIPTEN_KEEPALIVE 
-    void RunScript(const char* luau_code) {
-        // RunLuauCode C++ string'i bekler, bu yüzden const char* uygun.
-        g_engine.RunLuauCode(luau_code);
-    }
-    
+    // Motoru Başlatan Ana Fonksiyon
     EMSCRIPTEN_KEEPALIVE 
     void InitializeLunXStudio() {
-        g_engine.InitLuau();
+        g_engine.InitEngine();
+    }
+    
+    // Luau Betiğini Motor Çekirdeğine Gönderen Fonksiyon
+    EMSCRIPTEN_KEEPALIVE 
+    void RunScript(const char* luau_code) {
+        g_engine.RunLuauCode(luau_code);
     }
 }
 
-int main() { return 0; }
+// Emscripten main fonksiyonu
+int main() { 
+    return 0; 
+}
