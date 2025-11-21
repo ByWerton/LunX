@@ -3,505 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunXStudio IDE - Gelişmiş</title>
-    <!-- Tailwind CSS -->
+    <title>LunX Profesyonel C++ Scripting Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Three.js Imports -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <!-- Fonts & Styles (Roblox Studio teması korundu) -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        :root {
-            --bg-dark: #222222;       /* Ana pencere arka planı */
-            --bg-panel: #2b2b2b;      /* Panel arka planları */
-            --bg-header: #333333;     /* Panel başlıkları */
-            --bg-ribbon: #383838;     /* Ribbon bar */
-            --bg-input: #262626;      /* Input alanları */
-            --text-main: #cccccc;     /* Ana metin rengi */
-            --text-muted: #888888;    /* Pasif metin */
-            --accent: #00a2ff;        /* Seçim mavisi */
-            --border: #1a1a1a;        /* Kenarlıklar */
-            --hover: #444444;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            overflow: hidden;
-            font-size: 12px;
-            user-select: none;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
-
-        /* Custom Classes */
-        .panel-header {
-            background-color: var(--bg-header);
-            color: var(--text-main);
-            padding: 4px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .ribbon-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 4px 8px; border-radius: 3px; cursor: pointer; color: #fff;
-            min-width: 48px; height: 100%;
-        }
-        .ribbon-btn:hover { background-color: var(--hover); }
-        .ribbon-btn.active { background-color: #444; border: 1px solid #555; }
-        .ribbon-icon { width: 28px; height: 28px; margin-bottom: 4px; fill: currentColor; }
-        .ribbon-label { font-size: 10px; margin-top: -2px; }
-
-        .explorer-row {
-            display: flex; align-items: center; padding: 2px 4px 2px 8px;
-            cursor: pointer; color: #dcdcdc;
-        }
-        .explorer-row:hover { background-color: #3a3a3a; }
-        .explorer-row.selected { background-color: #004e8a; border: 1px solid #00a2ff; }
-        .exp-icon { width: 14px; height: 14px; margin-right: 6px; }
-        
-        /* Input Styling */
-        .studio-input {
-            background: var(--bg-input); border: 1px solid #444; color: white;
-            border-radius: 2px; padding: 2px 6px; font-size: 11px; width: 100%; outline: none;
-        }
-        .studio-input:focus { border-color: var(--accent); }
-
-        /* Script Editor Styling */
-        #script-editor {
-            resize: none;
-            font-family: 'Consolas', 'Monospace', monospace;
-            font-size: 11px;
-            background-color: #1e1e1e; /* Visual Studio Code Dark */
-            color: #dcdcdc;
-            line-height: 1.4;
-            tab-size: 4;
-            padding: 10px;
-            border: 1px solid #000;
-        }
-        
-        /* Console Styling */
-        .console-log {
-            font-family: 'Consolas', 'Monospace', monospace;
-            font-size: 11px;
-            padding: 5px;
-            border-bottom: 1px solid #333;
-            color: #c9d1d9;
-        }
-        .console-error { color: #f87171; }
-        .console-info { color: #60a5fa; }
-
+        /* Modern ve Profesyonel Tasarım - Koyu Tema */
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background-color: #1e293b; color: #f8fafc; }
+        .studio-container { background-color: #0f172a; border: 1px solid #334155; }
+        .editor-container { background-color: #1a1a1a; color: #00ff00; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; }
+        .output-container { background-color: #0b111e; color: #cbd5e1; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.8rem; height: 300px; }
+        textarea { resize: none; }
+        .log-error { color: #f87171; font-weight: bold; }
+        .log-success { color: #34d399; font-weight: bold; }
+        .log-system { color: #60a5fa; }
+        .log-luau { color: #ffeb3b; } /* Luau sarısı */
     </style>
 </head>
-<body class="w-screen h-screen flex flex-col">
+<body>
 
-    <!-- TOP MENU BAR (File, Home, Model...) -->
-    <div class="h-8 flex items-center px-2 space-x-1 text-white" style="background-color: #2d2d2d; border-bottom: 1px solid var(--border);">
-        <div class="px-2 py-1 text-blue-400 font-bold hover:bg-white/10 rounded">FILE</div>
-        <div class="px-3 py-1 bg-[#3a3a3a] border-t-2 border-[#00a2ff] font-semibold text-xs">HOME</div>
-        <div class="px-3 py-1 hover:bg-white/10 rounded text-gray-300 cursor-pointer text-xs">VIEW</div>
-        <div class="flex-grow"></div>
-        
-        <!-- RUN/PLAY BUTTON (Now triggers script) -->
-        <div class="flex h-full px-2 items-start pt-1 relative mr-4">
-            <div id="btn-run-script" class="flex flex-col items-center justify-center px-4 cursor-pointer hover:bg-[#3a3a3a] rounded transition-all duration-100">
-                <div class="bg-[#22c55e] rounded-full w-10 h-10 flex items-center justify-center mb-1 shadow-lg">
-                    <svg viewBox="0 0 24 24" class="w-6 h-6 fill-white ml-1"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-                <span class="text-xs font-bold text-[#22c55e]">RUN LUAU</span>
-            </div>
-        </div>
+    <div class="p-4 sm:p-8 max-w-6xl mx-auto studio-container rounded-xl shadow-2xl mt-4">
+        <h1 class="text-3xl font-extrabold text-blue-400 mb-2 border-b border-blue-400 pb-2">
+            LUNX PROFESSIONAL ENGINE - SCRIPTING STUDIO (C++ Core)
+        </h1>
+        <p class="text-gray-400 mb-6 text-sm">C++ Motoru, Modüler Sistemler ve Luau Betik Dili entegrasyonu.</p>
 
-        <div class="flex items-center space-x-3 text-gray-400 text-xs pr-2">
-            <span>Login</span>
-            <span>Settings</span>
-        </div>
-    </div>
+        <!-- Luau Kod Editörü -->
+        <div class="mb-6">
+            <label for="luau-code" class="block text-sm font-semibold text-gray-300 mb-2">Luau Betiği</label>
+            <textarea id="luau-code" rows="12" class="editor-container w-full p-4 rounded-lg shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Motorunuz için Luau kodunu buraya yazın.">
+-- Luau Scripting: Motor çekirdeğini kontrol edin.
+-- Luau betikleri C++ 'EngineCore' içinde çalışır.
 
-    <!-- RIBBON BAR (Simplified for the demo) -->
-    <div class="h-24 flex items-center px-1 space-x-1 shadow-md z-10" style="background-color: var(--bg-ribbon); border-bottom: 1px solid #111;">
-        
-        <!-- Tools -->
-        <div class="flex h-full px-2 border-r border-[#222] items-start pt-1 relative">
-            <div id="tool-select" class="ribbon-btn active"><svg class="ribbon-icon" viewBox="0 0 24 24"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4V2z"/></svg><span class="ribbon-label">Select</span></div>
-            <div id="tool-move" class="ribbon-btn"><svg class="ribbon-icon" viewBox="0 0 24 24"><path d="M12 2L8 6h3v3H8V6L4 10l4 4V11h3v3H8v-3l-4 4 4 4v-3h3v3h2v-3h3v3l4-4-4-4v3h-3V11h3v3l4-4-4-4v3h-3V6h3L12 2z"/></svg><span class="ribbon-label">Move</span></div>
-            <div id="tool-scale" class="ribbon-btn"><svg class="ribbon-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V7h-2v5H6v2h2v5h2v-5h2v-2z"/></svg><span class="ribbon-label">Scale</span></div>
-            <span class="absolute bottom-1 w-full text-center text-[9px] text-gray-500 left-0">Tools</span>
-        </div>
-        
-        <!-- Insert Part -->
-         <div class="flex h-full px-2 border-r border-[#222] items-start pt-1 relative space-x-1">
-            <div id="btn-part" class="ribbon-btn">
-                <svg class="ribbon-icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4z" fill="#ccc"/></svg>
-                <span class="ribbon-label">Part</span>
-            </div>
-             <span class="absolute bottom-1 w-full text-center text-[9px] text-gray-500 left-0">Insert</span>
-        </div>
-        
-        <div class="flex-grow"></div>
-    </div>
+-- Örnek: Basit bir mesaj yazdırma
+print("Luau betiği motor tarafından başarıyla çalıştırıldı!")
 
-    <!-- MAIN CONTENT AREA -->
-    <div class="flex flex-grow overflow-hidden">
-        
-        <!-- LEFT COLUMN: Script Editor -->
-        <div class="flex flex-col w-1/3 min-w-[300px] border-r border-[#111] bg-[#1e1e1e]">
-            <div class="panel-header">
-                <span>Script Editor (main.luau)</span>
-                <span class="text-xs text-gray-400 cursor-pointer hover:text-white">💾</span>
-            </div>
-            <!-- Luau Code Editor -->
-            <textarea id="script-editor" class="flex-grow h-full p-2" spellcheck="false">
--- [LunXStudio Luau Script]
--- C++ çekirdeği tarafından çalıştırılacak betik.
--- print() fonksiyonu C++ VM'den Konsol'a düşer.
-
-print("--- Luau Betiği Başladı ---")
-local x = 5
-local y = 10
-print("X + Y sonucu: " .. (x + y))
-
--- C++'tan gelen bir fonksiyonu çağırıp 3D nesne ekleyebiliriz:
--- Motor.CreateBox(Vector3.new(0, 10, 0), "TestPart")
-
-print("--- Luau Betiği Bitti ---")
+-- Örnek: Motor API'sını çağırma simülasyonu
+-- LunX.World:CreateInstance("Block")
+-- LunX.Assets:LoadTexture("Roblox_Texture_001")
             </textarea>
         </div>
 
-        <!-- CENTER: VIEWPORT & CONSOLE -->
-        <div class="flex flex-col flex-grow relative bg-[#1e1e1e]">
-            <!-- 3D Canvas Container -->
-            <div id="viewport-container" class="flex-grow relative w-full h-full overflow-hidden">
-                <canvas id="three-canvas" class="outline-none"></canvas>
-            </div>
-             
-            <!-- Console Panel (New) -->
-            <div class="h-48 bg-[#1f1f1f] border-t-4 border-[#00a2ff]">
-                <div class="panel-header bg-[#222] border-none">
-                    <span class="text-[#00a2ff] font-bold">Console</span>
-                    <div class="flex space-x-3 text-gray-400">
-                        <span class="text-xs text-red-400">Errors</span>
-                        <span class="text-xs text-yellow-400">Warnings</span>
-                        <span class="text-xs text-white">Info</span>
-                    </div>
-                </div>
-                <div id="console-output" class="h-[calc(100%-25px)] overflow-y-auto">
-                    <!-- Console output will be injected here -->
-                    <div class="console-log console-info">LunXStudio IDE v2.0 Yükleniyor...</div>
-                </div>
-            </div>
+        <!-- Kontrol Paneli -->
+        <div class="flex flex-wrap gap-4 mb-6">
+            <button id="run-button" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-95">
+                ▶️ Betiği Çalıştır
+            </button>
+            <button id="init-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-95">
+                ⚙️ Motoru Başlat (Tüm Sistemleri Init Et)
+            </button>
+            <button id="clear-button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out">
+                🗑️ Konsolu Temizle
+            </button>
         </div>
-
-        <!-- RIGHT COLUMN: Explorer & Properties -->
-        <div class="flex flex-col w-72 border-l border-[#111] bg-[var(--bg-panel)]">
-            
-            <!-- Explorer -->
-            <div class="flex flex-col h-1/2 border-b border-[#111]">
-                <div class="panel-header">
-                    <span>Explorer</span>
-                    <div class="flex space-x-2 text-gray-400"><span>🔍</span> <span>⬇️</span></div>
-                </div>
-                <div class="bg-[#262626] p-1">
-                    <input type="text" placeholder="Filter workspace" class="bg-transparent text-xs text-gray-400 w-full outline-none border-none placeholder-gray-600">
-                </div>
-                <div id="explorer-tree" class="flex-grow overflow-y-auto bg-[var(--bg-panel)] py-1">
-                    <!-- Dynamic Tree Content -->
-                </div>
-            </div>
-
-            <!-- Properties -->
-            <div class="flex flex-col h-1/2">
-                <div class="panel-header">
-                    <span>Properties</span>
-                    <div class="flex space-x-2 text-gray-400"><span>⚙️</span></div>
-                </div>
-                 <div class="bg-[#262626] p-1 border-b border-[#333]">
-                    <input type="text" placeholder="Filter properties" class="bg-transparent text-xs text-gray-400 w-full outline-none border-none placeholder-gray-600">
-                </div>
-                <div id="properties-content" class="flex-grow overflow-y-auto bg-[var(--bg-panel)] text-xs">
-                    <div class="p-4 text-center text-gray-500 italic" id="prop-empty-msg">Select an object to view properties</div>
-                    <div id="prop-grid" class="hidden">
-                        <!-- Props injected via JS -->
-                    </div>
-                </div>
-            </div>
+        
+        <!-- Konsol Çıktısı -->
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Motor Konsolu (C++ Sistem Çıktıları)</label>
+            <pre id="output-log" class="output-container w-full p-4 rounded-lg overflow-y-auto border border-gray-700 shadow-lg"></pre>
         </div>
     </div>
 
-    <!-- LOGIC -->
-    <script type="module">
-        import * as THREE from 'three';
-        import { TransformControls } from 'three/addons/controls/TransformControls.js';
-        
-        // --- GLOBAL STATE ---
-        let scene, camera, renderer, transformControl;
-        let raycaster = new THREE.Raycaster();
-        let mouse = new THREE.Vector2();
-        let selectedObjects = [];
-        let explorerMap = new Map();
-        
-        // --- MOTOR CORE INTERFACE (Simulated Wasm Module) ---
-        
-        // Bu, Emscripten tarafından oluşturulan Wasm yükleyici objesidir.
-        // C++ çekirdeğinin print/cout çağrıları buradaki fonksiyonlara yönlendirilir.
-        const consoleOutput = document.getElementById('console-output');
+    <script>
+        const outputLog = document.getElementById('output-log');
+        const codeEditor = document.getElementById('luau-code');
+        const runButton = document.getElementById('run-button');
+        const initButton = document.getElementById('init-button');
+        const clearButton = document.getElementById('clear-button');
 
-        function logToConsole(text, type = 'info') {
-            const logElement = document.createElement('div');
-            logElement.className = `console-log console-${type}`;
-            logElement.innerHTML = `> ${text}`;
-            consoleOutput.appendChild(logElement);
-            consoleOutput.scrollTop = consoleOutput.scrollHeight;
-        }
+        // C++ tarafından çağrılan JavaScript fonksiyonu
+        window.JS_LogOutput = function(message) {
+            const now = new Date().toLocaleTimeString();
+            let className = 'log-system';
 
-        var Module = {
-            canvas: document.getElementById('three-canvas'),
-            
-            postRun: [() => {
-                // C++ Motor Başlatılıyor
-                if (typeof InitializeLunXStudio !== 'undefined') {
-                    InitializeLunXStudio();
-                    logToConsole('C++ Motor Çekirdeği hazır. Luau VM başlatıldı.', 'info');
-                } else {
-                    logToConsole('UYARI: Wasm Motoru yüklenemedi. Sadece 3D arayüz aktif.', 'info');
-                }
-            }],
-            
-            print: function(text) {
-                // C++ ve Luau'dan gelen normal çıktılar (std::cout / Luau print)
-                logToConsole(text, 'log');
-            },
-            printErr: function(text) {
-                // Hata çıktıları (std::cerr)
-                logToConsole(`ERROR: ${text}`, 'error');
+            if (message.includes('HATA') || message.includes('ERROR')) {
+                className = 'log-error';
+            } else if (message.includes('BAŞLATILIYOR') || message.includes('HAZIR')) {
+                 className = 'log-success';
+            } else if (message.includes('GameWorld') || message.includes('AssetLoader')) {
+                 className = 'log-system';
+            } else if (message.includes('Luau')) {
+                 className = 'log-luau';
             }
+            
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="text-gray-500">[${now}]</span> <span class="${className}">${message.replace(/\n/g, '<br>')}</span>`;
+            outputLog.appendChild(logEntry);
+            outputLog.scrollTop = outputLog.scrollHeight; 
         };
 
-        // --- IDE LOGIC & THREE.JS INIT ---
-        
-        function init() {
-            const container = document.getElementById('viewport-container');
-            const canvas = document.getElementById('three-canvas');
-
-            // Scene setup... (Aynı kaldı)
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x6586a5);
-            scene.fog = new THREE.Fog(0x6586a5, 50, 300);
-
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(15, 10, 15);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            // Lighting...
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            dirLight.position.set(50, 100, 50);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048; 
-            dirLight.shadow.mapSize.height = 2048;
-            scene.add(dirLight);
-
-            // Environment
-            createBaseplate();
-            
-            // Controls
-            transformControl = new TransformControls(camera, renderer.domElement);
-            transformControl.addEventListener('change', updatePropertiesPanel);
-            scene.add(transformControl);
-
-            // Events
-            window.addEventListener('resize', onResize);
-            canvas.addEventListener('mousedown', onMouseDown);
-            canvas.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('keydown', onKeyDown);
-            
-            // UI Setup
-            setupExplorerServices();
-            setupRunButton(); // Yeni: Run Luau Script butonu
-
-            animate();
-        }
-        
-        // --- ASSET HELPERS (Kısaltıldı) ---
-        function createBaseplate() {
-            const size = 512;
-            const geometry = new THREE.PlaneGeometry(size, size);
-            const material = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
-            const baseplate = new THREE.Mesh(geometry, material);
-            baseplate.rotation.x = -Math.PI / 2;
-            baseplate.receiveShadow = true;
-            baseplate.name = "Baseplate";
-            scene.add(baseplate);
-            addToExplorer(baseplate, "Baseplate", "part");
-        }
-        
-        function createModel(type) {
-             let mesh;
-             // Sadece temel bir Part ekleme simülasyonu yapıldı
-             mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshStandardMaterial({color: Math.random() * 0xffffff}));
-             mesh.name = (type === 'part' ? "Part" : "Model") + scene.children.length;
-             mesh.position.set(Math.random() * 20 - 10, 2, Math.random() * 20 - 10);
-             mesh.castShadow = true;
-             mesh.receiveShadow = true;
-             scene.add(mesh);
-             addToExplorer(mesh, mesh.name, 'part');
-             selectObject(mesh);
-        }
-
-        // --- EXPLORER & PROPERTIES LOGIC (Aynı kaldı) ---
-        
-        function getIconHTML(type) {
-            if (type === 'workspace') return `<span style="margin-right:6px; font-size:14px;">🌍</span>`;
-            if (type === 'players') return `<span style="margin-right:6px; font-size:14px;">👥</span>`;
-            if (type === 'lighting') return `<span style="margin-right:6px; font-size:14px;">💡</span>`;
-            if (type === 'part') return `<div style="width:12px; height:12px; background:#ccc; margin-right:6px; display:inline-block; border-radius:1px;"></div>`;
-            return `<span style="margin-right:6px; font-size:12px;">📁</span>`;
-        }
-        
-        function setupExplorerServices() {
-            const list = document.getElementById('explorer-tree');
-            const services = [{ name: 'Workspace', type: 'workspace', id: 'workspace-root' }]; // Sadece Workspace'i tutalım
-
-            services.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'explorer-row';
-                div.innerHTML = `<span style="font-size:8px; margin-right:4px; color:#999;">▼</span>${getIconHTML(s.type)}<span>${s.name}</span>`;
-                div.dataset.uuid = s.id || Math.random().toString();
-                
-                const childContainer = document.createElement('div');
-                childContainer.id = 'workspace-children';
-                childContainer.style.paddingLeft = '16px';
-                list.appendChild(div);
-                list.appendChild(childContainer);
-            });
-        }
-
-        function addToExplorer(obj, name, iconType) {
-            const container = document.getElementById('workspace-children');
-            const div = document.createElement('div');
-            div.className = 'explorer-row';
-            div.innerHTML = `${getIconHTML(iconType)}<span class="truncate">${name}</span>`;
-            div.onclick = (e) => { e.stopPropagation(); selectObject(obj); };
-            
-            container.appendChild(div);
-            explorerMap.set(obj.uuid, div);
-        }
-
-        function updatePropertiesPanel() {
-            // ... Properties panel update logic remains the same ...
-        }
-
-        function selectObject(obj) {
-            // ... Selection logic remains the same ...
-            
-            // UI Selection (Aynı kaldı)
-            document.querySelectorAll('.explorer-row').forEach(el => el.classList.remove('selected'));
-            if (obj) {
-                const el = explorerMap.get(obj.uuid);
-                if (el) el.classList.add('selected');
-            }
-            // Properties Update (Aynı kaldı)
-        }
-        
-        // --- MOTOR ETKİLEŞİMİ (YENİ) ---
-        
-        function setupRunButton() {
-            document.getElementById('btn-run-script').onclick = () => {
-                const scriptCode = document.getElementById('script-editor').value;
-                
-                // Emscripten/Wasm tarafından expose edilen C++ fonksiyonunu çağırıyoruz.
-                // Bu, C++ çekirdeğine Luau kodunu çalıştır talimatı verir.
-                if (typeof Module !== 'undefined' && typeof Module.ccall !== 'undefined') {
-                    try {
-                        // C++'tan RunScript(const char*) fonksiyonunu çağır.
-                        // ccall, Wasm modülündeki C++ fonksiyonlarını çağırmanın standart yoludur.
-                        Module.ccall('RunScript', 'void', ['string'], [scriptCode]);
-                        logToConsole('C++ Motoruna Luau komutu gönderildi.', 'info');
-                    } catch (e) {
-                        logToConsole(`WASM Çağrı Hatası: RunScript bulunamadı veya motor yüklenmedi. ${e.message}`, 'error');
-                    }
-                } else if (typeof RunScript !== 'undefined') {
-                    // Eğer ccall yoksa, doğrudan global RunScript'i dene
-                    RunScript(scriptCode); 
-                } else {
-                    logToConsole('Motor yüklenmediği için Luau kodu çalıştırılamadı.', 'error');
-                    logToConsole(scriptCode, 'log'); // Sadece kodu konsola yazdır.
+        // Wasm Modülünün Yüklenmesi
+        var Module = {
+            onRuntimeInitialized: function() {
+                JS_LogOutput("<span class='log-system'>Wasm Modülü Başarıyla Yüklendi. C++ ile bağlantı kuruldu.</span>");
+                // Motoru otomatik olarak başlat
+                try {
+                    Module._InitializeLunXStudio(); 
+                } catch (e) {
+                    JS_LogOutput(`[WASM HATA]: Motor başlatma girişimi başarısız. ${e}`);
                 }
-            };
+            },
+            // Geleneksel C++ çıktılarını (std::cout) yakalama simülasyonu
+            print: function(text) { JS_LogOutput(`[C++ STDIO]: ${text}`); },
+            printErr: function(text) { JS_LogOutput(`[C++ STDERR]: ${text}`); }
+        };
+
+        // --- Olay Dinleyicileri ---
+        runButton.addEventListener('click', function() {
+            const luauCode = codeEditor.value;
+            if (typeof Module._RunScript === 'function') {
+                runButton.disabled = true;
+                runButton.textContent = "⚙️ Çalıştırılıyor...";
+                
+                // JS'ten C++'a string gönderme
+                const codePtr = Module.allocateUTF8(luauCode);
+                Module._RunScript(codePtr);
+                Module._free(codePtr); 
+                
+                runButton.disabled = false;
+                runButton.textContent = "▶️ Betiği Çalıştır";
+            } else {
+                JS_LogOutput("[HATA]: Wasm Motor fonksiyonu (_RunScript) henüz yüklenmedi. Lütfen Motoru Başlatın.");
+            }
+        });
+
+        initButton.addEventListener('click', function() {
+            if (typeof Module._InitializeLunXStudio === 'function') {
+                outputLog.innerHTML = '';
+                Module._InitializeLunXStudio();
+            } else {
+                JS_LogOutput("[HATA]: Wasm Modülü Yüklenmedi. Sayfayı Yenileyin.");
+            }
+        });
+
+        clearButton.addEventListener('click', function() {
+            outputLog.innerHTML = '';
+            JS_LogOutput("Konsol temizlendi.");
+        });
+
+        // Wasm JavaScript Glue kodunu yükle
+        const script = document.createElement('script');
+        script.src = 'motor_core.js'; 
+        document.body.appendChild(script);
+
+        // Emscripten dosya yolunu belirtme (Wasm dosyasının doğru yüklenmesi için kritik)
+        Module.locateFile = function(path, prefix) {
+            return path; 
         }
-
-        // --- TOOLBAR LOGIC (Kısaltıldı) ---
-        document.getElementById('tool-select').onclick = () => { setMode('select'); };
-        document.getElementById('tool-move').onclick = () => { setMode('translate'); };
-        document.getElementById('tool-scale').onclick = () => { setMode('scale'); };
-        document.getElementById('btn-part').onclick = () => { createModel('part'); };
-
-        function setMode(mode) {
-             document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
-             const target = document.getElementById('tool-' + (mode === 'translate' ? 'move' : mode));
-             if (target) target.classList.add('active');
-            
-             if (mode === 'select') transformControl.detach();
-             else transformControl.setMode(mode);
-             
-             if(selectedObjects.length > 0) transformControl.attach(selectedObjects[0]);
-        }
-        
-        // --- CAMERA LOGIC (Aynı kaldı) ---
-        let isRightDown = false;
-        let prevMouseX = 0, prevMouseY = 0;
-        document.getElementById('three-canvas').addEventListener('mousedown', (e) => { if (e.button === 2) { isRightDown = true; prevMouseX = e.clientX; prevMouseY = e.clientY; } });
-        document.getElementById('three-canvas').addEventListener('mouseup', () => { isRightDown = false; });
-        document.getElementById('three-canvas').addEventListener('contextmenu', e => e.preventDefault());
-        function onMouseMove(e) { /* ... rotation logic ... */ }
-        function onKeyDown(e) { /* ... movement logic ... */ }
-
-        // --- RENDER LOOP ---
-        function onResize() {
-            const container = document.getElementById('viewport-container');
-            if(!container) return;
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-            transformControl.update(); // Update controls in the loop
-        }
-
-        // Motoru Başlat
-        init();
-
-        // ** KRİTİK NOT **
-        // Gerçekte, C++'ı derlediğinizde oluşan .js dosyası buraya yüklenir:
-        // <script async src="motor.js"></script> 
-        // Bu dosya, yukarıdaki "Module" objesini kullanır ve C++'tan gelen fonksiyonları global olarak açar.
     </script>
 </body>
 </html>
