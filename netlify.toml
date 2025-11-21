@@ -1,0 +1,8 @@
+[build]
+command = "emcc motor_core.cpp -o motor_core.js -s WASM=1 -s SINGLE_FILE=1 -s EXPORTED_FUNCTIONS='[\"_RunScript\", \"_InitializeLunXStudio\", \"_CreateNewBlockFromUI\"]'"
+publish = "."
+
+[build.environment]
+EMSDK_VERSION = "latest"
+CC = "emcc"
+CXX = "em++"
