@@ -140,7 +140,7 @@ public:
         // Renkleri Rastgele Ayarla
         MeshRendererComponent* m = newEntity->GetComponent<MeshRendererComponent>("MeshRenderer");
         if (m) {
-            // Emscripten'ın uyarısı için RAND_MAX'e float dökümünü ekle
+            // RAND_MAX'e açık float dökümü eklendi.
             m->r = (float)rand() / (float)RAND_MAX;
             m->g = (float)rand() / (float)RAND_MAX;
             m->b = (float)rand() / (float)RAND_MAX;
