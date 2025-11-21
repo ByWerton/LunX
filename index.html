@@ -31,10 +31,20 @@
                 Move: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M5 9l-3 3 3 3"/><path d="M19 9l3 3-3 3"/><path d="M9 5l3-3 3 3"/><path d="M9 19l3 3 3-3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>`,
                 Rotate: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><path d="M21 12a9 9 0 1 1-9-9c1 2.5 4.17 2.5 5 5v3"/><path d="M17 12V5h-3"/><path d="M14 17l-3-3 3-3"/></svg>`,
                 Scale: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><circle cx="12" cy="12" r="10"/><path d="M6 12h12"/><path d="m15 9-3-3-3 3"/><path d="m9 15 3 3 3-3"/></svg>`,
+                Code: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="${classes}"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
             };
             return icons[name] || '';
         }
+
+        // Global Icon Injection Function
+        function injectIcon(elementId, iconName, iconClass, strokeWidth = '2') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = Icon(iconName, iconClass, strokeWidth);
+            }
+        }
     </script>
+    
     <!-- Firebase/Firestore -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -42,7 +52,6 @@
         import { getFirestore, doc, onSnapshot, collection, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Firestore log seviyesini ayarla (hata ayıklama için)
         setLogLevel('Debug');
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
@@ -70,7 +79,8 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         window.userId = user.uid;
-                        document.getElementById('user-id-display').innerHTML = Icon('User', 'w-4 h-4 mr-1') + user.uid; // Tam ID gösteriliyor
+                        // ID'yi ve ikonunu düzgünce yerleştir
+                        document.getElementById('user-id-display').innerHTML = Icon('User', 'w-4 h-4 mr-1') + user.uid; 
                         window.firebaseReady = true;
                         console.log("Firebase ve Auth hazır. UID:", user.uid);
                     } else {
@@ -199,16 +209,16 @@
         <!-- Başlık ve Çalıştır Butonları -->
         <div class="p-2 flex justify-between items-center border-b border-gray-800">
             <h1 class="text-xl font-black text-white ml-2 flex items-center">
-                <span class="text-blue-500 mr-2">${Icon('Cube', 'w-6 h-6')}</span> LunX Studio
+                <span class="text-blue-500 mr-2" id="app-icon-placeholder"></span> LunX Studio
             </h1>
             
             <!-- Oyun Kontrolleri -->
             <div class="flex space-x-2">
                 <button id="run-game-btn" class="flex items-center bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded-md transition duration-200 shadow-md">
-                    ${Icon('Play', 'w-4 h-4 mr-1')} Çalıştır
+                    <span id="play-icon-placeholder" class="mr-1"></span> Çalıştır
                 </button>
                 <button id="stop-game-btn" class="flex items-center bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded-md transition duration-200 opacity-50 cursor-not-allowed" disabled>
-                    ${Icon('Square', 'w-4 h-4 mr-1')} Durdur
+                    <span id="square-icon-placeholder" class="mr-1"></span> Durdur
                 </button>
             </div>
 
@@ -216,16 +226,16 @@
             <div class="flex items-center text-slate-400 mr-2 text-xs">
                 <span id="engine-status" class="text-green-400 mr-4">Motor: Yükleniyor...</span>
                 <div id="user-id-display" class="flex items-center bg-slate-700 p-1 px-2 rounded-full">
-                    ${Icon('User', 'w-4 h-4 mr-1')} Yükleniyor...
+                    <span id="user-icon-placeholder" class="mr-1"></span> Yükleniyor...
                 </div>
             </div>
         </div>
 
         <!-- Ribbon Sekmeleri -->
         <div class="flex items-end bg-gray-800 text-slate-400 border-b border-gray-700 ribbon-tabs-bar">
-            <div class="ribbon-tab active" data-tab="home-tab">${Icon('Home', 'w-4 h-4 mr-2')} HOME</div>
-            <div class="ribbon-tab" data-tab="model-tab">${Icon('Cube', 'w-4 h-4 mr-2')} MODEL</div>
-            <div class="ribbon-tab" data-tab="terrain-tab">${Icon('TreePine', 'w-4 h-4 mr-2')} TERRAIN</div>
+            <div class="ribbon-tab active" data-tab="home-tab"><span class="tab-icon-placeholder" data-icon="Home" data-class="w-4 h-4 mr-2"></span> HOME</div>
+            <div class="ribbon-tab" data-tab="model-tab"><span class="tab-icon-placeholder" data-icon="Cube" data-class="w-4 h-4 mr-2"></span> MODEL</div>
+            <div class="ribbon-tab" data-tab="terrain-tab"><span class="tab-icon-placeholder" data-icon="TreePine" data-class="w-4 h-4 mr-2"></span> TERRAIN</div>
         </div>
 
         <!-- Ribbon İçeriği -->
@@ -234,29 +244,29 @@
                 <!-- Varlık Düzenleme Araçları -->
                 <div class="ribbon-group flex space-x-1">
                     <button class="ribbon-btn">
-                        ${Icon('Move', 'w-7 h-7')}
+                        <span class="ribbon-btn-icon" data-icon="Move" data-class="w-7 h-7"></span>
                         <span>Taşı</span>
                     </button>
                     <button class="ribbon-btn">
-                        ${Icon('Rotate', 'w-7 h-7')}
+                        <span class="ribbon-btn-icon" data-icon="Rotate" data-class="w-7 h-7"></span>
                         <span>Döndür</span>
                     </button>
                     <button class="ribbon-btn">
-                        ${Icon('Scale', 'w-7 h-7')}
+                        <span class="ribbon-btn-icon" data-icon="Scale" data-class="w-7 h-7"></span>
                         <span>Ölçekle</span>
                     </button>
                 </div>
                 <!-- Varlık Ekleme -->
                 <div class="ribbon-group flex space-x-1">
                      <button id="add-block-btn" class="ribbon-btn bg-blue-600/30 text-blue-300 hover:bg-blue-700/50">
-                        ${Icon('Plus', 'w-7 h-7', '3')}
+                        <span class="ribbon-btn-icon" data-icon="Plus" data-class="w-7 h-7" data-stroke="3"></span>
                         <span>Part Ekle</span>
                     </button>
                 </div>
                 <!-- Renkler -->
                 <div class="ribbon-group flex space-x-1">
                     <button class="ribbon-btn">
-                        ${Icon('Palette', 'w-7 h-7')}
+                        <span class="ribbon-btn-icon" data-icon="Palette" data-class="w-7 h-7"></span>
                         <span>Renk Seç</span>
                     </button>
                 </div>
@@ -273,7 +283,7 @@
         <!-- Sol Panel: Explorer (Hiyerarşi) -->
         <div class="panel">
             <div class="panel-header flex justify-between items-center">
-                <span class="font-semibold flex items-center">${Icon('Layers', 'w-4 h-4 mr-2')} Explorer (Varlıklar)</span>
+                <span class="font-semibold flex items-center" id="explorer-header-icon"></span> Explorer (Varlıklar)</span>
             </div>
             <div id="hierarchy-list" class="flex flex-col space-y-0.5 text-sm flex-grow overflow-y-auto p-1">
                 <p class="text-slate-500 p-2 text-sm">Varlıklar C++ Motoru Tarafından Ekleniyor...</p>
@@ -291,7 +301,7 @@
         <!-- Sağ Panel: Properties -->
         <div class="panel h-full flex flex-col">
             <div class="panel-header flex items-center">
-                ${Icon('Settings', 'w-4 h-4 mr-2')} Özellikler: <span id="selected-entity-name" class="ml-2 text-blue-400 font-bold">Hiçbiri Seçili Değil</span>
+                <span id="settings-icon-placeholder"></span> Özellikler: <span id="selected-entity-name" class="ml-2 text-blue-400 font-bold">Hiçbiri Seçili Değil</span>
             </div>
             <div id="properties-panel" class="p-3 text-slate-300 space-y-4 flex-grow overflow-y-auto">
                 <p id="property-placeholder" class="text-sm text-slate-500">Lütfen bir varlık seçin. Özellikler paneli C++'tan gelen Transform, Renderable vb. Component'leri gösterecektir.</p>
@@ -305,10 +315,10 @@
              <!-- Alt Panel Sekmeleri -->
             <div class="flex items-center bg-gray-700/50 text-sm font-semibold border-r border-gray-800">
                  <div class="px-4 py-2 border-r border-gray-800 cursor-pointer text-white flex items-center">
-                    ${Icon('Layers', 'w-4 h-4 mr-1')} Output
+                    <span class="footer-icon-placeholder" data-icon="Layers" data-class="w-4 h-4 mr-1"></span> Output
                  </div>
                  <div class="px-4 py-2 text-slate-400 cursor-pointer flex items-center">
-                    ${Icon('Code', 'w-4 h-4 mr-1')} Konsol
+                    <span class="footer-icon-placeholder" data-icon="Code" data-class="w-4 h-4 mr-1"></span> Konsol
                  </div>
             </div>
             <!-- Output Logları -->
@@ -353,6 +363,7 @@
                 
                 button.className = 'entity-item text-left flex items-center w-full';
                 button.setAttribute('data-id', id);
+                // Dinamik ikon ekleme
                 button.innerHTML = `${Icon('Cube', 'w-4 h-4 mr-2 text-amber-300')} <span>${name}</span>`;
                 button.onclick = () => CppInterface.selectEntity(id, button);
                 
@@ -527,14 +538,15 @@
             varying vec3 vWorldPosition;
 
             void main() {
-                vWorldPosition = modelMatrix * vec4(position, 1.0)).xyz;
+                vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
                 
-                // Sinüs dalgaları ile Z ekseninde (yukarı/aşağı) dalgalanma
+                // Sinüs dalgaları ile Z ekseninde (yukarı/aşağı) dalgalanma (Gerçek 3D ortamda Y ekseni)
+                // Ufak dalgalanma için pozisyonu değiştiriyoruz
                 float displacement = sin(vWorldPosition.x * 2.0 + time * waveSpeed) * waveHeight * 0.5;
-                displacement += sin(vWorldPosition.y * 1.5 + time * waveSpeed * 1.5) * waveHeight * 0.7;
+                displacement += sin(vWorldPosition.z * 1.5 + time * waveSpeed * 1.5) * waveHeight * 0.7;
 
                 vec3 newPosition = position;
-                newPosition.z += displacement; // Z yerine Y ekseni kullanılmalıydı, ama Three.js'te y eksenini kullanıyoruz.
+                newPosition.y += displacement; 
                 
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
             }
@@ -553,7 +565,7 @@
                 // Basit bir derinlik simülasyonu
                 // Yüksek y pozisyonlarında daha açık renk (sığ)
                 // Düşük y pozisyonlarında daha koyu renk (derin)
-                float depthFactor = (vWorldPosition.y - WATER_LEVEL) * 0.1;
+                float depthFactor = (vWorldPosition.y - ${WATER_LEVEL.toFixed(1)}) * 0.1;
                 depthFactor = clamp(depthFactor, 0.0, 1.0);
 
                 // Suyun ana rengi
@@ -562,6 +574,12 @@
                 // Basit yansıma (mock-up)
                 vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
                 vec3 normal = vec3(0.0, 1.0, 0.0);
+                
+                // Suyun normalini sinüs dalgalarına göre hafifçe değiştirerek pırıltı simülasyonu
+                float shininessFactor = sin(vWorldPosition.x * 3.0 + time * 5.0) * 0.1 + 0.9;
+                normal.x = normal.x + shininessFactor * 0.01;
+                normal = normalize(normal);
+
                 vec3 reflectedLight = reflect(-sunDirection, normal);
                 
                 float specular = pow(max(dot(viewDirection, reflectedLight), 0.0), 32.0);
@@ -575,7 +593,7 @@
 
         function initWater() {
             const waterGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
-            waterGeometry.rotateX(-Math.PI / 2); // XZ düzleminde olacak şekilde döndür
+            waterGeometry.rotateX(-Math.PI / 2); // XZ düzleminde olacak şekilde döndür (Y eksenini yukarı yapar)
 
             // Water Shader Material
             const waterMaterial = new THREE.ShaderMaterial({
@@ -590,7 +608,7 @@
                 vertexShader: waterVertexShader,
                 fragmentShader: waterFragmentShader,
                 transparent: true,
-                lights: false, // Işık hesaplamalarını manuel yapacağız
+                lights: false, 
             });
 
             water = new THREE.Mesh(waterGeometry, waterMaterial);
@@ -599,7 +617,14 @@
             scene.add(water);
             
             // Su varlığını Hiyerarşi'ye ekleme mock-up
-            CppInterface.JS_AddHierarchyItem(Module.stringToUTF8("Water (Terrain)"), -1); 
+            // Gerçek C++ çağrısı: CppInterface.JS_AddHierarchyItem(Module.stringToUTF8("Water (Terrain)"), -1); 
+            const list = document.getElementById('hierarchy-list');
+            const button = document.createElement('button');
+            button.className = 'entity-item text-left flex items-center w-full';
+            button.setAttribute('data-id', -1);
+            button.innerHTML = `${Icon('TreePine', 'w-4 h-4 mr-2 text-green-400')} <span>Water (Terrain)</span>`;
+            if (list.querySelector('p')) { list.innerHTML = ''; }
+            list.appendChild(button);
         }
 
         function initThreeJS() {
@@ -715,6 +740,43 @@
         // ==========================================================
         // UI Olay Dinleyicileri ve Motor Başlatma
         // ==========================================================
+
+        // HTML'deki tüm ikon yer tutucularına SVG'leri enjekte eder.
+        function setupIcons() {
+            // 1. Üst Başlık İkonları
+            injectIcon('app-icon-placeholder', 'Cube', 'w-6 h-6');
+            injectIcon('play-icon-placeholder', 'Play', 'w-4 h-4 mr-1');
+            injectIcon('square-icon-placeholder', 'Square', 'w-4 h-4 mr-1');
+            // user-id-display Firebase'den güncelleniyor
+
+            // 2. Ribbon İkonları (Tab Başlıkları)
+            document.querySelectorAll('.tab-icon-placeholder').forEach(span => {
+                const iconName = span.getAttribute('data-icon');
+                const iconClass = span.getAttribute('data-class');
+                span.innerHTML = Icon(iconName, iconClass);
+            });
+
+            // 3. Ribbon Buton İkonları (Büyük İkonlar)
+            document.querySelectorAll('.ribbon-btn-icon').forEach(span => {
+                const iconName = span.getAttribute('data-icon');
+                const iconClass = span.getAttribute('data-class');
+                const strokeWidth = span.getAttribute('data-stroke') || '2';
+                span.innerHTML = Icon(iconName, iconClass, strokeWidth);
+            });
+            
+            // 4. Panel Başlık İkonları
+            document.getElementById('explorer-header-icon').innerHTML = Icon('Layers', 'w-4 h-4 mr-2');
+            document.getElementById('settings-icon-placeholder').innerHTML = Icon('Settings', 'w-4 h-4 mr-2');
+
+            // 5. Footer İkonları
+            document.querySelectorAll('.footer-icon-placeholder').forEach(span => {
+                const iconName = span.getAttribute('data-icon');
+                const iconClass = span.getAttribute('data-class');
+                span.innerHTML = Icon(iconName, iconClass);
+            });
+        }
+
+
         
         // Ribbon Tab Yönetimi
         function setupRibbonTabs() {
@@ -736,11 +798,10 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            setupIcons(); // İkonları hemen yerleştir
             initThreeJS();
             setupRibbonTabs();
             
-            document.getElementById('hierarchy-list').innerHTML = '<p class="text-slate-500 p-2 text-sm">Varlıklar C++ Motoru Tarafından Ekleniyor...</p>';
-
             // Yeni Varlık Ekle Butonu (Ribbon'daki)
             document.getElementById('add-block-btn').onclick = () => {
                 if (Module.CreateNewBlockFromUI) {
@@ -756,7 +817,11 @@
             document.getElementById('engine-status').textContent = 'Motor: Hazır (C++ ECS Aktif)';
             
             // C++ Başlatma Fonksiyonunu Çağır
-            Module.InitializeEngine(); 
+            if (Module.InitializeEngine) {
+                Module.InitializeEngine(); 
+            } else {
+                 CppInterface.JS_LogOutput(Module.stringToUTF8("Hata: InitializeEngine C++ fonksiyonu bulunamadı."));
+            }
         };
         
         // Emscripten motor.js dosyasını yükle
