@@ -2,248 +2,308 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Profesyonel Oyun Motoru (Roblox Studio Simülasyonu)</title>
-    <!-- 3D Görünüm İçin three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Tailwind CSS (Arayüz Stilini Profesyonel Yapmak İçin) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Karakter Demosu</title>
     <style>
-        /* Ana Stüdyo Teması */
-        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; }
-        .studio-layout { display: grid; grid-template-columns: 250px 1fr 300px; grid-template-rows: 50px 1fr 250px; height: 100vh; }
-        /* Paneller */
-        #toolbar { grid-area: 1 / 1 / 2 / 4; background-color: #1e293b; border-bottom: 1px solid #334155; }
-        #hierarchy { grid-area: 2 / 1 / 3 / 2; background-color: #0f172a; border-right: 1px solid #334155; overflow-y: auto; }
-        #canvas-container { grid-area: 2 / 2 / 3 / 3; position: relative; background-color: #2c3e50; }
-        #properties { grid-area: 2 / 3 / 3 / 4; background-color: #0f172a; border-left: 1px solid #334155; overflow-y: auto; }
-        #console-editor-area { grid-area: 3 / 1 / 4 / 4; background-color: #1e293b; border-top: 1px solid #334155; display: flex; }
-        /* Editör ve Konsol */
-        #code-editor { background-color: #1a1a1a; color: #00ff00; font-family: 'Consolas', monospace; font-size: 0.85rem; flex-grow: 1; padding: 10px; border-right: 1px solid #334155; }
-        #output-log { background-color: #0b111e; color: #cbd5e1; font-family: 'Consolas', monospace; font-size: 0.75rem; overflow-y: scroll; padding: 10px; flex-grow: 1; }
-        /* Log Renkleri */
-        .log-error { color: #f87171; font-weight: bold; }
-        .log-success { color: #34d399; font-weight: bold; }
-        .log-system { color: #60a5fa; }
-        .log-luau { color: #ffeb3b; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            overflow: hidden; /* Kaydırmayı engelle */
+            color: #fff;
+        }
+        #canvasContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+        #uiContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+        }
+        #playButton {
+            font-size: 2rem;
+            padding: 20px 40px;
+            background-color: #00a2ff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #007abb;
+            transition: all 0.1s ease;
+        }
+        #playButton:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #007abb;
+        }
+        #controls {
+            display: none; /* Başlangıçta gizli */
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 5;
+            user-select: none; /* Metin seçmeyi engelle */
+        }
+        #joystick {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 10px;
+        }
+        .joy-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+        #up { grid-area: up; }
+        #left { grid-area: left; }
+        #right { grid-area: right; }
+        #down { grid-area: down; }
+
+        #jumpButton {
+            display: none; /* Başlangıçta gizli */
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(0, 162, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            z-index: 5;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
-
-    <div class="studio-layout">
-        <!-- 1. Üst Araç Çubuğu (Toolbar) -->
-        <div id="toolbar" class="flex items-center p-2">
-            <span class="text-xl font-bold text-blue-300 mr-6">LunX 3D Studio</span>
-            <button id="add-block" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded-md transition duration-150">
-                🧱 Yeni Block (C++)
-            </button>
-            <button id="init-engine" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-md transition duration-150">
-                ⚙️ Motoru Başlat (Init C++)
-            </button>
-            <button id="run-script" class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-4 rounded-lg shadow-md transition duration-150">
-                ▶️ Betiği Çalıştır (Luau)
-            </button>
-        </div>
-
-        <!-- 2. Sol Hiyerarşi Paneli -->
-        <div id="hierarchy" class="p-2">
-            <h3 class="font-semibold text-gray-400 mb-2 border-b border-gray-700 pb-1">Hiyerarşi (C++ Obje Listesi)</h3>
-            <div id="hierarchy-list" class="text-sm space-y-1">
-                <p class="text-gray-500 text-xs">Motor başlatılınca buraya objeler eklenecek...</p>
-            </div>
-        </div>
-
-        <!-- 3. Ana 3D Canvas Alanı -->
-        <div id="canvas-container">
-            <!-- Three.js Canvas buraya eklenecek -->
-        </div>
-
-        <!-- 4. Sağ Özellikler (Properties) Paneli -->
-        <div id="properties" class="p-2">
-            <h3 class="font-semibold text-gray-400 mb-2 border-b border-gray-700 pb-1">Özellikler (Component'ler)</h3>
-            <div id="properties-panel" class="text-sm text-gray-300">
-                <p class="text-gray-500">Seçili Obje Yok.</p>
-            </div>
-        </div>
-
-        <!-- 5. Alt Konsol ve Kod Editörü -->
-        <div id="console-editor-area">
-            <textarea id="code-editor" class="w-1/2 focus:outline-none" placeholder="-- Luau Scripting: Motorun 'ExecuteScript' fonksiyonunu çağırır.&#10;-- Roblox Studio'daki gibi C++ motoruyla etkileşim kurun.&#10;&#10;-- Örnek: ScriptedPart'ın oluşmasını simüle eder.&#10;-- LunX.World:CreatePart('AwesomePart')&#10;if 1 == 1 then CreatePart() end"></textarea>
-            <pre id="output-log" class="w-1/2"></pre>
-        </div>
+    <!-- 3D Sahne için Canvas -->
+    <div id="canvasContainer">
+        <canvas id="myCanvas"></canvas>
     </div>
 
-    <script>
-        // ==========================================================
-        // LUNX STUDIO WEB İSTEMCİSİ (JavaScript)
-        // C++ Motoru ile Arayüz Arasındaki Köprü
-        // ==========================================================
+    <!-- Başlangıç UI -->
+    <div id="uiContainer">
+        <button id="playButton">Oyna</button>
+    </div>
 
-        const outputLog = document.getElementById('output-log');
-        const hierarchyList = document.getElementById('hierarchy-list');
-        const canvasContainer = document.getElementById('canvas-container');
+    <!-- Oyun Kontrolleri -->
+    <div id="controls">
+        <div id="joystick">
+            <div id="up" class="joy-btn">▲</div>
+            <div id="left" class="joy-btn">◄</div>
+            <div id="right" class="joy-btn">►</div>
+            <div id="down" class="joy-btn">▼</div>
+        </div>
+    </div>
+    <button id="jumpButton" style="display: none;">Zıpla</button>
 
-        // --- 3D SAHNE YÖNETİMİ (Three.js) ---
-        let scene, camera, renderer;
-        let objectMap = {}; // C++ ID'lerini 3D objelerle eşleştirir
+    <!-- Three.js Kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        function init3D() {
+    <script type="module">
+        // --- Değişkenler ---
+        let scene, camera, renderer, player, floor;
+        let playerVelocity = new THREE.Vector3(0, 0, 0);
+        let playerSpeed = 0.1;
+        let jumpStrength = 0.2;
+        let gravity = -0.005;
+        let isGrounded = false;
+        
+        const input = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            jump: false
+        };
+
+        // --- DOM Elementleri ---
+        const playButton = document.getElementById('playButton');
+        const uiContainer = document.getElementById('uiContainer');
+        const controls = document.getElementById('controls');
+        const jumpButton = document.getElementById('jumpButton');
+        const canvas = document.getElementById('myCanvas');
+        const canvasContainer = document.getElementById('canvasContainer');
+
+        // --- Başlatma Fonksiyonu ---
+        function init() {
+            // 1. Sahne
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
-            camera.position.set(10, 10, 10);
+            scene.background = new THREE.Color(0x87ceeb); // Gök mavisi
+
+            // 2. Kamera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, 7); // Kamerayı oyuncunun arkasına ve yukarısına konumlandır
             camera.lookAt(0, 0, 0);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            // 3. Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
             renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-            renderer.setClearColor(0x2c3e50, 1); // Koyu Mavi/Gri
-            canvasContainer.appendChild(renderer.domElement);
+            renderer.shadowMap.enabled = true;
 
-            // Işıklandırma
-            scene.add(new THREE.AmbientLight(0x404040, 3));
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            directionalLight.position.set(5, 15, 5);
-            scene.add(directionalLight);
+            // 4. Işıklandırma
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(5, 10, 7.5);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
 
-            // Zemin (Baseplate Görünümü)
-            const planeGeometry = new THREE.PlaneGeometry(100, 100);
-            const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x3d4e5f, side: THREE.DoubleSide });
-            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-            plane.rotation.x = Math.PI / 2;
-            plane.name = "GridBaseplate";
-            scene.add(plane);
+            // 5. Zemin
+            const floorGeometry = new THREE.PlaneGeometry(50, 50);
+            const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x009900 }); // Yeşil çimen
+            floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2; // Düz yatır
+            floor.receiveShadow = true;
+            scene.add(floor);
 
+            // 6. R6 Benzeri Karakter (Kutulardan)
+            player = new THREE.Group();
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffcc99 }));
+            head.position.y = 1.5;
+            head.castShadow = true;
+            player.add(head);
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 0.75), new THREE.MeshLambertMaterial({ color: 0x00aaff }));
+            torso.position.y = 0;
+            torso.castShadow = true;
+            player.add(torso);
+            
+            // Basit bir temel olarak karakteri konumlandır
+            player.position.y = 1; // Zemin yüzeyinde durması için (gövdenin yarısı)
+            scene.add(player);
+
+            // 7. Pencere Boyutlandırma
             window.addEventListener('resize', onWindowResize, false);
-            animate();
+            
+            // 8. Olay Dinleyicileri (Kontroller)
+            setupControls();
         }
 
+        // --- Kontrol Ayarları ---
+        function setupControls() {
+            // Butonlara basma (touch & mouse)
+            const setupButton = (elementId, key) => {
+                const button = document.getElementById(elementId);
+                button.addEventListener('touchstart', (e) => { e.preventDefault(); input[key] = true; }, { passive: false });
+                button.addEventListener('mousedown', () => { input[key] = true; });
+                
+                button.addEventListener('touchend', (e) => { e.preventDefault(); input[key] = false; }, { passive: false });
+                button.addEventListener('mouseup', () => { input[key] = false; });
+                button.addEventListener('mouseleave', () => { input[key] = false; });
+            };
+
+            setupButton('up', 'forward');
+            setupButton('down', 'backward');
+            setupButton('left', 'left');
+            setupButton('right', 'right');
+            setupButton('jumpButton', 'jump');
+        }
+
+        // --- Oyun Döngüsü ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            updatePhysics();
+            updateCamera();
+            
+            renderer.render(scene, camera);
+        }
+
+        // --- Fizik Güncellemesi ---
+        function updatePhysics() {
+            // 1. Yerçekimi uygula
+            if (!isGrounded) {
+                playerVelocity.y += gravity;
+            }
+
+            // 2. Hareket uygula (Input'a göre)
+            if (input.forward) playerVelocity.z = -playerSpeed;
+            else if (input.backward) playerVelocity.z = playerSpeed;
+            else playerVelocity.z = 0;
+
+            if (input.left) playerVelocity.x = -playerSpeed;
+            else if (input.right) playerVelocity.x = playerSpeed;
+            else playerVelocity.x = 0;
+
+            // 3. Zıplama
+            if (input.jump && isGrounded) {
+                playerVelocity.y = jumpStrength;
+                isGrounded = false;
+            }
+
+            // 4. Pozisyonu güncelle
+            player.position.add(playerVelocity);
+
+            // 5. Zemin kontrolü
+            if (player.position.y <= 1.0) { // Karakterin yüksekliğine göre ayarla
+                player.position.y = 1.0;
+                playerVelocity.y = 0;
+                isGrounded = true;
+            }
+            
+            // Dönüş (Basitçe)
+            if(playerVelocity.x !== 0 || playerVelocity.z !== 0) {
+                 player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
+            }
+        }
+        
+        // --- Kamera Takibi ---
+        function updateCamera() {
+            // Kameranın oyuncuyu takip etmesini sağla
+            camera.position.x = player.position.x;
+            camera.position.z = player.position.z + 7; // Oyuncunun biraz gerisinde
+            camera.position.y = player.position.y + 2; // Oyuncunun biraz yukarısında
+            camera.lookAt(player.position); // Oyuncuya bak
+        }
+
+        // --- Pencere Boyutlandırma ---
         function onWindowResize() {
             camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
         }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            // Obje animasyonları veya kamera hareketleri buraya gelir
-            renderer.render(scene, camera);
-        }
-
-        // C++'tan gelen komutla 3D obje oluşturma
-        window.JS_Spawn3DObject = function(id, x, y, z) {
-            const geometry = new THREE.BoxGeometry(2, 2, 2);
-            const material = new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff });
-            const block = new THREE.Mesh(geometry, material);
-            block.position.set(x, y, z);
-            block.userData.cppID = id;
-            
-            scene.add(block);
-            objectMap[id] = block;
-        }
-
-        // --- MOTOR KONSOLU (JavaScript) ---
-
-        // C++ tarafından çağrılan loglama fonksiyonu
-        window.JS_LogOutput = function(message) {
-            const now = new Date().toLocaleTimeString();
-            let className = 'log-system';
-
-            if (message.includes('HATA') || message.includes('ERROR') || message.includes('failed')) {
-                className = 'log-error';
-            } else if (message.includes('BAŞLATILIYOR') || message.includes('HAZIR')) {
-                 className = 'log-success';
-            } else if (message.includes('Luau')) {
-                 className = 'log-luau';
-            }
-            
-            const logEntry = document.createElement('div');
-            logEntry.innerHTML = `<span class="text-gray-500">[${now}]</span> <span class="${className}">${message.replace(/\n/g, '<br>')}</span>`;
-            outputLog.appendChild(logEntry);
-            outputLog.scrollTop = outputLog.scrollHeight; 
-        };
-
-        // --- HİYERARŞİ YÖNETİMİ (JavaScript) ---
-
-        // C++ tarafından çağrılan Hiyerarşi ekleme fonksiyonu
-        window.JS_AddHierarchyItem = function(name, id) {
-            // İlk kez çağrıldığında placeholder'ı temizle
-            if (hierarchyList.querySelector('.text-gray-500')) {
-                hierarchyList.innerHTML = '';
-            }
-
-            const div = document.createElement('div');
-            div.className = 'p-1 cursor-pointer hover:bg-blue-800/50 rounded transition duration-100';
-            div.textContent = `${name} (ID: ${id})`;
-            div.title = `C++ Engine ID: ${id}`;
-            // Seçme işlemleri buraya entegre edilebilir
-            hierarchyList.appendChild(div);
-        }
-
-
-        // --- Wasm Modülü Başlatma ---
-
-        // Bu 'Module' nesnesi, Wasm yükleme sürecini yönetir.
-        var Module = {
-            onRuntimeInitialized: function() {
-                JS_LogOutput("<span class='log-system'>Wasm Modülü Başarıyla Yüklendi. C++ Engine API'leri hazır.</span>");
-                // Motoru otomatik başlatmıyoruz, kullanıcı butona basacak.
-            },
-            // Geleneksel C++ çıktılarını yakalama
-            print: function(text) { JS_LogOutput(`[C++ STDOUT]: ${text}`); },
-            printErr: function(text) { JS_LogOutput(`[C++ STDERR]: ${text}`); }
-        };
-
-        // --- Olay Dinleyicileri ---
         
-        document.getElementById('init-engine').addEventListener('click', function() {
-            if (typeof Module._InitializeLunXStudio === 'function') {
-                outputLog.innerHTML = '';
-                // Hiyerarşiyi temizle
-                hierarchyList.innerHTML = '<p class="text-gray-500 text-xs">Motor başlatılınca buraya objeler eklenecek...</p>';
-                // 3D Sahneyi temizle
-                for (const objID in objectMap) { scene.remove(objectMap[objID]); }
-                objectMap = {};
-                
-                Module._InitializeLunXStudio();
-            } else {
-                JS_LogOutput("[HATA]: Wasm Modülü Yüklenmedi. 'lunx_core.js' bulunamıyor.");
-            }
+        // --- Başlat ---
+        playButton.addEventListener('click', () => {
+            uiContainer.style.display = 'none';
+            controls.style.display = 'grid'; // Kontrolleri göster
+            jumpButton.style.display = 'flex'; // Zıplama butonunu göster
+            
+            init();
+            animate();
         });
 
-        document.getElementById('run-script').addEventListener('click', function() {
-            const luauCode = document.getElementById('code-editor').value;
-            if (typeof Module._RunScript === 'function') {
-                const codePtr = Module.allocateUTF8(luauCode);
-                Module._RunScript(codePtr);
-                Module._free(codePtr); 
-            } else {
-                JS_LogOutput("[HATA]: Wasm Motor fonksiyonu (_RunScript) henüz yüklenmedi. Lütfen Motoru Başlatın.");
-            }
-        });
-
-        document.getElementById('add-block').addEventListener('click', function() {
-            if (typeof Module._CreateNewBlockFromUI === 'function') {
-                Module._CreateNewBlockFromUI();
-            } else {
-                JS_LogOutput("[HATA]: C++ Foksiyonu (_CreateNewBlockFromUI) çağrılamadı. Motor başlatılmadı.");
-            }
-        });
-
-        // Sayfa yüklendiğinde 3D sahneyi başlat
-        window.onload = function() {
-             init3D();
-
-             // Wasm JavaScript Glue kodunu yükle. Buradaki isimlendirme, derleme komutu ile EŞLEŞMELİDİR.
-             const script = document.createElement('script');
-             script.src = 'lunx_core.js'; 
-             document.body.appendChild(script);
-
-             // Emscripten dosya yolunu belirtme (Wasm dosyasının doğru yüklenmesi için kritik)
-             Module.locateFile = function(path, prefix) {
-                 return path; 
-             }
-             
-             JS_LogOutput("LunX Studio UI hazır. Wasm motor çekirdeği bekleniyor...");
-        }
     </script>
 </body>
 </html>
