@@ -8,6 +8,7 @@
 #include <cstring>       // strcpy için
 #include <cstdlib>       // malloc, rand, RAND_MAX için
 #include <emscripten/bind.h>
+#include <ctime>         // time(0) için
 
 using namespace emscripten;
 using namespace std;
@@ -43,10 +44,12 @@ struct TransformComponent : public Component {
         return ss.str();
     }
     void set_property(const string& name, const string& value) {
-        float val = stof(value);
-        if (name == "x") x = val;
-        else if (name == "y") y = val;
-        else if (name == "z") z = val;
+        try {
+            float val = stof(value);
+            if (name == "x") x = val;
+            else if (name == "y") y = val;
+            else if (name == "z") z = val;
+        } catch (...) { /* Hata görmezden gelinir */ }
     }
 };
 
@@ -67,10 +70,12 @@ struct MeshRendererComponent : public Component {
         if (name == "shape") shape = value;
         else if (name == "isVisible") isVisible = (value == "true");
         else if (name == "r" || name == "g" || name == "b") {
-            float val = stof(value);
-            if (name == "r") r = val;
-            else if (name == "g") g = val;
-            else if (name == "b") b = val;
+            try {
+                float val = stof(value);
+                if (name == "r") r = val;
+                else if (name == "g") g = val;
+                else if (name == "b") b = val;
+            } catch (...) { /* Hata görmezden gelinir */ }
         }
     }
 };
@@ -126,17 +131,19 @@ public:
         // Başlangıç Konumlarını Rastgele Ayarla
         TransformComponent* t = newEntity->GetComponent<TransformComponent>("Transform");
         if (t) {
+            // Konumlar -5 ile 5 arasında
             t->x = (float)(rand() % 10) - 5;
-            t->y = (float)(rand() % 5) + 1;
+            t->y = (float)(rand() % 5) + 1; // Yüksekliği 1 ile 6 arasında tut
             t->z = (float)(rand() % 10) - 5;
         }
         
         // Renkleri Rastgele Ayarla
         MeshRendererComponent* m = newEntity->GetComponent<MeshRendererComponent>("MeshRenderer");
         if (m) {
-            m->r = (float)rand() / RAND_MAX;
-            m->g = (float)rand() / RAND_MAX;
-            m->b = (float)rand() / RAND_MAX;
+            // Emscripten'ın uyarısı için RAND_MAX'e float dökümünü ekle
+            m->r = (float)rand() / (float)RAND_MAX;
+            m->g = (float)rand() / (float)RAND_MAX;
+            m->b = (float)rand() / (float)RAND_MAX;
         }
         
         // JS Arayüzünü Güncelle
@@ -261,15 +268,24 @@ void SetEntityProperty(int id, const char* compType, const char* propName, const
 
 
 // ==========================================================
-// Emscripten Bağlantı Noktaları (KRİTİK DÜZELTME BURADA)
+// Emscripten Bağlantı Noktaları (Tüm Ham İşaretçiler İçin Düzeltme)
 // ==========================================================
 
 EMSCRIPTEN_BINDINGS(lunx_module) {
-    // std::function ile karışmaması için açıkça 'emscripten::function' kullanıldı.
-    emscripten::function("InitializeEngine", &InitializeEngine);
-    emscripten::function("RunScript", &RunScript);
-    emscripten::function("CreateNewBlockFromUI", &CreateNewBlockFromUI);
-    // allow_raw_pointer, C++'tan ayrılmış belleği JS'ye aktarırken gereklidir.
+    // Ham işaretçi (const char*) parametresi aldığı için allow_raw_pointer gerekli
+    emscripten::function("RunScript", &RunScript, allow_raw_pointer<const char>());
+
+    // Çıkış değeri ham işaretçi (char*) olduğu için allow_raw_pointer gerekli
     emscripten::function("GetEntityProperties", &GetEntityProperties, allow_raw_pointer<char>());
-    emscripten::function("SetEntityProperty", &SetEntityProperty);
+    
+    // Ham işaretçi (const char*) parametreleri aldığı için allow_raw_pointer gerekli
+    emscripten::function("SetEntityProperty", &SetEntityProperty, 
+                         allow_raw_pointer<const char>(), 
+                         allow_raw_pointer<const char>(), 
+                         allow_raw_pointer<const char>()
+                        );
+
+    // Bu fonksiyonlar ham işaretçi kullanmadığı için özel politikaya gerek yok
+    emscripten::function("InitializeEngine", &InitializeEngine);
+    emscripten::function("CreateNewBlockFromUI", &CreateNewBlockFromUI);
 }
