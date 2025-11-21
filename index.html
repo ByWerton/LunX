@@ -3,83 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunX Profesyonel C++ Scripting Studio</title>
+    <title>LunX Profesyonel Oyun Motoru (Roblox Studio Simülasyonu)</title>
+    <!-- 3D Görünüm İçin three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tailwind CSS (Arayüz Stilini Profesyonel Yapmak İçin) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Modern ve Profesyonel Tasarım - Koyu Tema */
-        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background-color: #1e293b; color: #f8fafc; }
-        .studio-container { background-color: #0f172a; border: 1px solid #334155; }
-        .editor-container { background-color: #1a1a1a; color: #00ff00; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; }
-        .output-container { background-color: #0b111e; color: #cbd5e1; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.8rem; height: 300px; }
-        textarea { resize: none; }
+        /* Ana Stüdyo Teması */
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; }
+        .studio-layout { display: grid; grid-template-columns: 250px 1fr 300px; grid-template-rows: 50px 1fr 250px; height: 100vh; }
+        /* Paneller */
+        #toolbar { grid-area: 1 / 1 / 2 / 4; background-color: #1e293b; border-bottom: 1px solid #334155; }
+        #hierarchy { grid-area: 2 / 1 / 3 / 2; background-color: #0f172a; border-right: 1px solid #334155; overflow-y: auto; }
+        #canvas-container { grid-area: 2 / 2 / 3 / 3; position: relative; background-color: #2c3e50; }
+        #properties { grid-area: 2 / 3 / 3 / 4; background-color: #0f172a; border-left: 1px solid #334155; overflow-y: auto; }
+        #console-editor-area { grid-area: 3 / 1 / 4 / 4; background-color: #1e293b; border-top: 1px solid #334155; display: flex; }
+        /* Editör ve Konsol */
+        #code-editor { background-color: #1a1a1a; color: #00ff00; font-family: 'Consolas', monospace; font-size: 0.85rem; flex-grow: 1; padding: 10px; border-right: 1px solid #334155; }
+        #output-log { background-color: #0b111e; color: #cbd5e1; font-family: 'Consolas', monospace; font-size: 0.75rem; overflow-y: scroll; padding: 10px; flex-grow: 1; }
+        /* Log Renkleri */
         .log-error { color: #f87171; font-weight: bold; }
         .log-success { color: #34d399; font-weight: bold; }
         .log-system { color: #60a5fa; }
-        .log-luau { color: #ffeb3b; } /* Luau sarısı */
+        .log-luau { color: #ffeb3b; }
     </style>
 </head>
 <body>
 
-    <div class="p-4 sm:p-8 max-w-6xl mx-auto studio-container rounded-xl shadow-2xl mt-4">
-        <h1 class="text-3xl font-extrabold text-blue-400 mb-2 border-b border-blue-400 pb-2">
-            LUNX PROFESSIONAL ENGINE - SCRIPTING STUDIO (C++ Core)
-        </h1>
-        <p class="text-gray-400 mb-6 text-sm">C++ Motoru, Modüler Sistemler ve Luau Betik Dili entegrasyonu.</p>
-
-        <!-- Luau Kod Editörü -->
-        <div class="mb-6">
-            <label for="luau-code" class="block text-sm font-semibold text-gray-300 mb-2">Luau Betiği</label>
-            <textarea id="luau-code" rows="12" class="editor-container w-full p-4 rounded-lg shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Motorunuz için Luau kodunu buraya yazın.">
--- Luau Scripting: Motor çekirdeğini kontrol edin.
--- Luau betikleri C++ 'EngineCore' içinde çalışır.
-
--- Örnek: Basit bir mesaj yazdırma
-print("Luau betiği motor tarafından başarıyla çalıştırıldı!")
-
--- Örnek: Motor API'sını çağırma simülasyonu
--- LunX.World:CreateInstance("Block")
--- LunX.Assets:LoadTexture("Roblox_Texture_001")
-            </textarea>
-        </div>
-
-        <!-- Kontrol Paneli -->
-        <div class="flex flex-wrap gap-4 mb-6">
-            <button id="run-button" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-95">
-                ▶️ Betiği Çalıştır
+    <div class="studio-layout">
+        <!-- 1. Üst Araç Çubuğu (Toolbar) -->
+        <div id="toolbar" class="flex items-center p-2">
+            <span class="text-xl font-bold text-blue-300 mr-6">LunX 3D Studio</span>
+            <button id="add-block" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded-md transition duration-150">
+                🧱 Yeni Block (C++)
             </button>
-            <button id="init-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out transform hover:scale-[1.02] active:scale-95">
-                ⚙️ Motoru Başlat (Tüm Sistemleri Init Et)
+            <button id="init-engine" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-md transition duration-150">
+                ⚙️ Motoru Başlat (Init C++)
             </button>
-            <button id="clear-button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-150 ease-in-out">
-                🗑️ Konsolu Temizle
+            <button id="run-script" class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-4 rounded-lg shadow-md transition duration-150">
+                ▶️ Betiği Çalıştır (Luau)
             </button>
         </div>
-        
-        <!-- Konsol Çıktısı -->
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-300 mb-2">Motor Konsolu (C++ Sistem Çıktıları)</label>
-            <pre id="output-log" class="output-container w-full p-4 rounded-lg overflow-y-auto border border-gray-700 shadow-lg"></pre>
+
+        <!-- 2. Sol Hiyerarşi Paneli -->
+        <div id="hierarchy" class="p-2">
+            <h3 class="font-semibold text-gray-400 mb-2 border-b border-gray-700 pb-1">Hiyerarşi (C++ Obje Listesi)</h3>
+            <div id="hierarchy-list" class="text-sm space-y-1">
+                <p class="text-gray-500 text-xs">Motor başlatılınca buraya objeler eklenecek...</p>
+            </div>
+        </div>
+
+        <!-- 3. Ana 3D Canvas Alanı -->
+        <div id="canvas-container">
+            <!-- Three.js Canvas buraya eklenecek -->
+        </div>
+
+        <!-- 4. Sağ Özellikler (Properties) Paneli -->
+        <div id="properties" class="p-2">
+            <h3 class="font-semibold text-gray-400 mb-2 border-b border-gray-700 pb-1">Özellikler (Component'ler)</h3>
+            <div id="properties-panel" class="text-sm text-gray-300">
+                <p class="text-gray-500">Seçili Obje Yok.</p>
+            </div>
+        </div>
+
+        <!-- 5. Alt Konsol ve Kod Editörü -->
+        <div id="console-editor-area">
+            <textarea id="code-editor" class="w-1/2 focus:outline-none" placeholder="-- Luau Scripting: Motorun 'ExecuteScript' fonksiyonunu çağırır.&#10;-- Roblox Studio'daki gibi C++ motoruyla etkileşim kurun.&#10;&#10;-- Örnek: ScriptedPart'ın oluşmasını simüle eder.&#10;-- LunX.World:CreatePart('AwesomePart')&#10;if 1 == 1 then CreatePart() end"></textarea>
+            <pre id="output-log" class="w-1/2"></pre>
         </div>
     </div>
 
     <script>
-        const outputLog = document.getElementById('output-log');
-        const codeEditor = document.getElementById('luau-code');
-        const runButton = document.getElementById('run-button');
-        const initButton = document.getElementById('init-button');
-        const clearButton = document.getElementById('clear-button');
+        // ==========================================================
+        // LUNX STUDIO WEB İSTEMCİSİ (JavaScript)
+        // C++ Motoru ile Arayüz Arasındaki Köprü
+        // ==========================================================
 
-        // C++ tarafından çağrılan JavaScript fonksiyonu
+        const outputLog = document.getElementById('output-log');
+        const hierarchyList = document.getElementById('hierarchy-list');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 3D SAHNE YÖNETİMİ (Three.js) ---
+        let scene, camera, renderer;
+        let objectMap = {}; // C++ ID'lerini 3D objelerle eşleştirir
+
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
+            camera.position.set(10, 10, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.setClearColor(0x2c3e50, 1); // Koyu Mavi/Gri
+            canvasContainer.appendChild(renderer.domElement);
+
+            // Işıklandırma
+            scene.add(new THREE.AmbientLight(0x404040, 3));
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(5, 15, 5);
+            scene.add(directionalLight);
+
+            // Zemin (Baseplate Görünümü)
+            const planeGeometry = new THREE.PlaneGeometry(100, 100);
+            const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x3d4e5f, side: THREE.DoubleSide });
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.rotation.x = Math.PI / 2;
+            plane.name = "GridBaseplate";
+            scene.add(plane);
+
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            // Obje animasyonları veya kamera hareketleri buraya gelir
+            renderer.render(scene, camera);
+        }
+
+        // C++'tan gelen komutla 3D obje oluşturma
+        window.JS_Spawn3DObject = function(id, x, y, z) {
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const material = new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff });
+            const block = new THREE.Mesh(geometry, material);
+            block.position.set(x, y, z);
+            block.userData.cppID = id;
+            
+            scene.add(block);
+            objectMap[id] = block;
+        }
+
+        // --- MOTOR KONSOLU (JavaScript) ---
+
+        // C++ tarafından çağrılan loglama fonksiyonu
         window.JS_LogOutput = function(message) {
             const now = new Date().toLocaleTimeString();
             let className = 'log-system';
 
-            if (message.includes('HATA') || message.includes('ERROR')) {
+            if (message.includes('HATA') || message.includes('ERROR') || message.includes('failed')) {
                 className = 'log-error';
             } else if (message.includes('BAŞLATILIYOR') || message.includes('HAZIR')) {
                  className = 'log-success';
-            } else if (message.includes('GameWorld') || message.includes('AssetLoader')) {
-                 className = 'log-system';
             } else if (message.includes('Luau')) {
                  className = 'log-luau';
             }
@@ -90,63 +161,88 @@ print("Luau betiği motor tarafından başarıyla çalıştırıldı!")
             outputLog.scrollTop = outputLog.scrollHeight; 
         };
 
-        // Wasm Modülünün Yüklenmesi
+        // --- HİYERARŞİ YÖNETİMİ (JavaScript) ---
+
+        // C++ tarafından çağrılan Hiyerarşi ekleme fonksiyonu
+        window.JS_AddHierarchyItem = function(name, id) {
+            // İlk kez çağrıldığında placeholder'ı temizle
+            if (hierarchyList.querySelector('.text-gray-500')) {
+                hierarchyList.innerHTML = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'p-1 cursor-pointer hover:bg-blue-800/50 rounded transition duration-100';
+            div.textContent = `${name} (ID: ${id})`;
+            div.title = `C++ Engine ID: ${id}`;
+            // Seçme işlemleri buraya entegre edilebilir
+            hierarchyList.appendChild(div);
+        }
+
+
+        // --- Wasm Modülü Başlatma ---
+
+        // Bu 'Module' nesnesi, Wasm yükleme sürecini yönetir.
         var Module = {
             onRuntimeInitialized: function() {
-                JS_LogOutput("<span class='log-system'>Wasm Modülü Başarıyla Yüklendi. C++ ile bağlantı kuruldu.</span>");
-                // Motoru otomatik olarak başlat
-                try {
-                    Module._InitializeLunXStudio(); 
-                } catch (e) {
-                    JS_LogOutput(`[WASM HATA]: Motor başlatma girişimi başarısız. ${e}`);
-                }
+                JS_LogOutput("<span class='log-system'>Wasm Modülü Başarıyla Yüklendi. C++ Engine API'leri hazır.</span>");
+                // Motoru otomatik başlatmıyoruz, kullanıcı butona basacak.
             },
-            // Geleneksel C++ çıktılarını (std::cout) yakalama simülasyonu
-            print: function(text) { JS_LogOutput(`[C++ STDIO]: ${text}`); },
+            // Geleneksel C++ çıktılarını yakalama
+            print: function(text) { JS_LogOutput(`[C++ STDOUT]: ${text}`); },
             printErr: function(text) { JS_LogOutput(`[C++ STDERR]: ${text}`); }
         };
 
         // --- Olay Dinleyicileri ---
-        runButton.addEventListener('click', function() {
-            const luauCode = codeEditor.value;
-            if (typeof Module._RunScript === 'function') {
-                runButton.disabled = true;
-                runButton.textContent = "⚙️ Çalıştırılıyor...";
+        
+        document.getElementById('init-engine').addEventListener('click', function() {
+            if (typeof Module._InitializeLunXStudio === 'function') {
+                outputLog.innerHTML = '';
+                // Hiyerarşiyi temizle
+                hierarchyList.innerHTML = '<p class="text-gray-500 text-xs">Motor başlatılınca buraya objeler eklenecek...</p>';
+                // 3D Sahneyi temizle
+                for (const objID in objectMap) { scene.remove(objectMap[objID]); }
+                objectMap = {};
                 
-                // JS'ten C++'a string gönderme
+                Module._InitializeLunXStudio();
+            } else {
+                JS_LogOutput("[HATA]: Wasm Modülü Yüklenmedi. 'lunx_core.js' bulunamıyor.");
+            }
+        });
+
+        document.getElementById('run-script').addEventListener('click', function() {
+            const luauCode = document.getElementById('code-editor').value;
+            if (typeof Module._RunScript === 'function') {
                 const codePtr = Module.allocateUTF8(luauCode);
                 Module._RunScript(codePtr);
                 Module._free(codePtr); 
-                
-                runButton.disabled = false;
-                runButton.textContent = "▶️ Betiği Çalıştır";
             } else {
                 JS_LogOutput("[HATA]: Wasm Motor fonksiyonu (_RunScript) henüz yüklenmedi. Lütfen Motoru Başlatın.");
             }
         });
 
-        initButton.addEventListener('click', function() {
-            if (typeof Module._InitializeLunXStudio === 'function') {
-                outputLog.innerHTML = '';
-                Module._InitializeLunXStudio();
+        document.getElementById('add-block').addEventListener('click', function() {
+            if (typeof Module._CreateNewBlockFromUI === 'function') {
+                Module._CreateNewBlockFromUI();
             } else {
-                JS_LogOutput("[HATA]: Wasm Modülü Yüklenmedi. Sayfayı Yenileyin.");
+                JS_LogOutput("[HATA]: C++ Foksiyonu (_CreateNewBlockFromUI) çağrılamadı. Motor başlatılmadı.");
             }
         });
 
-        clearButton.addEventListener('click', function() {
-            outputLog.innerHTML = '';
-            JS_LogOutput("Konsol temizlendi.");
-        });
+        // Sayfa yüklendiğinde 3D sahneyi başlat
+        window.onload = function() {
+             init3D();
 
-        // Wasm JavaScript Glue kodunu yükle
-        const script = document.createElement('script');
-        script.src = 'motor_core.js'; 
-        document.body.appendChild(script);
+             // Wasm JavaScript Glue kodunu yükle. Buradaki isimlendirme, derleme komutu ile EŞLEŞMELİDİR.
+             const script = document.createElement('script');
+             script.src = 'lunx_core.js'; 
+             document.body.appendChild(script);
 
-        // Emscripten dosya yolunu belirtme (Wasm dosyasının doğru yüklenmesi için kritik)
-        Module.locateFile = function(path, prefix) {
-            return path; 
+             // Emscripten dosya yolunu belirtme (Wasm dosyasının doğru yüklenmesi için kritik)
+             Module.locateFile = function(path, prefix) {
+                 return path; 
+             }
+             
+             JS_LogOutput("LunX Studio UI hazır. Wasm motor çekirdeği bekleniyor...");
         }
     </script>
 </body>
